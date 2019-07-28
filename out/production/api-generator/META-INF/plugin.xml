@@ -1,0 +1,41 @@
+<idea-plugin>
+  <id>site.forgus.plugins.api-generator</id>
+  <name>API Generator</name>
+  <version>1.0</version>
+  <vendor email="wenbin1876@gmail.com" url="http://www.forgus.site">Forgus</vendor>
+
+  <description><![CDATA[
+      API Generator.<br>
+      <em>Support generate markdown for dubbo api</em>
+    ]]></description>
+
+  <change-notes><![CDATA[
+      <em>2.0</em>
+      Support upload to Yapi for REST api<br>
+      <em>1.0</em>
+      Support generate markdown for DUBBO api<br>
+    ]]>
+  </change-notes>
+
+  <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->
+  <idea-version since-build="173.0"/>
+
+  <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
+       on how to target different products -->
+  <!-- uncomment to enable plugin in all products
+  <depends>com.intellij.modules.lang</depends>
+  -->
+
+  <extensions defaultExtensionNs="com.intellij">
+    <!-- Add your extensions here -->
+  </extensions>
+
+  <actions>
+    <!-- Add your actions here -->
+    <action id="api-generator.ID" class="ApiGenerateAction" text="API Generate"
+            description="upload to YAPI for REST api or generate markdown for Dubbo api">
+      <add-to-group group-id="EditorLangPopupMenu" anchor="first"/>
+    </action>
+  </actions>
+
+</idea-plugin>
