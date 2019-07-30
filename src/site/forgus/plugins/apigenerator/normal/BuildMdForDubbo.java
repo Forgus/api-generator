@@ -9,11 +9,13 @@ import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
+import com.intellij.psi.impl.source.PsiClassReferenceType;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.psi.util.PsiUtil;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class BuildMdForDubbo {
 
@@ -125,16 +127,21 @@ public class BuildMdForDubbo {
         }
         PsiType returnType = psiMethodTarget.getReturnType();
         List<FieldDocVO> vos = new ArrayList<>();
-        PsiClass psiClassChild = JavaPsiFacade.getInstance(project).findClass(returnType.getInternalCanonicalText(), GlobalSearchScope.allScope(project));
-        vos.addAll(listParamDocVO(psiClassChild));
+        if (returnType instanceof PsiClassReferenceType) {
+            PsiClass psiClass = PsiUtil.resolveClassInType(returnType);
+            vos.addAll(listParamDocVO(psiClass));
+        } else {
+            PsiClass psiClassChild = JavaPsiFacade.getInstance(project).findClass(returnType.getCanonicalText(), GlobalSearchScope.allScope(project));
+            vos.addAll(listParamDocVO(psiClassChild));
+        }
         return vos;
     }
 
     public static List<FieldDocVO> listParamDocVO(PsiClass psiClass) {
-        return listParamDocVO(psiClass, false);
+        return listParamDocVO(psiClass,false);
     }
 
-    public static List<FieldDocVO> listParamDocVO(PsiClass psiClass, boolean isChildParam) {
+    public static List<FieldDocVO> listParamDocVO(PsiClass psiClass,boolean isChildParam) {
         if (psiClass == null) {
             return new ArrayList<>();
         }
@@ -161,14 +168,28 @@ public class BuildMdForDubbo {
                     ));
                 } else {
                     vos.add(FieldDocVO.parent(fieldName, "Object[]", "N/A", filedDesc));
-                    vos.addAll(listParamDocVO(PsiUtil.resolveClassInType(iterableType), true));
+                    vos.addAll(listParamDocVO(PsiUtil.resolveClassInType(iterableType),true));
                 }
 
             } else {
                 //class type
                 if (!pName.equals(PsiUtil.resolveClassInType(type).getName())) {
                     vos.add(FieldDocVO.parent(fieldName, "Object", "N/A", filedDesc));
-                    vos.addAll(listParamDocVO(PsiUtil.resolveClassInType(type), true));
+                    PsiClass outerClass = PsiUtil.resolveGenericsClassInType(type).getElement();
+                    PsiType innerType = PsiUtil.substituteTypeParameter(type, outerClass, 0, false);
+                    PsiClass innerClass = PsiUtil.resolveClassInClassTypeOnly(innerType);
+//                    PsiField[] allOuterFields = outerClass.getAllFields();
+//                    for (PsiField psiField : allOuterFields) {
+//                        PsiType psiFieldType = psiField.getType();
+//                        if ("T".equals(psiFieldType.getPresentableText())) {
+//                            PsiElementFactory factory = JavaPsiFacade.getInstance(project).getElementFactory();
+//                            PsiField factoryField = factory.createField(psiField.getName(), innerType);
+//                            psiField.replace(factoryField);
+//                        }
+//                    }
+//                    vos.addAll(listParamDocVO(outerClass, project,true));
+                    vos.add(FieldDocVO.parent(fieldName, "Object", "N/A", filedDesc));
+                    vos.addAll(listParamDocVO(innerClass));
                 } else {
                     vos.add(FieldDocVO.normal(fieldName, typeName, "N/A", filedDesc));
                 }

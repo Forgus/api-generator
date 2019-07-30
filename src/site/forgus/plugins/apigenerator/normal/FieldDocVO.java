@@ -30,7 +30,7 @@ public class FieldDocVO implements Serializable {
     }
 
     public static FieldDocVO child(String name, String type, String range, String desc) {
-        return new FieldDocVO("└"+name,type,range,desc);
+        return new FieldDocVO(" "+name,type,range,desc);
     }
 
     public String getName() {

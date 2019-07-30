@@ -39,7 +39,7 @@ public class ApiGenerateAction extends AnAction {
 
     private void dubboApiUpload(AnActionEvent anActionEvent, Project project) {
         // 获得dubbo需上传的接口列表 参数对象
-        List<FieldDocVO> fieldDocVOS = new BuildMdForDubbo().generateResponseFieldDocVOs(anActionEvent);
+        List<FieldDocVO> fieldDocVOS = new BuildMdForDubbo().generateParamFieldDocVOs(anActionEvent);
         String jsonDoc = new Gson().toJson(fieldDocVOS);
         System.out.println(jsonDoc);
     }
