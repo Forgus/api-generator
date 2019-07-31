@@ -1,3 +1,5 @@
+package demo;
+
 import com.google.common.base.Strings;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -17,9 +19,13 @@ import site.forgus.plugins.apigenerator.normal.DesUtil;
 import site.forgus.plugins.apigenerator.normal.KV;
 import site.forgus.plugins.apigenerator.normal.NormalTypes;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+
 
 public class BuildJsonForDubbo {
 
@@ -40,14 +46,14 @@ public class BuildJsonForDubbo {
      */
     public ArrayList<YapiDubboDTO> actionPerformedList(AnActionEvent e) {
         Editor editor = e.getDataContext().getData(CommonDataKeys.EDITOR);
-        Project project = editor.getProject();
+        PsiFile psiFile = e.getDataContext().getData(CommonDataKeys.PSI_FILE);
         String selectedText = e.getRequiredData(CommonDataKeys.EDITOR).getSelectionModel().getSelectedText();
+        Project project = editor.getProject();
         if (Strings.isNullOrEmpty(selectedText)) {
             Notification error = notificationGroup.createNotification("please select method or class", NotificationType.ERROR);
             Notifications.Bus.notify(error, project);
             return null;
         }
-        PsiFile psiFile = e.getDataContext().getData(CommonDataKeys.PSI_FILE);
         PsiElement referenceAt = psiFile.findElementAt(editor.getCaretModel().getOffset());
         PsiClass selectedClass = (PsiClass) PsiTreeUtil.getContextOfType(referenceAt, new Class[]{PsiClass.class});
         ArrayList<YapiDubboDTO> yapiDubboDTOS = new ArrayList<>();
@@ -87,79 +93,82 @@ public class BuildJsonForDubbo {
      */
     public YapiDubboDTO actionPerformed(PsiClass selectedClass, PsiMethod psiMethodTarget, Project project, PsiFile psiFile) {
         YapiDubboDTO yapiDubboDTO = new YapiDubboDTO();
-        List list = new ArrayList<KV>();
+        ArrayList list = new ArrayList<KV>();
         //判断是否有匹配的目标方法
-        if(psiMethodTarget == null) {
+        if (psiMethodTarget != null) {
+            // 获得响应
+            yapiDubboDTO.setResponse(BuildJsonForYApi.getResponse(project, psiMethodTarget.getReturnType()));
+            PsiParameter[] psiParameters = psiMethodTarget.getParameterList().getParameters();
+            for (PsiParameter psiParameter : psiParameters) {
+                if (psiParameter.getType() instanceof PsiPrimitiveType) {
+                    //如果是基本类型
+                    KV kvClass = KV.create();
+                    kvClass.set(psiParameter.getType().getCanonicalText(), NormalTypes.normalTypes.get(psiParameter.getType().getPresentableText()));
+                    list.add(kvClass);
+                } else if (NormalTypes.isNormalType(psiParameter.getType().getPresentableText())) {
+                    //如果是包装类型
+                    KV kvClass = KV.create();
+                    kvClass.set(psiParameter.getType().getCanonicalText(), NormalTypes.normalTypes.get(psiParameter.getType().getPresentableText()));
+                    list.add(kvClass);
+                } else if (psiParameter.getType().getPresentableText().startsWith("List")) {
+                    ArrayList listChild = new ArrayList<>();
+                    String[] types = psiParameter.getType().getCanonicalText().split("<");
+                    if (types.length > 1) {
+                        String childPackage = types[1].split(">")[0];
+                        if (NormalTypes.noramlTypesPackages.keySet().contains(childPackage)) {
+                            listChild.add(NormalTypes.noramlTypesPackages.get(childPackage));
+                        } else if (NormalTypes.collectTypesPackages.containsKey(childPackage)) {
+                            listChild.add(NormalTypes.collectTypesPackages.get(childPackage));
+                        } else {
+                            PsiClass psiClassChild = JavaPsiFacade.getInstance(project).findClass(childPackage, GlobalSearchScope.allScope(project));
+                            KV kvObject = getFields(psiClassChild, project);
+                            listChild.add(kvObject);
+                        }
+                    }
+                    KV kvClass = KV.create();
+                    kvClass.set(types[0], listChild);
+                    list.add(kvClass);
+                } else if (psiParameter.getType().getPresentableText().startsWith("Set")) {
+                    HashSet setChild = new HashSet();
+                    String[] types = psiParameter.getType().getCanonicalText().split("<");
+                    if (types.length > 1) {
+                        String childPackage = types[1].split(">")[0];
+                        if (NormalTypes.noramlTypesPackages.keySet().contains(childPackage)) {
+                            setChild.add(NormalTypes.noramlTypesPackages.get(childPackage));
+                        } else if (NormalTypes.collectTypesPackages.containsKey(childPackage)) {
+                            setChild.add(NormalTypes.collectTypesPackages.get(childPackage));
+                        } else {
+                            PsiClass psiClassChild = JavaPsiFacade.getInstance(project).findClass(childPackage, GlobalSearchScope.allScope(project));
+                            KV kvObject = getFields(psiClassChild, project);
+                            setChild.add(kvObject);
+                        }
+
+                    }
+                    KV kvClass = KV.create();
+                    kvClass.set(types[0], setChild);
+                    list.add(kvClass);
+                } else if (psiParameter.getType().getPresentableText().startsWith("Map")) {
+                    HashMap hashMapChild = new HashMap();
+                    String[] types = psiParameter.getType().getCanonicalText().split("<");
+                    if (types.length > 1) {
+                        hashMapChild.put("String", "Object");
+                    }
+                    KV kvClass = KV.create();
+                    kvClass.set(types[0], hashMapChild);
+                    list.add(kvClass);
+                } else {
+                    PsiClass psiClassChild = JavaPsiFacade.getInstance(project).findClass(psiParameter.getType().getCanonicalText(), GlobalSearchScope.allScope(project));
+                    KV kvObject = getFields(psiClassChild, project);
+                    String classNameChild = ((PsiJavaFileImpl) psiClassChild.getContext()).getPackageName() + "." + psiClassChild.getName();
+                    KV kvClass = KV.create();
+                    kvClass.set(classNameChild, kvObject);
+                    list.add(kvClass);
+                }
+            }
+        } else {
             Notification error = notificationGroup.createNotification("please check method name", NotificationType.ERROR);
             Notifications.Bus.notify(error, project);
             return null;
-        }
-        PsiParameter[] psiParameters = psiMethodTarget.getParameterList().getParameters();
-        for (PsiParameter psiParameter : psiParameters) {
-            if (psiParameter.getType() instanceof PsiPrimitiveType) {
-                //如果是基本类型
-                KV kvClass = KV.create();
-                kvClass.set(psiParameter.getType().getCanonicalText(), NormalTypes.normalTypes.get(psiParameter.getType().getPresentableText()));
-                list.add(kvClass);
-            } else if (NormalTypes.isNormalType(psiParameter.getType().getPresentableText())) {
-                //如果是包装类型
-                KV kvClass = KV.create();
-                kvClass.set(psiParameter.getType().getCanonicalText(), NormalTypes.normalTypes.get(psiParameter.getType().getPresentableText()));
-                list.add(kvClass);
-            } else if (psiParameter.getType().getPresentableText().startsWith("List")) {
-                ArrayList listChild = new ArrayList<>();
-                String[] types = psiParameter.getType().getCanonicalText().split("<");
-                if (types.length > 1) {
-                    String childPackage = types[1].split(">")[0];
-                    if (NormalTypes.noramlTypesPackages.keySet().contains(childPackage)) {
-                        listChild.add(NormalTypes.noramlTypesPackages.get(childPackage));
-                    } else if (NormalTypes.collectTypesPackages.containsKey(childPackage)) {
-                        listChild.add(NormalTypes.collectTypesPackages.get(childPackage));
-                    } else {
-                        PsiClass psiClassChild = JavaPsiFacade.getInstance(project).findClass(childPackage, GlobalSearchScope.allScope(project));
-                        KV kvObject = getFields(psiClassChild, project);
-                        listChild.add(kvObject);
-                    }
-                }
-                KV kvClass = KV.create();
-                kvClass.set(types[0], listChild);
-                list.add(kvClass);
-            } else if (psiParameter.getType().getPresentableText().startsWith("Set")) {
-                HashSet setChild = new HashSet();
-                String[] types = psiParameter.getType().getCanonicalText().split("<");
-                if (types.length > 1) {
-                    String childPackage = types[1].split(">")[0];
-                    if (NormalTypes.noramlTypesPackages.keySet().contains(childPackage)) {
-                        setChild.add(NormalTypes.noramlTypesPackages.get(childPackage));
-                    } else if (NormalTypes.collectTypesPackages.containsKey(childPackage)) {
-                        setChild.add(NormalTypes.collectTypesPackages.get(childPackage));
-                    } else {
-                        PsiClass psiClassChild = JavaPsiFacade.getInstance(project).findClass(childPackage, GlobalSearchScope.allScope(project));
-                        KV kvObject = getFields(psiClassChild, project);
-                        setChild.add(kvObject);
-                    }
-
-                }
-                KV kvClass = KV.create();
-                kvClass.set(types[0], setChild);
-                list.add(kvClass);
-            } else if (psiParameter.getType().getPresentableText().startsWith("Map")) {
-                HashMap hashMapChild = new HashMap();
-                String[] types = psiParameter.getType().getCanonicalText().split("<");
-                if (types.length > 1) {
-                    hashMapChild.put("String", "Object");
-                }
-                KV kvClass = KV.create();
-                kvClass.set(types[0], hashMapChild);
-                list.add(kvClass);
-            } else {
-                PsiClass psiClassChild = JavaPsiFacade.getInstance(project).findClass(psiParameter.getType().getCanonicalText(), GlobalSearchScope.allScope(project));
-                KV kvObject = getFields(psiClassChild, project);
-                String classNameChild = ((PsiJavaFileImpl) psiClassChild.getContext()).getPackageName() + "." + psiClassChild.getName();
-                KV kvClass = KV.create();
-                kvClass.set(classNameChild, kvObject);
-                list.add(kvClass);
-            }
         }
         try {
             String json = gson.toJson(list);
@@ -280,4 +289,3 @@ public class BuildJsonForDubbo {
         return kv;
     }
 }
-

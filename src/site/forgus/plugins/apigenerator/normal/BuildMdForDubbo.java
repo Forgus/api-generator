@@ -13,6 +13,7 @@ import com.intellij.psi.impl.source.PsiClassReferenceType;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.psi.util.PsiUtil;
+import org.apache.commons.lang.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -138,10 +139,10 @@ public class BuildMdForDubbo {
     }
 
     public static List<FieldDocVO> listParamDocVO(PsiClass psiClass) {
-        return listParamDocVO(psiClass,false);
+        return listParamDocVO(psiClass,"",false);
     }
 
-    public static List<FieldDocVO> listParamDocVO(PsiClass psiClass,boolean isChildParam) {
+    public static List<FieldDocVO> listParamDocVO(PsiClass psiClass,String prefix,boolean isChildParam) {
         if (psiClass == null) {
             return new ArrayList<>();
         }
@@ -149,13 +150,39 @@ public class BuildMdForDubbo {
         String pName = psiClass.getName();
         for (PsiField field : psiClass.getAllFields()) {
             PsiType type = field.getType();
-            String fieldName = isChildParam ? "└" + field.getName() : field.getName();
+            String newPrefix = isChildParam ? prefix + "&emsp;" : prefix;
+            String fieldName = newPrefix + field.getName();
             String typeName = type.getPresentableText();
-            String filedDesc = DesUtil.getFiledDesc(field.getDocComment());
+            String filedDesc = DesUtil.getFiledDesc(field.getDocComment()).replace("@see","见");
+            String require = "N";
+            String range = "N/A";
+            PsiAnnotation[] annotations = field.getAnnotations();
+            for (PsiAnnotation annotation : annotations) {
+
+                String qualifiedName = annotation.getText();
+                if(qualifiedName.contains("NotNull") || qualifiedName.contains("NotBlank")) {
+                    require = "Y";
+                }
+                if(qualifiedName.contains("Length") || qualifiedName.contains("Range")) {
+                    String min = "";
+                    String max = "";
+                    PsiAnnotationMemberValue maxValue = annotation.findAttributeValue("max");
+                    PsiAnnotationMemberValue minValue = annotation.findAttributeValue("min");
+                    if(maxValue != null) {
+                        max = maxValue.getText();
+                    }
+                    if(minValue != null) {
+                        min = "0".equals(minValue.getText()) ? "1" : minValue.getText();
+                    }
+                    if(StringUtils.isNotEmpty(min) && StringUtils.isNotEmpty(max)) {
+                        range = "["+min + "," + max + "]";
+                    }
+                }
+            }
             // 如果是基本类型
             if (NormalTypes.isNormalType(typeName)) {
                 vos.add(FieldDocVO.normal(
-                        fieldName, typeName, "1-32", filedDesc
+                        fieldName, typeName,require, range, filedDesc
                 ));
             } else if (typeName.startsWith("List")) {
                 //list type
@@ -164,34 +191,27 @@ public class BuildMdForDubbo {
                 String classTypeName = iterableClass.getName();
                 if (NormalTypes.isNormalType(classTypeName)) {
                     vos.add(FieldDocVO.normal(
-                            fieldName, classTypeName + "[]", "1-32", filedDesc
+                            fieldName, classTypeName + "[]",require, range, filedDesc
                     ));
                 } else {
-                    vos.add(FieldDocVO.parent(fieldName, "Object[]", "N/A", filedDesc));
-                    vos.addAll(listParamDocVO(PsiUtil.resolveClassInType(iterableType),true));
+                    vos.add(FieldDocVO.parent(fieldName, "Object[]",require, range, filedDesc));
+                    vos.addAll(listParamDocVO(PsiUtil.resolveClassInType(iterableType),newPrefix,true));
                 }
 
+            }else if(typeName.contains("<")) {
+                PsiClass outerClass = PsiUtil.resolveGenericsClassInType(type).getElement();
+                PsiType innerType = PsiUtil.substituteTypeParameter(type, outerClass, 0, false);
+                PsiClass innerClass = PsiUtil.resolveClassInClassTypeOnly(innerType);
+                vos.add(FieldDocVO.parent(fieldName, "Object",require, range, filedDesc));
+                vos.addAll(listParamDocVO(innerClass,newPrefix,true));
             } else {
                 //class type
-                if (!pName.equals(PsiUtil.resolveClassInType(type).getName())) {
-                    vos.add(FieldDocVO.parent(fieldName, "Object", "N/A", filedDesc));
-                    PsiClass outerClass = PsiUtil.resolveGenericsClassInType(type).getElement();
-                    PsiType innerType = PsiUtil.substituteTypeParameter(type, outerClass, 0, false);
-                    PsiClass innerClass = PsiUtil.resolveClassInClassTypeOnly(innerType);
-//                    PsiField[] allOuterFields = outerClass.getAllFields();
-//                    for (PsiField psiField : allOuterFields) {
-//                        PsiType psiFieldType = psiField.getType();
-//                        if ("T".equals(psiFieldType.getPresentableText())) {
-//                            PsiElementFactory factory = JavaPsiFacade.getInstance(project).getElementFactory();
-//                            PsiField factoryField = factory.createField(psiField.getName(), innerType);
-//                            psiField.replace(factoryField);
-//                        }
-//                    }
-//                    vos.addAll(listParamDocVO(outerClass, project,true));
-                    vos.add(FieldDocVO.parent(fieldName, "Object", "N/A", filedDesc));
-                    vos.addAll(listParamDocVO(innerClass));
-                } else {
-                    vos.add(FieldDocVO.normal(fieldName, typeName, "N/A", filedDesc));
+                PsiClass psiClass1 = PsiUtil.resolveClassInType(type);
+                if (!pName.equals(psiClass1.getName())) {
+                    vos.add(FieldDocVO.parent(fieldName, "Object",require, range, filedDesc));
+                    vos.addAll(listParamDocVO(psiClass1,newPrefix,true));
+                }else {
+                    vos.add(FieldDocVO.normal(fieldName, typeName,require, range, filedDesc));
                 }
             }
         }

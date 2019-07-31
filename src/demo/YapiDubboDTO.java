@@ -1,3 +1,5 @@
+package demo;
+
 import java.io.Serializable;
 public class YapiDubboDTO implements Serializable {
     /**

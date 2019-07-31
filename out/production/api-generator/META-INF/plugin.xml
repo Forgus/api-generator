@@ -32,7 +32,7 @@
 
   <actions>
     <!-- Add your actions here -->
-    <action id="api-generator.ID" class="ApiGenerateAction" text="API Generate"
+    <action id="api-generator.ID" class="site.forgus.plugins.apigenerator.normal.ApiGenerateAction" text="API Generate"
             description="upload to YAPI for REST api or generate markdown for Dubbo api">
       <add-to-group group-id="EditorLangPopupMenu" anchor="first"/>
     </action>
