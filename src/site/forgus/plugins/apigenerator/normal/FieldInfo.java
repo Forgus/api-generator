@@ -18,11 +18,11 @@ public class FieldInfo {
     private List<FieldInfo> children;
 
     private FieldInfo(String name, PsiType psiType, boolean require, String range, String desc) {
-        this.name = name;
+        this.name = name == null ? "N/A" : name;
         this.psiType = psiType;
         this.require = require;
-        this.range = range;
-        this.desc = desc;
+        this.range = range == null ? "N/A" : range;
+        this.desc = desc == null ? "N/A" : desc;
         String presentableText = psiType.getPresentableText();
         if(NormalTypes.isNormalType(presentableText)) {
             paramType = ParamTypeEnum.LITERAL;

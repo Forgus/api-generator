@@ -10,12 +10,19 @@ import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
 import com.intellij.psi.impl.source.PsiClassReferenceType;
+import com.intellij.psi.javadoc.PsiDocComment;
+import com.intellij.psi.javadoc.PsiDocTag;
 import com.intellij.psi.util.PsiTreeUtil;
+import com.intellij.psi.util.PsiTypesUtil;
 import com.intellij.psi.util.PsiUtil;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class BuildMdForDubbo {
 
@@ -27,8 +34,7 @@ public class BuildMdForDubbo {
         notificationGroup = new NotificationGroup("Java2Json.NotificationGroup", NotificationDisplayType.BALLOON, true);
     }
 
-
-    public List<FieldInfo> listRequestParamModel(AnActionEvent e) {
+    public List<FieldInfo> listClassFieldInfos(AnActionEvent e) {
         Editor editor = e.getDataContext().getData(CommonDataKeys.EDITOR);
         Project project = editor.getProject();
         String selectedText = e.getRequiredData(CommonDataKeys.EDITOR).getSelectionModel().getSelectedText();
@@ -41,10 +47,45 @@ public class BuildMdForDubbo {
         PsiElement referenceAt = psiFile.findElementAt(editor.getCaretModel().getOffset());
         PsiClass selectedClass = (PsiClass) PsiTreeUtil.getContextOfType(referenceAt, new Class[]{PsiClass.class});
         List<FieldInfo> fieldInfos = new ArrayList<>();
+        fieldInfos.add(FieldInfo.parent(
+                selectedClass.getName(),
+                PsiTypesUtil.getClassType(selectedClass),
+                getRequireAndRange(selectedClass.getAnnotations()),
+                DesUtil.getFiledDesc(selectedClass.getDocComment()),
+                listFieldInfos(selectedClass, project))
+        );
+        return fieldInfos;
+    }
+
+    public MethodInfo getMethod(Project project,PsiMethod psiMethod) {
+        MethodInfo methodInfo = new MethodInfo();
+        List<FieldInfo> paramFieldInfos = listParamFieldInfos(project, psiMethod);
+        List<FieldInfo> responseFieldInfos = listResponseFieldInfos(psiMethod, project);
+        methodInfo.setDesc(DesUtil.getFiledDesc(psiMethod.getDocComment()));
+        methodInfo.setRequestFields(paramFieldInfos);
+        methodInfo.setResponseFields(responseFieldInfos);
+        return methodInfo;
+    }
+
+    public List<FieldInfo> listParamFieldInfos(AnActionEvent e) {
+        Editor editor = e.getDataContext().getData(CommonDataKeys.EDITOR);
+        Project project = editor.getProject();
+        String selectedText = e.getRequiredData(CommonDataKeys.EDITOR).getSelectionModel().getSelectedText();
+        if (Strings.isNullOrEmpty(selectedText)) {
+            Notification error = notificationGroup.createNotification("please select method or class", NotificationType.ERROR);
+            Notifications.Bus.notify(error, project);
+            return null;
+        }
+        PsiFile psiFile = e.getDataContext().getData(CommonDataKeys.PSI_FILE);
+        PsiElement referenceAt = psiFile.findElementAt(editor.getCaretModel().getOffset());
+        PsiClass selectedClass = (PsiClass) PsiTreeUtil.getContextOfType(referenceAt, new Class[]{PsiClass.class});
+        List<FieldInfo> fieldInfos = new ArrayList<>();
+        PsiMethod[] psiMethods = selectedClass.getMethods();
         if (selectedText.equals(selectedClass.getName())) {
-            //TODO
+            if (psiMethods.length == 0) {
+               return fieldInfos;
+            }
         } else {
-            PsiMethod[] psiMethods = selectedClass.getAllMethods();
             //寻找目标Method
             PsiMethod psiMethodTarget = null;
             for (PsiMethod psiMethod : psiMethods) {
@@ -59,15 +100,69 @@ public class BuildMdForDubbo {
                 Notifications.Bus.notify(error, project);
                 return null;
             }
-            PsiParameter[] psiParameters = psiMethodTarget.getParameterList().getParameters();
-            for (PsiParameter psiParameter : psiParameters) {
-                resolveAndFillFieldInfos(project, psiParameter, fieldInfos);
-            }
+            return listParamFieldInfos(project, psiMethodTarget);
         }
         return fieldInfos;
     }
 
-    public List<FieldInfo> generateResponseFieldInfos(AnActionEvent e) {
+    private List<FieldInfo> listParamFieldInfos(Project project,PsiMethod psiMethod) {
+        List<FieldInfo> fieldInfos =  new ArrayList<>();
+        PsiDocComment docComment = psiMethod.getDocComment();
+        Map<String, String> paramDescMap = new HashMap<>();
+        for (PsiDocTag docTag : docComment.getTags()) {
+            String tagText = docTag.getText();
+            String tagName = docTag.getName();
+            String tagValue = docTag.getValueElement().getText();
+            if ("param".equals(tagName) && StringUtils.isNotEmpty(tagValue)) {
+                paramDescMap.put(tagValue, getParamDesc(tagText));
+            }
+        }
+        PsiParameter[] psiParameters = psiMethod.getParameterList().getParameters();
+        for (PsiParameter psiParameter : psiParameters) {
+            PsiType psiType = psiParameter.getType();
+            FieldInfo fieldInfo = FieldInfo.normal(
+                    psiParameter.getName(),
+                    psiType,
+                    getRequireAndRange(psiParameter.getAnnotations()),
+                    paramDescMap.get(psiParameter.getName()),
+                    listFieldInfos(project, psiType)
+            );
+            fieldInfos.add(fieldInfo);
+        }
+        return fieldInfos;
+    }
+
+    private void fillParamFieldInfos(Project project, List<FieldInfo> fieldInfos, PsiMethod psiMethodTarget) {
+        PsiDocComment docComment = psiMethodTarget.getDocComment();
+        Map<String, String> paramDescMap = new HashMap<>();
+        for (PsiDocTag docTag : docComment.getTags()) {
+            String tagText = docTag.getText();
+            String tagName = docTag.getName();
+            String tagValue = docTag.getValueElement().getText();
+            if ("param".equals(tagName) && StringUtils.isNotEmpty(tagValue)) {
+                paramDescMap.put(tagValue, getParamDesc(tagText));
+            }
+        }
+        PsiParameter[] psiParameters = psiMethodTarget.getParameterList().getParameters();
+        for (PsiParameter psiParameter : psiParameters) {
+            PsiType psiType = psiParameter.getType();
+            FieldInfo fieldInfo = FieldInfo.normal(
+                    psiParameter.getName(),
+                    psiType,
+                    getRequireAndRange(psiParameter.getAnnotations()),
+                    paramDescMap.get(psiParameter.getName()),
+                    listFieldInfos(project, psiType)
+            );
+            fieldInfos.add(fieldInfo);
+        }
+    }
+
+    private String getParamDesc(String tagText) {
+        String desc = tagText.split(" ")[2];
+        return desc.replace("\n", "");
+    }
+
+    public List<FieldInfo> listResponseFieldInfos(AnActionEvent e) {
         Editor editor = e.getDataContext().getData(CommonDataKeys.EDITOR);
         Project project = editor.getProject();
         String selectedText = e.getRequiredData(CommonDataKeys.EDITOR).getSelectionModel().getSelectedText();
@@ -98,22 +193,20 @@ public class BuildMdForDubbo {
     }
 
     public List<FieldInfo> listResponseFieldInfos(PsiMethod psiMethodTarget, Project project) {
-        //判断是否有匹配的目标方法
-        if (psiMethodTarget == null) {
-            Notification error = notificationGroup.createNotification("please check method name", NotificationType.ERROR);
-            Notifications.Bus.notify(error, project);
-            return null;
-        }
         PsiType psiType = psiMethodTarget.getReturnType();
-        List<FieldInfo> fieldInfos = new ArrayList<>();
-        if (psiType != null) {
-            resolveAndFillFieldInfos(project, psiType, fieldInfos);
+        if(psiType == null) {
+            return new ArrayList<>();
         }
+        return listResponseFieldInfos(psiType,project);
+    }
+
+    public List<FieldInfo> listResponseFieldInfos(PsiType psiType,Project project) {
+        List<FieldInfo> fieldInfos = new ArrayList<>();
+        resolveAndFillFieldInfos(project,psiType,fieldInfos);
         return fieldInfos;
     }
 
-    private void resolveAndFillFieldInfos(Project project, PsiParameter psiParameter, List<FieldInfo> fieldInfoList) {
-        PsiType psiType = psiParameter.getType();
+    private List<FieldInfo> listFieldInfos(Project project, PsiType psiType) {
         List<FieldInfo> fieldInfos = new ArrayList<>();
         String typeName = psiType.getPresentableText();
         if (psiType instanceof PsiClassReferenceType) {
@@ -121,14 +214,14 @@ public class BuildMdForDubbo {
                 if (typeName.contains("<")) {
                     PsiType iterableType = PsiUtil.extractIterableTypeParameter(psiType, false);
                     if (iterableType == null) {
-                        return;
+                        return null;
                     }
                     if (NormalTypes.isNormalType(iterableType.getPresentableText())) {
                         fieldInfos.add(FieldInfo.child("N/A", psiType, RequireAndRange.instance(), ""));
                     } else {
                         PsiClass iterableClass = PsiUtil.resolveClassInType(iterableType);
                         if (iterableClass == null) {
-                            return;
+                            return null;
                         }
                         for (PsiField psiField : iterableClass.getAllFields()) {
                             resolveFields(project, fieldInfos, psiField);
@@ -142,11 +235,11 @@ public class BuildMdForDubbo {
             } else if (typeName.contains("<")) {
                 PsiClass outerClass = PsiUtil.resolveGenericsClassInType(psiType).getElement();
                 if (outerClass == null) {
-                    return;
+                    return null;
                 }
                 PsiType innerType = PsiUtil.substituteTypeParameter(psiType, outerClass, 0, false);
                 if (innerType == null) {
-                    return;
+                    return null;
                 }
                 PsiElementFactory elementFactory = JavaPsiFacade.getInstance(project).getElementFactory();
                 for (PsiField outField : outerClass.getAllFields()) {
@@ -159,7 +252,7 @@ public class BuildMdForDubbo {
             } else {
                 PsiClass psiClass = PsiUtil.resolveClassInType(psiType);
                 if (psiClass == null) {
-                    return;
+                    return null;
                 }
                 for (PsiField psiField : psiClass.getAllFields()) {
                     resolveFields(project, fieldInfos, psiField);
@@ -168,7 +261,7 @@ public class BuildMdForDubbo {
         } else {
             fieldInfos.add(FieldInfo.child(typeName, psiType, RequireAndRange.instance(), ""));
         }
-        fieldInfoList.add(FieldInfo.normal(psiParameter.getName(), psiType, new RequireAndRange(true, "N/A"), "desc", fieldInfos));
+        return fieldInfos;
     }
 
     private void resolveAndFillFieldInfos(Project project, PsiType psiType, List<FieldInfo> fieldInfos) {
