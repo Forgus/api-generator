@@ -57,7 +57,17 @@ public class DesUtil {
                     return trimFirstAndLastChar(psiDocTag.getText().replace("@description", "").replace("@Description", "").replace("Description", "").replace("<br>", "").replace(":", "").replace("*", "").replace("\n", " "), ' ');
                 }
             }
-            return trimFirstAndLastChar(psiMethodTarget.getDocComment().getText().split("@")[0].replace("@description", "").replace("@Description", "").replace("Description", "").replace("<br>", "").replace(":", "").replace("*", "").replace("/", "").replace("\n", " "), ' ');
+            return trimFirstAndLastChar(
+                    psiMethodTarget.getDocComment().getText().split("@")[0]
+                            .replace("@description", "")
+                            .replace("@Description", "")
+                            .replace("Description", "")
+                            .replace("<br>", "")
+                            .replace(":", "")
+                            .replace("*", "")
+                            .replace("/", "")
+                            .replace("\n", " "), ' '
+            );
         }
         return null;
     }

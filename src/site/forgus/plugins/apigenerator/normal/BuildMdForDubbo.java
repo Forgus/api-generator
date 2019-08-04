@@ -61,7 +61,13 @@ public class BuildMdForDubbo {
         MethodInfo methodInfo = new MethodInfo();
         List<FieldInfo> paramFieldInfos = listParamFieldInfos(project, psiMethod);
         List<FieldInfo> responseFieldInfos = listResponseFieldInfos(psiMethod, project);
-        methodInfo.setDesc(DesUtil.getFiledDesc(psiMethod.getDocComment()));
+        methodInfo.setDesc(DesUtil.getDescription(psiMethod));
+        PsiClass psiClass = psiMethod.getContainingClass();
+        methodInfo.setPackageName(PsiUtil.getPackageName(psiClass));
+        methodInfo.setClassName(psiClass.getName());
+        methodInfo.setReturnStr(psiMethod.getReturnType().getPresentableText());
+        methodInfo.setParamStr(psiMethod.getParameterList().getText());
+        methodInfo.setMethodName(psiMethod.getName());
         methodInfo.setRequestFields(paramFieldInfos);
         methodInfo.setResponseFields(responseFieldInfos);
         return methodInfo;
@@ -112,7 +118,7 @@ public class BuildMdForDubbo {
         for (PsiDocTag docTag : docComment.getTags()) {
             String tagText = docTag.getText();
             String tagName = docTag.getName();
-            String tagValue = docTag.getValueElement().getText();
+            String tagValue = docTag.getValueElement() == null ? "" : docTag.getValueElement().getText();
             if ("param".equals(tagName) && StringUtils.isNotEmpty(tagValue)) {
                 paramDescMap.put(tagValue, getParamDesc(tagText));
             }
