@@ -62,11 +62,13 @@ public class DesUtil {
                             .replace("@description", "")
                             .replace("@Description", "")
                             .replace("Description", "")
-                            .replace("<br>", "")
+                            .replace("<br>", "\n")
                             .replace(":", "")
                             .replace("*", "")
                             .replace("/", "")
-                            .replace("\n", " "), ' '
+                            .replace("\n", " ")
+                            .replace("<p>", "\n")
+                            .replace("</p>", "\n"), ' '
             );
         }
         return null;
