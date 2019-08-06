@@ -19,12 +19,10 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class ApiGenerateAction extends AnAction {
 
@@ -47,10 +45,10 @@ public class ApiGenerateAction extends AnAction {
     }
 
     @Override
-    public void update(AnActionEvent anActionEvent) {
-        // Set the availability based on whether a project is open
-        Project project = anActionEvent.getProject();
-        anActionEvent.getPresentation().setEnabledAndVisible(project != null);
+    public void update(AnActionEvent e) {
+        //perform action if and only if EDITOR != null
+        boolean enabled = e.getData(CommonDataKeys.EDITOR) != null;
+        e.getPresentation().setEnabledAndVisible(enabled);
     }
 
     private void generateMarkdownForDubboApi(AnActionEvent actionEvent) throws IOException {
@@ -59,35 +57,46 @@ public class ApiGenerateAction extends AnAction {
             return;
         }
         Project project = editor.getProject();
-        PsiFile pomFile = FilenameIndex.getFilesByName(project, "pom.xml", GlobalSearchScope.projectScope(project))[0];
-        String pomPath = pomFile.getContainingDirectory().getVirtualFile().getPath() + "/pom.xml";
-        Model pomModel = readPom(pomPath);
+
         String selectedText = actionEvent.getRequiredData(CommonDataKeys.EDITOR).getSelectionModel().getSelectedText();
         if (Strings.isNullOrEmpty(selectedText)) {
             Notification error = notificationGroup.createNotification("please select method or class", NotificationType.ERROR);
             Notifications.Bus.notify(error, project);
             return;
         }
-        PsiFile psiFile = actionEvent.getDataContext().getData(CommonDataKeys.PSI_FILE);
-        PsiElement referenceAt = psiFile.findElementAt(editor.getCaretModel().getOffset());
-        PsiClass selectedClass = (PsiClass) PsiTreeUtil.getContextOfType(referenceAt, new Class[]{PsiClass.class});
-        PsiMethod selectedMethod = getSelectedMethod(selectedClass, selectedText);
-        if (selectedMethod == null) {
-            //TODO
+        PsiFile psiFile = actionEvent.getData(CommonDataKeys.PSI_FILE);
+        if(psiFile == null) {
             return;
         }
-        BuildMdForDubbo buildMdForDubbo = new BuildMdForDubbo();
-        MethodInfo methodInfo = buildMdForDubbo.getMethod(project, selectedMethod);
+        PsiElement referenceAt = psiFile.findElementAt(editor.getCaretModel().getOffset());
+        PsiClass selectedClass = PsiTreeUtil.getContextOfType(referenceAt, PsiClass.class);
+        if(selectedClass == null) {
+            return;
+        }
         String dirPath = "/Users/chenwenbin/Desktop/api_docs";
         File dir = new File(dirPath);
         if(!dir.exists()) {
             dir.mkdir();
         }
+        PsiMethod[] methods = selectedClass.getMethods();
+        PsiMethod selectedMethod = getSelectedMethod(methods, selectedText);
+        if (selectedMethod == null) {
+            for(PsiMethod psiMethod : methods) {
+                generateDocWithMethod(project,psiMethod,dirPath);
+            }
+        }else {
+            generateDocWithMethod(project, selectedMethod, dirPath);
+        }
+    }
+
+    private void generateDocWithMethod(Project project, PsiMethod selectedMethod, String dirPath) throws IOException {
+        MethodInfo methodInfo = BuildMdForDubbo.getMethod(project, selectedMethod);
         String fileName = getFileName(methodInfo);
         File apiDoc = new File(dirPath + "/" + fileName + ".md");
         if(!apiDoc.exists()) {
             apiDoc.createNewFile();
         }
+        Model pomModel = getPomModel(project);
         Writer md = new FileWriter(apiDoc);
         md.write("# " + fileName + "\n");
         md.write("## 功能介绍\n");
@@ -111,8 +120,7 @@ public class ApiGenerateAction extends AnAction {
         md.write("### 请求参数示例\n");
         if (CollectionUtils.isNotEmpty(methodInfo.getRequestFields())) {
             md.write("```json\n");
-            String requestDemo = buildDemo(methodInfo.getRequestFields());
-            md.write(requestDemo + "\n");
+            md.write(buildDemo(methodInfo.getRequestFields()) + "\n");
             md.write("```\n");
         }
         md.write("### 请求参数说明\n");
@@ -127,8 +135,7 @@ public class ApiGenerateAction extends AnAction {
         md.write("### 返回结果示例\n");
         if (CollectionUtils.isNotEmpty(methodInfo.getResponseFields())) {
             md.write("```json\n");
-            String responseDemo = buildDemo(methodInfo.getResponseFields());
-            md.write(responseDemo + "\n");
+            md.write(buildDemo(methodInfo.getResponseFields()) + "\n");
             md.write("```\n");
         }
         md.write("### 返回结果说明\n");
@@ -142,6 +149,12 @@ public class ApiGenerateAction extends AnAction {
         md.close();
     }
 
+    private Model getPomModel(Project project) {
+        PsiFile pomFile = FilenameIndex.getFilesByName(project, "pom.xml", GlobalSearchScope.projectScope(project))[0];
+        String pomPath = pomFile.getContainingDirectory().getVirtualFile().getPath() + "/pom.xml";
+        return readPom(pomPath);
+    }
+
     private String getFileName(MethodInfo methodInfo) {
         if(StringUtils.isEmpty(methodInfo.getDesc()) || !methodInfo.getDesc().contains(" ")) {
             return methodInfo.getMethodName();
@@ -149,10 +162,10 @@ public class ApiGenerateAction extends AnAction {
         return methodInfo.getDesc().split(" ")[0];
     }
 
-    private PsiMethod getSelectedMethod(PsiClass selectedClass, String selectedText) {
+    private PsiMethod getSelectedMethod(PsiMethod[] methods, String selectedText) {
         //寻找目标Method
         PsiMethod psiMethodTarget = null;
-        for (PsiMethod psiMethod : selectedClass.getMethods()) {
+        for (PsiMethod psiMethod : methods) {
             if (psiMethod.getName().equals(selectedText)) {
                 psiMethodTarget = psiMethod;
                 break;
@@ -169,9 +182,8 @@ public class ApiGenerateAction extends AnAction {
                 writeFieldInfo(writer, fieldInfo, CHILD_PREFIX);
             }
         } else if (ParamTypeEnum.ARRAY.equals(info.getParamType())) {
-            PsiType iterableType = PsiUtil.extractIterableTypeParameter(info.getPsiType(), false);
-            String iterableTypePresentableText = iterableType.getPresentableText();
             String str = "**" + info.getName() + "**" + "|" + getTypeInArray(info.getPsiType()) + "|" + getRequireStr(info.isRequire()) + "|" + info.getRange() + "|" + info.getDesc() + "\n";
+            String iterableTypePresentableText = getIterableTypePresentableText(info.getPsiType());
             if (NormalTypes.isNormalType(iterableTypePresentableText)) {
                 str = info.getName() + "|" + iterableTypePresentableText + "[]|" + getRequireStr(info.isRequire()) + "|" + info.getRange() + "|" + info.getDesc() + "\n";
                 writer.write(str);
@@ -187,9 +199,13 @@ public class ApiGenerateAction extends AnAction {
         }
     }
 
-    private String getTypeInArray(PsiType psiType) {
+    private String getIterableTypePresentableText(PsiType psiType) {
         PsiType iterableType = PsiUtil.extractIterableTypeParameter(psiType, false);
-        String iterableTypePresentableText = iterableType.getPresentableText();
+        return iterableType == null ? "" : iterableType.getPresentableText();
+    }
+
+    private String getTypeInArray(PsiType psiType) {
+        String iterableTypePresentableText = getIterableTypePresentableText(psiType);
         if (NormalTypes.isNormalType(iterableTypePresentableText)) {
             return iterableTypePresentableText + "[]";
         }
@@ -219,7 +235,7 @@ public class ApiGenerateAction extends AnAction {
         }
         if (presentableText.contains("<")) {
             PsiType iterableType = PsiUtil.extractIterableTypeParameter(psiType, false);
-            String iterableTypePresentableText = iterableType.getPresentableText();
+            String iterableTypePresentableText = iterableType == null ? "" : iterableType.getPresentableText();
             return iterableTypePresentableText + "[]";
         }
         return presentableText;
@@ -230,7 +246,7 @@ public class ApiGenerateAction extends AnAction {
     }
 
     private String buildDemo(List<FieldInfo> fieldInfos) {
-        Map<String, Object> map = new HashMap(32);
+        Map<String, Object> map = new HashMap<>(32);
         for (FieldInfo fieldInfo : fieldInfos) {
             if (ParamTypeEnum.LITERAL.equals(fieldInfo.getParamType())) {
                 map.put(fieldInfo.getName(), fieldInfo.getValue());
@@ -244,12 +260,12 @@ public class ApiGenerateAction extends AnAction {
     }
 
     private Object buildObjectDemo(List<FieldInfo> fieldInfos) {
-        Map<String, Object> map = new HashMap(32);
+        Map<String, Object> map = new HashMap<>(32);
         for (FieldInfo fieldInfo : fieldInfos) {
             if (ParamTypeEnum.LITERAL.equals(fieldInfo.getParamType())) {
                 map.put(fieldInfo.getName(), fieldInfo.getValue());
             } else if (ParamTypeEnum.ARRAY.equals(fieldInfo.getParamType())) {
-                map.put(fieldInfo.getName(), Arrays.asList(buildObjectDemo(fieldInfo.getChildren())));
+                map.put(fieldInfo.getName(), Collections.singletonList(buildObjectDemo(fieldInfo.getChildren())));
             } else {
                 map.put(fieldInfo.getName(), buildObjectDemo(fieldInfo.getChildren()));
             }
@@ -261,9 +277,7 @@ public class ApiGenerateAction extends AnAction {
         MavenXpp3Reader reader = new MavenXpp3Reader();
         try {
             return reader.read(new FileReader(pom));
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (XmlPullParserException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return  null;
