@@ -56,36 +56,39 @@ public class ApiGenerateAction extends AnAction {
         if (editor == null) {
             return;
         }
-        Project project = editor.getProject();
-
-        String selectedText = actionEvent.getRequiredData(CommonDataKeys.EDITOR).getSelectionModel().getSelectedText();
-        if (Strings.isNullOrEmpty(selectedText)) {
-            Notification error = notificationGroup.createNotification("please select method or class", NotificationType.ERROR);
-            Notifications.Bus.notify(error, project);
-            return;
-        }
         PsiFile psiFile = actionEvent.getData(CommonDataKeys.PSI_FILE);
         if(psiFile == null) {
+            return;
+        }
+        Project project = editor.getProject();
+        if(project == null) {
             return;
         }
         PsiElement referenceAt = psiFile.findElementAt(editor.getCaretModel().getOffset());
         PsiClass selectedClass = PsiTreeUtil.getContextOfType(referenceAt, PsiClass.class);
         if(selectedClass == null) {
+            Notification error = notificationGroup.createNotification("this operate only support in class file", NotificationType.ERROR);
+            Notifications.Bus.notify(error, project);
             return;
         }
+//        String dirPath = project.getBasePath() + "/target/api_docs";
         String dirPath = "/Users/chenwenbin/Desktop/api_docs";
         File dir = new File(dirPath);
         if(!dir.exists()) {
-            dir.mkdir();
-        }
-        PsiMethod[] methods = selectedClass.getMethods();
-        PsiMethod selectedMethod = getSelectedMethod(methods, selectedText);
-        if (selectedMethod == null) {
-            for(PsiMethod psiMethod : methods) {
-                generateDocWithMethod(project,psiMethod,dirPath);
+            boolean success = dir.mkdir();
+            if(!success) {
+                Notification error = notificationGroup.createNotification("invalid directory path!", NotificationType.ERROR);
+                Notifications.Bus.notify(error, project);
+                return;
             }
-        }else {
+        }
+        PsiMethod selectedMethod = PsiTreeUtil.getContextOfType(referenceAt, PsiMethod.class);
+        if (selectedMethod != null) {
             generateDocWithMethod(project, selectedMethod, dirPath);
+            return;
+        }
+        for(PsiMethod psiMethod : selectedClass.getMethods()) {
+            generateDocWithMethod(project,psiMethod,dirPath);
         }
     }
 
@@ -111,7 +114,7 @@ public class ApiGenerateAction extends AnAction {
         md.write("```\n");
         md.write("## Dubbo接口声明\n");
         md.write("```java\n");
-        md.write(methodInfo.getPackageName() + "\n\n");
+        md.write("package "+ methodInfo.getPackageName() + ";\n\n");
         md.write("public interface " + methodInfo.getClassName() + " {\n\n");
         md.write("\t" + methodInfo.getReturnStr() + " " + methodInfo.getMethodName() + methodInfo.getParamStr() + ";\n\n");
         md.write("}\n");
@@ -131,7 +134,7 @@ public class ApiGenerateAction extends AnAction {
                 writeFieldInfo(md, fieldInfo);
             }
         }
-        md.write("## 返回结果\n");
+        md.write("\n## 返回结果\n");
         md.write("### 返回结果示例\n");
         if (CollectionUtils.isNotEmpty(methodInfo.getResponseFields())) {
             md.write("```json\n");
