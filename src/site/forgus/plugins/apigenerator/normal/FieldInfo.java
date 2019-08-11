@@ -1,6 +1,8 @@
 package site.forgus.plugins.apigenerator.normal;
 
 import com.intellij.psi.PsiType;
+import com.intellij.psi.util.PsiTypesUtil;
+import com.intellij.psi.util.PsiUtil;
 import org.apache.commons.collections.CollectionUtils;
 
 import java.util.List;
@@ -27,6 +29,7 @@ public class FieldInfo {
         if(NormalTypes.isNormalType(presentableText)) {
             paramType = ParamTypeEnum.LITERAL;
             value = NormalTypes.normalTypes.get(presentableText);
+//            value = PsiTypesUtil.getDefaultValueOfType(psiType,true);
         }else if(presentableText.contains("<") && (presentableText.startsWith("List") || presentableText.startsWith("Set"))) {
             paramType = ParamTypeEnum.ARRAY;
         }else {

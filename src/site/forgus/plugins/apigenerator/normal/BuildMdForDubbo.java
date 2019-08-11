@@ -10,10 +10,7 @@ import com.intellij.psi.javadoc.PsiDocTag;
 import com.intellij.psi.util.PsiUtil;
 import org.apache.commons.lang.StringUtils;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class BuildMdForDubbo {
 
@@ -25,10 +22,10 @@ public class BuildMdForDubbo {
     }
 
 
-    public static MethodInfo getMethod(Project project,PsiMethod psiMethod) {
+    public static MethodInfo getMethodInfo(Project project, PsiMethod psiMethod) {
         MethodInfo methodInfo = new MethodInfo();
         List<FieldInfo> paramFieldInfos = listParamFieldInfos(project, psiMethod);
-        List<FieldInfo> responseFieldInfos = listResponseFieldInfos(psiMethod, project);
+        List<FieldInfo> responseFieldInfos = listResponseFieldInfo(psiMethod, project);
         methodInfo.setDesc(DesUtil.getDescription(psiMethod));
         PsiClass psiClass = psiMethod.getContainingClass();
         methodInfo.setPackageName(PsiUtil.getPackageName(psiClass));
@@ -73,66 +70,15 @@ public class BuildMdForDubbo {
         return desc.replace("\n", "");
     }
 
-    public static List<FieldInfo> listResponseFieldInfos(PsiMethod psiMethodTarget, Project project) {
+    public static List<FieldInfo> listResponseFieldInfo(PsiMethod psiMethodTarget, Project project) {
         PsiType psiType = psiMethodTarget.getReturnType();
         if(psiType == null) {
-            return new ArrayList<>();
+            return null;
         }
-        List<FieldInfo> fieldInfos = new ArrayList<>();
-        String typeName = psiType.getPresentableText();
-        if (psiType instanceof PsiClassReferenceType) {
-            if (typeName.startsWith("List") || typeName.startsWith("Set")) {
-                if (typeName.contains("<")) {
-                    PsiType iterableType = PsiUtil.extractIterableTypeParameter(psiType, false);
-                    if (iterableType == null) {
-                        return fieldInfos;
-                    }
-                    if (NormalTypes.isNormalType(iterableType.getPresentableText())) {
-                        fieldInfos.add(FieldInfo.child("N/A", psiType, RequireAndRange.instance(), ""));
-                    } else {
-                        PsiClass iterableClass = PsiUtil.resolveClassInType(iterableType);
-                        if (iterableClass == null) {
-                            return fieldInfos;
-                        }
-                        for (PsiField psiField : iterableClass.getAllFields()) {
-                            resolveFields(project, fieldInfos, psiField);
-                        }
-                    }
-                } else {
-                    fieldInfos.add(FieldInfo.child("N/A", psiType, RequireAndRange.instance(), ""));
-                }
-            } else if (NormalTypes.isNormalType(typeName)) {
-                fieldInfos.add(FieldInfo.child(typeName, psiType, RequireAndRange.instance(), ""));
-            } else if (typeName.contains("<")) {
-                PsiClass outerClass = PsiUtil.resolveGenericsClassInType(psiType).getElement();
-                if (outerClass == null) {
-                    return fieldInfos;
-                }
-                PsiType innerType = PsiUtil.substituteTypeParameter(psiType, outerClass, 0, false);
-                if (innerType == null) {
-                    return fieldInfos;
-                }
-                PsiElementFactory elementFactory = JavaPsiFacade.getInstance(project).getElementFactory();
-                for (PsiField outField : outerClass.getAllFields()) {
-                    if (NormalTypes.genericList.contains(outField.getType().getPresentableText())) {
-                        resolveFields(project, fieldInfos, elementFactory.createField(outField.getName() == null ? "" : outField.getName(), innerType));
-                    } else {
-                        resolveFields(project, fieldInfos, outField);
-                    }
-                }
-            } else {
-                PsiClass psiClass = PsiUtil.resolveClassInType(psiType);
-                if (psiClass == null) {
-                    return fieldInfos;
-                }
-                for (PsiField psiField : psiClass.getAllFields()) {
-                    resolveFields(project, fieldInfos, psiField);
-                }
-            }
-        } else {
-            fieldInfos.add(FieldInfo.child(typeName, psiType, RequireAndRange.instance(), ""));
+        if(NormalTypes.isNormalType(psiType.getPresentableText())) {
+            return Collections.singletonList(FieldInfo.child(psiType.getPresentableText(), psiType, RequireAndRange.instance(), ""));
         }
-        return fieldInfos;
+        return listFieldInfos(project,psiType);
     }
 
     private static List<FieldInfo> listFieldInfos(Project project, PsiType psiType) {
@@ -140,6 +86,7 @@ public class BuildMdForDubbo {
             return new ArrayList<>();
         }
         if(psiType instanceof PsiClassReferenceType) {
+            PsiClass psiClass = PsiUtil.resolveClassInType(psiType);
             String typeName = psiType.getPresentableText();
             if (NormalTypes.isNormalType(typeName)) {
                 return new ArrayList<>();
@@ -177,7 +124,6 @@ public class BuildMdForDubbo {
                 }
                 return fieldInfos;
             }
-            PsiClass psiClass = PsiUtil.resolveClassInType(psiType);
             if (psiClass == null) {
                 return new ArrayList<>();
             }
@@ -238,7 +184,13 @@ public class BuildMdForDubbo {
             }
             return;
         }
-        fieldInfos.add(FieldInfo.parent(name, type, requireAndRange, desc, listFieldInfos(PsiUtil.resolveClassInType(type), project)));
+        PsiClass containingClass = psiField.getContainingClass();
+        PsiClass psiClass = PsiUtil.resolveClassInType(type);
+        if(psiClass.isEnum() || containingClass.getText().equals(psiClass.getText())) {
+            fieldInfos.add(FieldInfo.normal(name,type,requireAndRange,desc,new ArrayList<>()));
+            return;
+        }
+        fieldInfos.add(FieldInfo.parent(name, type, requireAndRange, desc, listFieldInfos(psiClass, project)));
     }
 
     private static RequireAndRange getRequireAndRange(PsiAnnotation[] annotations) {

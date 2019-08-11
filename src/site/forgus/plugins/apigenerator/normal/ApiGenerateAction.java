@@ -1,6 +1,5 @@
 package site.forgus.plugins.apigenerator.normal;
 
-import com.google.common.base.Strings;
 import com.google.gson.GsonBuilder;
 import com.intellij.notification.*;
 import com.intellij.openapi.actionSystem.AnAction;
@@ -13,13 +12,10 @@ import com.intellij.psi.search.FilenameIndex;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.psi.util.PsiUtil;
-import com.intellij.psi.xml.XmlFile;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
-import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
 import java.util.*;
@@ -93,8 +89,9 @@ public class ApiGenerateAction extends AnAction {
     }
 
     private void generateDocWithMethod(Project project, PsiMethod selectedMethod, String dirPath) throws IOException {
-        MethodInfo methodInfo = BuildMdForDubbo.getMethod(project, selectedMethod);
-        String fileName = getFileName(methodInfo);
+        MethodInfo methodInfo = BuildMdForDubbo.getMethodInfo(project, selectedMethod);
+//        String fileName = getFileName(methodInfo);
+        String fileName = methodInfo.getMethodName();
         File apiDoc = new File(dirPath + "/" + fileName + ".md");
         if(!apiDoc.exists()) {
             apiDoc.createNewFile();
@@ -145,7 +142,7 @@ public class ApiGenerateAction extends AnAction {
         if (CollectionUtils.isNotEmpty(methodInfo.getResponseFields())) {
             md.write("名称|类型|必填|值域范围|描述/示例\n");
             md.write("--|--|--|--|--\n");
-            for (FieldInfo fieldInfo : methodInfo.getResponseFields()) {
+            for(FieldInfo fieldInfo :methodInfo.getResponseFields()) {
                 writeFieldInfo(md, fieldInfo, "");
             }
         }
@@ -264,6 +261,9 @@ public class ApiGenerateAction extends AnAction {
 
     private Object buildObjectDemo(List<FieldInfo> fieldInfos) {
         Map<String, Object> map = new HashMap<>(32);
+        if(fieldInfos == null) {
+            return map;
+        }
         for (FieldInfo fieldInfo : fieldInfos) {
             if (ParamTypeEnum.LITERAL.equals(fieldInfo.getParamType())) {
                 map.put(fieldInfo.getName(), fieldInfo.getValue());
