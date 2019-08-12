@@ -28,6 +28,8 @@
 
   <extensions defaultExtensionNs="com.intellij">
     <!-- Add your extensions here -->
+    <applicationConfigurable instance="site.forgus.plugins.apigenerator.config.ApiGeneratorSetting"  />
+    <applicationService serviceInterface="site.forgus.plugins.apigenerator.config.PersistentConfig" serviceImplementation="site.forgus.plugins.apigenerator.config.PersistentConfig"/>
   </extensions>
 
   <actions>

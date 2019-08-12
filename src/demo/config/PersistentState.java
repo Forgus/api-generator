@@ -5,6 +5,7 @@ import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.components.State;
 import org.jdom.Element;
 import org.jetbrains.annotations.Nullable;
+import site.forgus.plugins.apigenerator.config.NormalSetting;
 
 import java.util.Objects;
 
