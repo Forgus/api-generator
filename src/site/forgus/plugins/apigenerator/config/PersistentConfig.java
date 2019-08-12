@@ -10,10 +10,10 @@ import org.jetbrains.annotations.Nullable;
 @State(name = "ApiGeneratorConfig", storages = {@com.intellij.openapi.components.Storage(value = "$APP_CONFIG$/ApiGeneratorConfig.xml")})
 public class PersistentConfig implements PersistentStateComponent<PersistentConfig.State> {
 
-    static class State {
-
+    public static class State {
         public String dirPath = "";
         public String prefix = "└";
+        public Boolean cnFileName = false;
     }
     State myState;
 

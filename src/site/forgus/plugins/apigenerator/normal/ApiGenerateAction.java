@@ -16,6 +16,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
+import site.forgus.plugins.apigenerator.config.PersistentConfig;
 
 import java.io.*;
 import java.util.*;
@@ -25,6 +26,8 @@ public class ApiGenerateAction extends AnAction {
     private static NotificationGroup notificationGroup;
 
     private static final String CHILD_PREFIX = "└";//空格：&emsp;
+
+    private PersistentConfig persistentConfig = PersistentConfig.getInstance();
 
     static {
         notificationGroup = new NotificationGroup("Java2Json.NotificationGroup", NotificationDisplayType.BALLOON, true);
@@ -53,26 +56,25 @@ public class ApiGenerateAction extends AnAction {
             return;
         }
         PsiFile psiFile = actionEvent.getData(CommonDataKeys.PSI_FILE);
-        if(psiFile == null) {
+        if (psiFile == null) {
             return;
         }
         Project project = editor.getProject();
-        if(project == null) {
+        if (project == null) {
             return;
         }
         PsiElement referenceAt = psiFile.findElementAt(editor.getCaretModel().getOffset());
         PsiClass selectedClass = PsiTreeUtil.getContextOfType(referenceAt, PsiClass.class);
-        if(selectedClass == null) {
+        if (selectedClass == null) {
             Notification error = notificationGroup.createNotification("this operate only support in class file", NotificationType.ERROR);
             Notifications.Bus.notify(error, project);
             return;
         }
-//        String dirPath = project.getBasePath() + "/target/api_docs";
-        String dirPath = "/Users/chenwenbin/Desktop/api_docs";
+        String dirPath = getDirPath(project);
         File dir = new File(dirPath);
-        if(!dir.exists()) {
+        if (!dir.exists()) {
             boolean success = dir.mkdir();
-            if(!success) {
+            if (!success) {
                 Notification error = notificationGroup.createNotification("invalid directory path!", NotificationType.ERROR);
                 Notifications.Bus.notify(error, project);
                 return;
@@ -83,17 +85,27 @@ public class ApiGenerateAction extends AnAction {
             generateDocWithMethod(project, selectedMethod, dirPath);
             return;
         }
-        for(PsiMethod psiMethod : selectedClass.getMethods()) {
-            generateDocWithMethod(project,psiMethod,dirPath);
+        for (PsiMethod psiMethod : selectedClass.getMethods()) {
+            generateDocWithMethod(project, psiMethod, dirPath);
         }
+    }
+
+    private String getDirPath(Project project) {
+        String dirPath = persistentConfig.getState().dirPath;
+        if (StringUtils.isEmpty(dirPath)) {
+            return project.getBasePath() + "/target/generate_docs";
+        }
+        if (dirPath.endsWith("/")) {
+            return dirPath.substring(0,dirPath.lastIndexOf("/"));
+        }
+        return dirPath;
     }
 
     private void generateDocWithMethod(Project project, PsiMethod selectedMethod, String dirPath) throws IOException {
         MethodInfo methodInfo = BuildMdForDubbo.getMethodInfo(project, selectedMethod);
-//        String fileName = getFileName(methodInfo);
-        String fileName = methodInfo.getMethodName();
+        String fileName = getFileName(methodInfo);
         File apiDoc = new File(dirPath + "/" + fileName + ".md");
-        if(!apiDoc.exists()) {
+        if (!apiDoc.exists()) {
             apiDoc.createNewFile();
         }
         Model pomModel = getPomModel(project);
@@ -111,7 +123,7 @@ public class ApiGenerateAction extends AnAction {
         md.write("```\n");
         md.write("## Dubbo接口声明\n");
         md.write("```java\n");
-        md.write("package "+ methodInfo.getPackageName() + ";\n\n");
+        md.write("package " + methodInfo.getPackageName() + ";\n\n");
         md.write("public interface " + methodInfo.getClassName() + " {\n\n");
         md.write("\t" + methodInfo.getReturnStr() + " " + methodInfo.getMethodName() + methodInfo.getParamStr() + ";\n\n");
         md.write("}\n");
@@ -142,7 +154,7 @@ public class ApiGenerateAction extends AnAction {
         if (CollectionUtils.isNotEmpty(methodInfo.getResponseFields())) {
             md.write("名称|类型|必填|值域范围|描述/示例\n");
             md.write("--|--|--|--|--\n");
-            for(FieldInfo fieldInfo :methodInfo.getResponseFields()) {
+            for (FieldInfo fieldInfo : methodInfo.getResponseFields()) {
                 writeFieldInfo(md, fieldInfo, "");
             }
         }
@@ -156,22 +168,13 @@ public class ApiGenerateAction extends AnAction {
     }
 
     private String getFileName(MethodInfo methodInfo) {
-        if(StringUtils.isEmpty(methodInfo.getDesc()) || !methodInfo.getDesc().contains(" ")) {
+        if(!persistentConfig.getState().cnFileName) {
+            return methodInfo.getMethodName();
+        }
+        if (StringUtils.isEmpty(methodInfo.getDesc()) || !methodInfo.getDesc().contains(" ")) {
             return methodInfo.getMethodName();
         }
         return methodInfo.getDesc().split(" ")[0];
-    }
-
-    private PsiMethod getSelectedMethod(PsiMethod[] methods, String selectedText) {
-        //寻找目标Method
-        PsiMethod psiMethodTarget = null;
-        for (PsiMethod psiMethod : methods) {
-            if (psiMethod.getName().equals(selectedText)) {
-                psiMethodTarget = psiMethod;
-                break;
-            }
-        }
-        return psiMethodTarget;
     }
 
     private void writeFieldInfo(Writer writer, FieldInfo info) throws IOException {
@@ -261,7 +264,7 @@ public class ApiGenerateAction extends AnAction {
 
     private Object buildObjectDemo(List<FieldInfo> fieldInfos) {
         Map<String, Object> map = new HashMap<>(32);
-        if(fieldInfos == null) {
+        if (fieldInfos == null) {
             return map;
         }
         for (FieldInfo fieldInfo : fieldInfos) {
@@ -276,13 +279,13 @@ public class ApiGenerateAction extends AnAction {
         return map;
     }
 
-    public Model readPom(String pom){
+    public Model readPom(String pom) {
         MavenXpp3Reader reader = new MavenXpp3Reader();
         try {
             return reader.read(new FileReader(pom));
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return  null;
+        return null;
     }
 }
