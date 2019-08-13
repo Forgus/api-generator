@@ -34,8 +34,12 @@
 
   <actions>
     <!-- Add your actions here -->
-    <action id="api-generator.ID" class="site.forgus.plugins.apigenerator.normal.ApiGenerateAction" text="API Generate"
-            description="upload to YAPI for REST api or generate markdown for Dubbo api">
+    <action id="api-generator.ID" class="site.forgus.plugins.apigenerator.normal.ApiGenerateAction" text="Api Generate"
+            description="generate markdown for Dubbo api">
+      <add-to-group group-id="EditorLangPopupMenu" anchor="first"/>
+    </action>
+    <action id="yapi-generator.ID" class="site.forgus.plugins.apigenerator.yapi.YApiGenerateAction" text="YApi Generate"
+            description="upload to YApi for REST api">
       <add-to-group group-id="EditorLangPopupMenu" anchor="first"/>
     </action>
   </actions>

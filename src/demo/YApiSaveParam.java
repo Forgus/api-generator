@@ -65,7 +65,7 @@ public class YApiSaveParam implements Serializable {
     /**
      * 返回参数是否为json_schema
      */
-    private boolean res_body_is_json_schema = true;
+    private boolean res_body_is_json_schema;
 
     /**
      * 创建的用户名

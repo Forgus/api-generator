@@ -1,6 +1,5 @@
 package site.forgus.plugins.apigenerator.normal;
 
-import com.google.gson.GsonBuilder;
 import com.intellij.notification.*;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
@@ -17,40 +16,20 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import site.forgus.plugins.apigenerator.config.PersistentConfig;
+import site.forgus.plugins.apigenerator.yapi.util.JsonUtil;
 
 import java.io.*;
-import java.util.*;
 
 public class ApiGenerateAction extends AnAction {
 
-    private static NotificationGroup notificationGroup;
+    protected static NotificationGroup notificationGroup =  new NotificationGroup("Java2Json.NotificationGroup",NotificationDisplayType.BALLOON, true);
 
-    private static final String CHILD_PREFIX = "└";//空格：&emsp;
-
-    private PersistentConfig persistentConfig = PersistentConfig.getInstance();
-
-    static {
-        notificationGroup = new NotificationGroup("Java2Json.NotificationGroup", NotificationDisplayType.BALLOON, true);
-    }
+    protected PersistentConfig config = PersistentConfig.getInstance();
+    protected AnActionEvent actionEvent;
 
     @Override
-    public void actionPerformed(AnActionEvent e) {
-
-        try {
-            generateMarkdownForDubboApi(e);
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
-    }
-
-    @Override
-    public void update(AnActionEvent e) {
-        //perform action if and only if EDITOR != null
-        boolean enabled = e.getData(CommonDataKeys.EDITOR) != null;
-        e.getPresentation().setEnabledAndVisible(enabled);
-    }
-
-    private void generateMarkdownForDubboApi(AnActionEvent actionEvent) throws IOException {
+    public void actionPerformed(AnActionEvent actionEvent) {
+        this.actionEvent = actionEvent;
         Editor editor = actionEvent.getDataContext().getData(CommonDataKeys.EDITOR);
         if (editor == null) {
             return;
@@ -70,28 +49,44 @@ public class ApiGenerateAction extends AnAction {
             Notifications.Bus.notify(error, project);
             return;
         }
-        String dirPath = getDirPath(project);
-        File dir = new File(dirPath);
-        if (!dir.exists()) {
-            boolean success = dir.mkdir();
-            if (!success) {
-                Notification error = notificationGroup.createNotification("invalid directory path!", NotificationType.ERROR);
-                Notifications.Bus.notify(error, project);
-                return;
-            }
-        }
+
         PsiMethod selectedMethod = PsiTreeUtil.getContextOfType(referenceAt, PsiMethod.class);
         if (selectedMethod != null) {
-            generateDocWithMethod(project, selectedMethod, dirPath);
+            try {
+                generateDocWithMethod(project, selectedMethod);
+            } catch (IOException e) {
+                Notification error = notificationGroup.createNotification(e.getMessage(), NotificationType.ERROR);
+                Notifications.Bus.notify(error, project);
+            }
+            return;
+        }
+        try {
+            generateDocsWithClass(project, selectedClass);
+        } catch (IOException e) {
+            Notification error = notificationGroup.createNotification(e.getMessage(), NotificationType.ERROR);
+            Notifications.Bus.notify(error, project);
+        }
+    }
+
+    @Override
+    public void update(AnActionEvent e) {
+        //perform action if and only if EDITOR != null
+        boolean enabled = e.getData(CommonDataKeys.EDITOR) != null;
+        e.getPresentation().setEnabledAndVisible(enabled);
+    }
+
+    protected void generateDocsWithClass(Project project, PsiClass selectedClass) throws IOException {
+        String dirPath = getDirPath(project);
+        if (!mkdirectory(project, dirPath)) {
             return;
         }
         for (PsiMethod psiMethod : selectedClass.getMethods()) {
-            generateDocWithMethod(project, psiMethod, dirPath);
+            generateDocWithMethod(project, psiMethod,dirPath);
         }
     }
 
     private String getDirPath(Project project) {
-        String dirPath = persistentConfig.getState().dirPath;
+        String dirPath = config.getState().dirPath;
         if (StringUtils.isEmpty(dirPath)) {
             return project.getBasePath() + "/target/generate_docs";
         }
@@ -101,7 +96,10 @@ public class ApiGenerateAction extends AnAction {
         return dirPath;
     }
 
-    private void generateDocWithMethod(Project project, PsiMethod selectedMethod, String dirPath) throws IOException {
+    protected void generateDocWithMethod(Project project, PsiMethod selectedMethod,String dirPath) throws IOException {
+        if (!mkdirectory(project, dirPath)) {
+            return;
+        }
         MethodInfo methodInfo = BuildMdForDubbo.getMethodInfo(project, selectedMethod);
         String fileName = getFileName(methodInfo);
         File apiDoc = new File(dirPath + "/" + fileName + ".md");
@@ -132,7 +130,7 @@ public class ApiGenerateAction extends AnAction {
         md.write("### 请求参数示例\n");
         if (CollectionUtils.isNotEmpty(methodInfo.getRequestFields())) {
             md.write("```json\n");
-            md.write(buildDemo(methodInfo.getRequestFields()) + "\n");
+            md.write(JsonUtil.buildPrettyJson(methodInfo.getRequestFields()) + "\n");
             md.write("```\n");
         }
         md.write("### 请求参数说明\n");
@@ -147,7 +145,7 @@ public class ApiGenerateAction extends AnAction {
         md.write("### 返回结果示例\n");
         if (CollectionUtils.isNotEmpty(methodInfo.getResponseFields())) {
             md.write("```json\n");
-            md.write(buildDemo(methodInfo.getResponseFields()) + "\n");
+            md.write(JsonUtil.buildPrettyJson(methodInfo.getResponseFields()) + "\n");
             md.write("```\n");
         }
         md.write("### 返回结果说明\n");
@@ -161,6 +159,27 @@ public class ApiGenerateAction extends AnAction {
         md.close();
     }
 
+    protected void generateDocWithMethod(Project project, PsiMethod selectedMethod) throws IOException {
+        String dirPath = getDirPath(project);
+        if (!mkdirectory(project, dirPath)) {
+            return;
+        }
+        generateDocWithMethod(project,selectedMethod,dirPath);
+    }
+
+    private boolean mkdirectory(Project project, String dirPath) {
+        File dir = new File(dirPath);
+        if (!dir.exists()) {
+            boolean success = dir.mkdir();
+            if (!success) {
+                Notification error = notificationGroup.createNotification("invalid directory path!", NotificationType.ERROR);
+                Notifications.Bus.notify(error, project);
+                return false;
+            }
+        }
+        return true;
+    }
+
     private Model getPomModel(Project project) {
         PsiFile pomFile = FilenameIndex.getFilesByName(project, "pom.xml", GlobalSearchScope.projectScope(project))[0];
         String pomPath = pomFile.getContainingDirectory().getVirtualFile().getPath() + "/pom.xml";
@@ -168,7 +187,7 @@ public class ApiGenerateAction extends AnAction {
     }
 
     private String getFileName(MethodInfo methodInfo) {
-        if(!persistentConfig.getState().cnFileName) {
+        if(!config.getState().cnFileName) {
             return methodInfo.getMethodName();
         }
         if (StringUtils.isEmpty(methodInfo.getDesc()) || !methodInfo.getDesc().contains(" ")) {
@@ -182,7 +201,7 @@ public class ApiGenerateAction extends AnAction {
             String str = "**" + info.getName() + "**" + "|Object|" + getRequireStr(info.isRequire()) + "|" + info.getRange() + "|" + info.getDesc() + "\n";
             writer.write(str);
             for (FieldInfo fieldInfo : info.getChildren()) {
-                writeFieldInfo(writer, fieldInfo, CHILD_PREFIX);
+                writeFieldInfo(writer, fieldInfo, getPrefix());
             }
         } else if (ParamTypeEnum.ARRAY.equals(info.getParamType())) {
             String str = "**" + info.getName() + "**" + "|" + getTypeInArray(info.getPsiType()) + "|" + getRequireStr(info.isRequire()) + "|" + info.getRange() + "|" + info.getDesc() + "\n";
@@ -193,7 +212,7 @@ public class ApiGenerateAction extends AnAction {
             } else {
                 writer.write(str);
                 for (FieldInfo fieldInfo : info.getChildren()) {
-                    writeFieldInfo(writer, fieldInfo, CHILD_PREFIX);
+                    writeFieldInfo(writer, fieldInfo, getPrefix());
                 }
             }
         } else {
@@ -220,12 +239,20 @@ public class ApiGenerateAction extends AnAction {
             String str = "**" + info.getName() + "**" + "|" + getType(true, info.getPsiType()) + "|" + getRequireStr(info.isRequire()) + "|" + info.getRange() + "|" + info.getDesc() + "\n";
             writer.write(prefix + str);
             for (FieldInfo fieldInfo : info.getChildren()) {
-                writeFieldInfo(writer, fieldInfo, CHILD_PREFIX + prefix);
+                writeFieldInfo(writer, fieldInfo, getPrefix() + prefix);
             }
         } else {
             String str = info.getName() + "|" + getType(false, info.getPsiType()) + "|" + getRequireStr(info.isRequire()) + "|" + info.getRange() + "|" + info.getDesc() + "\n";
             writer.write(prefix + str);
         }
+    }
+
+    private String getPrefix() {
+        String prefix = config.getState().prefix;
+        if(" ".equals(prefix)) {
+            return "&emsp";
+        }
+        return prefix;
     }
 
     private String getType(boolean isParent, PsiType psiType) {
@@ -248,36 +275,9 @@ public class ApiGenerateAction extends AnAction {
         return isRequire ? "Y" : "N";
     }
 
-    private String buildDemo(List<FieldInfo> fieldInfos) {
-        Map<String, Object> map = new HashMap<>(32);
-        for (FieldInfo fieldInfo : fieldInfos) {
-            if (ParamTypeEnum.LITERAL.equals(fieldInfo.getParamType())) {
-                map.put(fieldInfo.getName(), fieldInfo.getValue());
-            } else if (ParamTypeEnum.ARRAY.equals(fieldInfo.getParamType())) {
-                map.put(fieldInfo.getName(), Arrays.asList(buildObjectDemo(fieldInfo.getChildren())));
-            } else {
-                map.put(fieldInfo.getName(), buildObjectDemo(fieldInfo.getChildren()));
-            }
-        }
-        return new GsonBuilder().setPrettyPrinting().create().toJson(map);
-    }
 
-    private Object buildObjectDemo(List<FieldInfo> fieldInfos) {
-        Map<String, Object> map = new HashMap<>(32);
-        if (fieldInfos == null) {
-            return map;
-        }
-        for (FieldInfo fieldInfo : fieldInfos) {
-            if (ParamTypeEnum.LITERAL.equals(fieldInfo.getParamType())) {
-                map.put(fieldInfo.getName(), fieldInfo.getValue());
-            } else if (ParamTypeEnum.ARRAY.equals(fieldInfo.getParamType())) {
-                map.put(fieldInfo.getName(), Collections.singletonList(buildObjectDemo(fieldInfo.getChildren())));
-            } else {
-                map.put(fieldInfo.getName(), buildObjectDemo(fieldInfo.getChildren()));
-            }
-        }
-        return map;
-    }
+
+
 
     public Model readPom(String pom) {
         MavenXpp3Reader reader = new MavenXpp3Reader();

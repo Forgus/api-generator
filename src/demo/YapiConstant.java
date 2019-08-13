@@ -12,6 +12,8 @@ public interface YapiConstant {
      */
     String menu="tool-temp";
 
+    String projectInfo = "/api/project/get";
+
     /**
      * yapi 地址
      */
