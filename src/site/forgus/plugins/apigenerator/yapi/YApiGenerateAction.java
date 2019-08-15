@@ -88,6 +88,7 @@ public class YApiGenerateAction extends ApiGenerateAction {
         YApiInterface yApiInterface = new YApiInterface();
         yApiInterface.setToken(config.getState().token);
         yApiInterface.setReq_query(listYApiQueries(methodInfo.getRequestFields()));
+        yApiInterface.setReq_headers(listRequestHeaders(methodInfo.getParamStr()));
         yApiInterface.setMethod(getMethodFromAnnotation(methodMapping));
         yApiInterface.setReq_params(listYApiPathVariables(methodInfo.getRequestFields()));
         yApiInterface.setPath(new StringBuilder()
@@ -114,6 +115,16 @@ public class YApiGenerateAction extends ApiGenerateAction {
         yApiInterface.setCatid(catId);
         yApiInterface.setTitle(methodInfo.getDesc());
         return yApiInterface;
+    }
+
+    private List<YApiHeader> listRequestHeaders(String paramStr) {
+        List<YApiHeader> headers = new ArrayList<>();
+        if(paramStr.contains("RequestBody")) {
+            headers.add(new YApiHeader("Content-Type","application/json"));
+        }else {
+            headers.add(new YApiHeader("Content-Type","application/x-www-form-urlencoded"));
+        }
+        return headers;
     }
 
     private List<YApiQuery> listYApiQueries(List<FieldInfo> requestFields) {
