@@ -20,14 +20,13 @@ public class ApiGeneratorSetting implements Configurable {
 
     JBTextField dirPathTextField;
     JBTextField prefixTextField;
-    OnOffButton cnFileNameButton;
+    JBCheckBox cnFileNameCheckBox;
 
     JBTextField yApiUrlTextField;
     JBTextField tokenTextField;
     JBTextField projectIdTextField;
     JBTextField defaultCatTextField;
-    OnOffButton autoCatButton;
-
+    JBCheckBox autoCatCheckBox;
 
     @Nls(capitalization = Nls.Capitalization.Title)
     @Override
@@ -39,65 +38,59 @@ public class ApiGeneratorSetting implements Configurable {
     @Override
     public JComponent createComponent() {
         state = config.getState();
-        if(state == null) {
-            state = new PersistentConfig.State();
-        }
         JBTabbedPane jbTabbedPane = new JBTabbedPane();
         GridBagLayout layout = new GridBagLayout();
         //normal setting
         JBPanel normalPanel = new JBPanel(layout);
 
-        normalPanel.add(buildLabel(layout,"Directory Path:"));
+        normalPanel.add(buildLabel(layout,"Directory path:"));
         dirPathTextField = buildTextField(layout, state.dirPath);
         normalPanel.add(dirPathTextField);
 
-        normalPanel.add(buildLabel(layout,"Indent Style:"));
+        normalPanel.add(buildLabel(layout,"Indent style:"));
         prefixTextField = buildTextField(layout, state.prefix);
         normalPanel.add(prefixTextField);
 
-        normalPanel.add(buildLabel(layout,"Use Chinese as API Doc Name:"));
-        cnFileNameButton = buildOnOffButton(layout,state.cnFileName);
-        normalPanel.add(cnFileNameButton);
+        cnFileNameCheckBox = buildJBCheckBox(layout,"Extract filename from doc comments",state.cnFileName);
+        normalPanel.add(cnFileNameCheckBox);
 
-        jbTabbedPane.addTab("Normal Setting",normalPanel);
+        jbTabbedPane.addTab("Api Setting",normalPanel);
 
         //YApi setting
         JBPanel yApiPanel = new JBPanel(layout);
 
-        yApiPanel.add(buildLabel(layout,"YApi Url:"));
+        yApiPanel.add(buildLabel(layout,"YApi url:"));
         yApiUrlTextField = buildTextField(layout,state.yApiUrl);
         yApiPanel.add(yApiUrlTextField);
 
-        yApiPanel.add(buildLabel(layout,"Token:"));
+        yApiPanel.add(buildLabel(layout,"Project token:"));
         tokenTextField = buildTextField(layout,state.token);
         yApiPanel.add(tokenTextField);
 
-        yApiPanel.add(buildLabel(layout,"ProjectId:"));
+        yApiPanel.add(buildLabel(layout,"Project id:"));
         projectIdTextField = buildTextField(layout,state.projectId);
         yApiPanel.add(projectIdTextField);
 
-        yApiPanel.add(buildLabel(layout,"Default Category:"));
+        yApiPanel.add(buildLabel(layout,"Default category:"));
         defaultCatTextField = buildTextField(layout,state.defaultCat);
         yApiPanel.add(defaultCatTextField);
 
-        yApiPanel.add(buildLabel(layout,"Auto Categorization:"));
-        autoCatButton = buildOnOffButton(layout,state.autoCat);
-        yApiPanel.add(autoCatButton);
+        autoCatCheckBox = buildJBCheckBox(layout,"Classify APIs automatically",state.autoCat);
+        yApiPanel.add(autoCatCheckBox);
 
         jbTabbedPane.addTab("YApi Setting",yApiPanel);
         return jbTabbedPane;
     }
 
-    private OnOffButton buildOnOffButton(GridBagLayout layout,boolean selected) {
-        OnOffButton onOffButton = new OnOffButton();
-        onOffButton.setOnText("YES");
-        onOffButton.setOffText("NO");
-        onOffButton.setSelected(selected);
+    private JBCheckBox buildJBCheckBox(GridBagLayout layout,String text,boolean selected) {
+        JBCheckBox checkBox = new JBCheckBox();
+        checkBox.setText(text);
+        checkBox.setSelected(selected);
         GridBagConstraints labelConstraints = new GridBagConstraints();
         labelConstraints.fill = GridBagConstraints.WEST;
         labelConstraints.gridwidth =  GridBagConstraints.REMAINDER;
-        layout.setConstraints(onOffButton,labelConstraints);
-        return onOffButton;
+        layout.setConstraints(checkBox,labelConstraints);
+        return checkBox;
     }
 
     private JBLabel buildLabel(GridBagLayout layout,String name) {
@@ -120,26 +113,26 @@ public class ApiGeneratorSetting implements Configurable {
 
     @Override
     public boolean isModified() {
-        return !state.dirPath.equals(dirPathTextField.getText()) ||
-                !state.prefix.equals(prefixTextField.getText()) ||
-                state.cnFileName != cnFileNameButton.isSelected() ||
+        return !state.prefix.equals(prefixTextField.getText()) ||
+                state.cnFileName != cnFileNameCheckBox.isSelected() ||
                 !state.yApiUrl.equals(yApiUrlTextField.getText()) ||
                 !state.token.equals(yApiUrlTextField.getText()) ||
                 !state.projectId.equals(projectIdTextField.getText()) ||
                 !state.defaultCat.equals(defaultCatTextField.getText()) ||
-                state.autoCat != autoCatButton.isSelected();
+                state.autoCat != autoCatCheckBox.isSelected() ||
+                !state.dirPath.equals(dirPathTextField.getText());
     }
 
     @Override
     public void apply() {
-        config.myState.dirPath = dirPathTextField.getText();
-        config.myState.prefix = prefixTextField.getText();
-        config.myState.cnFileName = cnFileNameButton.isSelected();
-        config.myState.yApiUrl = yApiUrlTextField.getText();
-        config.myState.token = tokenTextField.getText();
-        config.myState.projectId = projectIdTextField.getText();
-        config.myState.defaultCat = defaultCatTextField.getText();
-        config.myState.autoCat = autoCatButton.isSelected();
+        config.getState().dirPath = dirPathTextField.getText();
+        config.getState().prefix = prefixTextField.getText();
+        config.getState().cnFileName = cnFileNameCheckBox.isSelected();
+        config.getState().yApiUrl = yApiUrlTextField.getText();
+        config.getState().token = tokenTextField.getText();
+        config.getState().projectId = projectIdTextField.getText();
+        config.getState().defaultCat = defaultCatTextField.getText();
+        config.getState().autoCat = autoCatCheckBox.isSelected();
     }
 
 }

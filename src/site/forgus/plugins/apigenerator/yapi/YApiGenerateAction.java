@@ -1,15 +1,17 @@
 package site.forgus.plugins.apigenerator.yapi;
 
 import com.google.common.base.Strings;
-import com.intellij.notification.Notification;
+import com.intellij.lang.jvm.annotation.JvmAnnotationAttribute;
 import com.intellij.notification.NotificationType;
-import com.intellij.notification.Notifications;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
+import com.intellij.psi.javadoc.PsiDocComment;
 import com.intellij.psi.search.GlobalSearchScope;
 import demo.*;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import site.forgus.plugins.apigenerator.normal.DesUtil;
 import site.forgus.plugins.apigenerator.normal.*;
 import site.forgus.plugins.apigenerator.yapi.model.*;
@@ -17,21 +19,44 @@ import site.forgus.plugins.apigenerator.yapi.sdk.YApiSdk;
 import site.forgus.plugins.apigenerator.yapi.util.JsonUtil;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class YApiGenerateAction extends ApiGenerateAction {
 
 
     @Override
     protected void generateDocsWithClass(Project project, PsiClass selectedClass) throws IOException {
-        super.generateDocsWithClass(project, selectedClass);
+        PsiMethod[] methods = selectedClass.getMethods();
+        for (PsiMethod method : methods) {
+            if (hasMappingAnnotation(method)) {
+                uploadToYApi(project, method);
+            }
+        }
+    }
+
+    private boolean hasMappingAnnotation(PsiMethod method) {
+        PsiAnnotation[] annotations = method.getAnnotations();
+        for (PsiAnnotation annotation : annotations) {
+            if (annotation.getText().contains("Mapping")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
     protected void generateDocWithMethod(Project project, PsiMethod selectedMethod) throws IOException {
-        YApiInterface yApiInterface = buildYApiInterface(project, selectedMethod);
+        if (!hasMappingAnnotation(selectedMethod)) {
+            NotifyUtil.log(notificationGroup, project, "Upload api failed, reason:\n not http method!", NotificationType.ERROR);
+            return;
+        }
+        uploadToYApi(project, selectedMethod);
+    }
+
+    private void uploadToYApi(Project project, PsiMethod psiMethod) throws IOException {
+        YApiInterface yApiInterface = buildYApiInterface(project, psiMethod);
         if (yApiInterface == null) {
             return;
         }
@@ -43,14 +68,18 @@ public class YApiGenerateAction extends ApiGenerateAction {
         NotifyUtil.log(notificationGroup, project, "Upload api success.", NotificationType.INFORMATION);
     }
 
-    private YApiInterface buildYApiInterface(Project project, PsiMethod psiMethodTarget) {
-        PsiClass containingClass = psiMethodTarget.getContainingClass();
+    private YApiInterface buildYApiInterface(Project project, PsiMethod psiMethod) throws IOException {
+        PsiClass containingClass = psiMethod.getContainingClass();
+        if (containingClass == null) {
+            return null;
+        }
         PsiAnnotation controller = null;
         PsiAnnotation classRequestMapping = null;
         for (PsiAnnotation annotation : containingClass.getAnnotations()) {
-            if (annotation.getText().contains("Controller")) {
+            String text = annotation.getText();
+            if (text.contains("Controller")) {
                 controller = annotation;
-            } else if (annotation.getText().contains("RequestMapping")) {
+            } else if (text.contains("RequestMapping")) {
                 classRequestMapping = annotation;
             }
         }
@@ -58,106 +87,173 @@ public class YApiGenerateAction extends ApiGenerateAction {
             NotifyUtil.log(notificationGroup, project, "Invalid Class File!", NotificationType.INFORMATION);
             return null;
         }
+        MethodInfo methodInfo = BuildMdForDubbo.getMethodInfo(project, psiMethod);
+        PsiAnnotation methodMapping = getMethodMapping(psiMethod);
         YApiInterface yApiInterface = new YApiInterface();
         yApiInterface.setToken(config.getState().token);
-        StringBuilder path = new StringBuilder();
-        if (classRequestMapping != null) {
-            PsiNameValuePair[] psiNameValuePairs = classRequestMapping.getParameterList().getAttributes();
-            if (psiNameValuePairs.length > 0) {
-                if (psiNameValuePairs[0].getLiteralValue() != null) {
-                    path.append(psiNameValuePairs[0].getLiteralValue());
-                } else {
-                    PsiAnnotationMemberValue psiAnnotationMemberValue = classRequestMapping.findAttributeValue("value");
-                    if (Objects.nonNull(psiAnnotationMemberValue) && Objects.nonNull(psiAnnotationMemberValue.getReference())) {
-                        String[] results = psiAnnotationMemberValue.getReference().resolve().getText().split("=");
-                        path.append(results[results.length - 1].split(";")[0].replace("\"", "").trim());
-                    }
-                }
-            }
+        yApiInterface.setMethod(getMethodFromAnnotation(methodMapping));
+        yApiInterface.setReq_params(listYApiPathVariables(methodInfo.getRequestFields()));
+        yApiInterface.setPath(new StringBuilder()
+                .append(getPathFromAnnotation(classRequestMapping))
+                .append(getPathFromAnnotation(methodMapping)).toString());
+        yApiInterface.setDesc(Objects.nonNull(yApiInterface.getDesc()) ? yApiInterface.getDesc() : " <pre><code>  " + getMethodDesc(psiMethod) + "</code> </pre>");
+        yApiInterface.setRes_body(JsonUtil.buildJson5(methodInfo.getResponseFields()));
+        yApiInterface.setReq_body_other(JsonUtil.buildJson5(methodInfo.getRequestFields()));
+        Map<String, YApiCat> catNameMap = getCatNameMap();
+        PsiDocComment classDesc = containingClass.getDocComment();
+        String catId = null;
+        String catName = config.getState().defaultCat;
+        if (classDesc != null) {
+            catName = DesUtil.getDescription(classDesc).split(" ")[0];
         }
+        YApiCat apiCat = catNameMap.get(catName);
+        if (apiCat != null) {
+            catId = apiCat.get_id().toString();
+        }
+        if (catId == null) {
+            YApiResponse<YApiCat> yApiResponse = YApiSdk.addCategory(config.getState().token, config.getState().projectId, catName);
+            catId = yApiResponse.getData().get_id().toString();
+        }
+        yApiInterface.setCatid(catId);
+        yApiInterface.setTitle(methodInfo.getDesc());
+        return yApiInterface;
+    }
 
-        PsiAnnotation psiAnnotationMethod = PsiAnnotationSearchUtil.findAnnotation(psiMethodTarget, SpringMVCConstant.RequestMapping);
-        if (psiAnnotationMethod != null) {
-            PsiNameValuePair[] psiNameValuePairs = psiAnnotationMethod.getParameterList().getAttributes();
-            if (psiNameValuePairs.length > 0) {
-                for (PsiNameValuePair psiNameValuePair : psiNameValuePairs) {
-                    String requestMethod = psiNameValuePair.getValue().toString().toUpperCase();
-                    String methodName = psiNameValuePair.getName();
-
-                    //获得方法上的路径
-                    if (Objects.isNull(psiNameValuePair.getName()) || "value".equals(psiNameValuePair.getName())) {
-                        PsiReference psiReference = psiNameValuePair.getValue().getReference();
-                        if (psiReference == null) {
-                            path.append(psiNameValuePair.getLiteralValue());
-                        } else {
-                            String[] results = psiReference.resolve().getText().split("=");
-                            path.append(results[results.length - 1].split(";")[0].replace("\"", "").trim());
-                            yApiInterface.setTitle(site.forgus.plugins.apigenerator.normal.DesUtil.getUrlReFerenceRDesc(psiReference.resolve().getText()));
-                            yApiInterface.setDesc("<pre><code>  " + psiReference.resolve().getText() + " </code></pre> <hr>");
-                        }
-                        yApiInterface.setPath(path.toString());
-                    } else {
-                        if ("method".equals(methodName)) {
-                            // 判断是何种请求、get、post等
-                            yApiInterface.setMethod(this.switchRequestMethod(requestMethod));
-                        }
-                    }
-                }
-            } else {
-                yApiInterface.setPath(path.toString());
-            }
-        } else {
-            // 分析请求方式
-            RequestMethodUtil requestMethodUtil = new RequestMethodUtil().invoke(psiMethodTarget);
-
-            yApiInterface.setMethod(requestMethodUtil.getRequestMethod());
-
-            if (Objects.nonNull(requestMethodUtil.getPsiAnnotationMethodSemple())) {
-                PsiNameValuePair[] psiNameValuePairs = requestMethodUtil.getPsiAnnotationMethodSemple().getParameterList().getAttributes();
+    private List<YApiPathVariable> listYApiPathVariables(List<FieldInfo> requestFields) {
+        List<YApiPathVariable> yApiPathVariables = new ArrayList<>();
+        for (FieldInfo fieldInfo : requestFields) {
+            List<PsiAnnotation> annotations = fieldInfo.getAnnotations();
+            PsiAnnotation pathVariable = findAnnotationByName(annotations, "PathVariable");
+            if (pathVariable != null) {
+                YApiPathVariable yApiPathVariable = new YApiPathVariable();
+                PsiNameValuePair[] psiNameValuePairs = pathVariable.getParameterList().getAttributes();
                 if (psiNameValuePairs.length > 0) {
                     for (PsiNameValuePair psiNameValuePair : psiNameValuePairs) {
-                        //获得方法上的路径
-                        if (Objects.isNull(psiNameValuePair.getName()) || psiNameValuePair.getName().equals("value")) {
-                            PsiReference psiReference = psiNameValuePair.getValue().getReference();
-                            if (psiReference == null) {
-                                path.append(psiNameValuePair.getLiteralValue());
-                            } else {
-                                String[] results = psiReference.resolve().getText().split("=");
-                                path.append(results[results.length - 1].split(";")[0].replace("\"", "").trim());
-                                yApiInterface.setTitle(site.forgus.plugins.apigenerator.normal.DesUtil.getUrlReFerenceRDesc(psiReference.resolve().getText()));
-                                if (!Strings.isNullOrEmpty(psiReference.resolve().getText())) {
-                                    String refernceDesc = psiReference.resolve().getText().replace("<", "&lt;").replace(">", "&gt;");
-                                    yApiInterface.setDesc("<pre><code>  " + refernceDesc + " </code></pre> <hr>");
-                                }
+                        String name = psiNameValuePair.getName();
+                        String literalValue = psiNameValuePair.getLiteralValue();
+                        if (StringUtils.isNotEmpty(literalValue)) {
+                            if ("value".equals(name) || "name".equals(name)) {
+                                yApiPathVariable.setName(literalValue);
+                                break;
                             }
-                            yApiInterface.setPath(path.toString().trim());
                         }
                     }
                 } else {
-                    yApiInterface.setPath(path.toString().trim());
+                    yApiPathVariable.setName(fieldInfo.getName());
+                }
+                yApiPathVariable.setDesc(fieldInfo.getDesc());
+                yApiPathVariable.setExample(fieldInfo.getValue().toString());
+                yApiPathVariables.add(yApiPathVariable);
+            }
+        }
+        return yApiPathVariables;
+    }
+
+    private PsiAnnotation findAnnotationByName(List<PsiAnnotation> annotations, String text) {
+        for (PsiAnnotation annotation : annotations) {
+            if (annotation.getText().contains(text)) {
+                return annotation;
+            }
+        }
+        return null;
+    }
+
+    private List<PsiAnnotation> listPathVariableAnnotations(PsiMethod psiMethod) {
+        List<PsiAnnotation> annotations = new ArrayList<>();
+        for (PsiParameter parameter : psiMethod.getParameterList().getParameters()) {
+            for (PsiAnnotation psiAnnotation : parameter.getAnnotations()) {
+                if (psiAnnotation.getText().contains("PathVariable")) {
+                    annotations.add(psiAnnotation);
                 }
             }
         }
-        String classDesc = psiMethodTarget.getText().replace(Objects.nonNull(psiMethodTarget.getBody()) ? psiMethodTarget.getBody().getText() : "", "");
-        if (!Strings.isNullOrEmpty(classDesc)) {
-            classDesc = classDesc.replace("<", "&lt;").replace(">", "&gt;");
+        return annotations;
+    }
+
+    private String getPathFromAnnotation(PsiAnnotation methodMapping, PsiAnnotation pathVariable) {
+        //TODO
+        return "0";
+    }
+
+    private PsiAnnotation getMethodMapping(PsiMethod psiMethod) {
+        PsiAnnotation methodMapping = null;
+        for (PsiAnnotation annotation : psiMethod.getAnnotations()) {
+            String text = annotation.getText();
+            if (text.contains("Mapping")) {
+                methodMapping = annotation;
+            }
         }
-        yApiInterface.setDesc(Objects.nonNull(yApiInterface.getDesc()) ? yApiInterface.getDesc() : " <pre><code>  " + classDesc + "</code> </pre>");
-        try {
-            // 生成响应参数
-            MethodInfo methodInfo = BuildMdForDubbo.getMethodInfo(project, psiMethodTarget);
-            yApiInterface.setRes_body(JsonUtil.buildJson5(methodInfo.getResponseFields()));
-            yApiInterface.setReq_body_other(JsonUtil.buildJson5(methodInfo.getRequestFields()));
-            //TODO
-            yApiInterface.setCatid("838");
-            //TODO
-            yApiInterface.setTitle("swerwerwer");
-            return yApiInterface;
-        } catch (Exception ex) {
-            Notification error = notificationGroup.createNotification("Convert to JSON failed.", NotificationType.ERROR);
-            Notifications.Bus.notify(error, project);
+        return methodMapping;
+    }
+
+    @NotNull
+    private String getMethodDesc(PsiMethod psiMethod) {
+        String methodDesc = psiMethod.getText().replace(Objects.nonNull(psiMethod.getBody()) ? psiMethod.getBody().getText() : "", "");
+        if (!Strings.isNullOrEmpty(methodDesc)) {
+            methodDesc = methodDesc.replace("<", "&lt;").replace(">", "&gt;");
         }
-        return null;
+        return methodDesc;
+    }
+
+    private String getMethodFromAnnotation(PsiAnnotation methodMapping) {
+        String text = methodMapping.getText();
+        if (text.contains("RequestMapping")) {
+            return extractMethodFromAttribute(methodMapping);
+        }
+        return extractMethodFromMappingText(text);
+    }
+
+    private String extractMethodFromAttribute(PsiAnnotation annotation) {
+        PsiNameValuePair[] psiNameValuePairs = annotation.getParameterList().getAttributes();
+        for (PsiNameValuePair psiNameValuePair : psiNameValuePairs) {
+            if ("method".equals(psiNameValuePair.getName())) {
+                return psiNameValuePair.getValue().getReference().resolve().getText();
+            }
+        }
+        return "POST";
+    }
+
+    private String extractMethodFromMappingText(String text) {
+        if (text.contains("GetMapping")) {
+            return "GET";
+        }
+        if (text.contains("PutMapping")) {
+            return "PUT";
+        }
+        if (text.contains("DeleteMapping")) {
+            return "DELETE";
+        }
+        if (text.contains("PatchMapping")) {
+            return "PATCH";
+        }
+        return "POST";
+    }
+
+    private String getPathFromAnnotation(PsiAnnotation annotation) {
+        if (annotation == null) {
+            return "";
+        }
+        PsiNameValuePair[] psiNameValuePairs = annotation.getParameterList().getAttributes();
+        if (psiNameValuePairs.length == 1 && psiNameValuePairs[0].getName() == null) {
+            return psiNameValuePairs[0].getLiteralValue();
+        }
+        if (psiNameValuePairs.length > 1) {
+            for (PsiNameValuePair psiNameValuePair : psiNameValuePairs) {
+                if (psiNameValuePair.getName().equals("value") || psiNameValuePair.getName().equals("path")) {
+                    return psiNameValuePair.getLiteralValue();
+                }
+            }
+        }
+        return "";
+    }
+
+    private Map<String, YApiCat> getCatNameMap() throws IOException {
+        List<YApiCat> yApiCats = YApiSdk.listCategories(config.getState().token);
+        Map<String, YApiCat> catNameMap = new HashMap<>();
+        for (YApiCat cat : yApiCats) {
+            catNameMap.put(cat.getName(), cat);
+        }
+        return catNameMap;
     }
 
     public static void getRequest(Project project, YApiInterface yApiInterface, PsiMethod psiMethodTarget, List<FieldInfo> requestFields) {

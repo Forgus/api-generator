@@ -56,9 +56,9 @@ public class BuildMdForDubbo {
             FieldInfo fieldInfo = FieldInfo.normal(
                     psiParameter.getName(),
                     psiType,
-                    getRequireAndRange(psiParameter.getAnnotations()),
                     paramDescMap.get(psiParameter.getName()),
-                    listFieldInfos(project, psiType)
+                    listFieldInfos(project, psiType),
+                    psiParameter.getAnnotations()
             );
             fieldInfos.add(fieldInfo);
         }
@@ -76,7 +76,7 @@ public class BuildMdForDubbo {
             return null;
         }
         if(NormalTypes.isNormalType(psiType.getPresentableText())) {
-            return Collections.singletonList(FieldInfo.child(psiType.getPresentableText(), psiType, RequireAndRange.instance(), ""));
+            return Collections.singletonList(FieldInfo.child(psiType.getPresentableText(), psiType,  "",new PsiAnnotation[0]));
         }
         return listFieldInfos(project,psiType);
     }
@@ -152,19 +152,18 @@ public class BuildMdForDubbo {
             return;
         }
         String desc = DesUtil.getFiledDesc(psiField.getDocComment()).replace("@see", "见");
-        RequireAndRange requireAndRange = getRequireAndRange(psiField.getAnnotations());
         if (NormalTypes.isNormalType(typeName)) {
-            fieldInfos.add(FieldInfo.child(name, type, requireAndRange, desc));
+            fieldInfos.add(FieldInfo.child(name, type, desc,psiField.getAnnotations()));
             return;
         }
         if (typeName.startsWith("List") || typeName.startsWith("Set")) {
             //list type
             PsiType iterableType = PsiUtil.extractIterableTypeParameter(type, false);
             if(iterableType == null || NormalTypes.isNormalType(iterableType.getPresentableText())) {
-                fieldInfos.add(FieldInfo.child(name, type, requireAndRange, desc));
+                fieldInfos.add(FieldInfo.child(name, type, desc,psiField.getAnnotations()));
                 return;
             }
-            fieldInfos.add(FieldInfo.parent(name, type, requireAndRange, desc, listFieldInfos(project,iterableType)));
+            fieldInfos.add(FieldInfo.parent(name, type, desc, listFieldInfos(project,iterableType),psiField.getAnnotations()));
             return;
         }
         if (typeName.startsWith("Map")) {
@@ -187,50 +186,13 @@ public class BuildMdForDubbo {
         PsiClass containingClass = psiField.getContainingClass();
         PsiClass psiClass = PsiUtil.resolveClassInType(type);
         if(psiClass.isEnum() || containingClass.getText().equals(psiClass.getText())) {
-            fieldInfos.add(FieldInfo.normal(name,type,requireAndRange,desc,new ArrayList<>()));
+            fieldInfos.add(FieldInfo.normal(name,type,desc,new ArrayList<>(),psiField.getAnnotations()));
             return;
         }
-        fieldInfos.add(FieldInfo.parent(name, type, requireAndRange, desc, listFieldInfos(psiClass, project)));
+        fieldInfos.add(FieldInfo.parent(name, type, desc, listFieldInfos(psiClass, project),psiField.getAnnotations()));
     }
 
-    private static RequireAndRange getRequireAndRange(PsiAnnotation[] annotations) {
-        boolean require = false;
-        String min = "";
-        String max = "";
-        String range = "N/A";
-        for (PsiAnnotation annotation : annotations) {
-            String qualifiedName = annotation.getText();
-            if (qualifiedName.contains("NotNull") || qualifiedName.contains("NotBlank") || qualifiedName.contains("NotEmpty")) {
-                require = true;
-            }
-            if (qualifiedName.contains("Length") || qualifiedName.contains("Range")) {
-                PsiAnnotationMemberValue maxValue = annotation.findAttributeValue("max");
-                PsiAnnotationMemberValue minValue = annotation.findAttributeValue("min");
-                if (maxValue != null) {
-                    max = maxValue.getText();
-                }
-                if (minValue != null) {
-                    min = minValue.getText();
-                }
-            }
-            if(qualifiedName.contains("Min")) {
-                PsiAnnotationMemberValue minValue = annotation.findAttributeValue("value");
-                if(minValue != null) {
-                    min = minValue.getText();
-                }
-            }
-            if(qualifiedName.contains("Max")) {
-                PsiAnnotationMemberValue maxValue = annotation.findAttributeValue("value");
-                if(maxValue != null) {
-                    max = maxValue.getText();
-                }
-            }
-        }
-        if (StringUtils.isNotEmpty(min) || StringUtils.isNotEmpty(max)) {
-            range = "[" + min + "," + max + "]";
-        }
-        return new RequireAndRange(require, range);
-    }
+
 
 
 }

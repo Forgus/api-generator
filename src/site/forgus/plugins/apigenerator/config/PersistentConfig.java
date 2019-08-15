@@ -20,7 +20,7 @@ public class PersistentConfig implements PersistentStateComponent<PersistentConf
         public Boolean autoCat = true;
         public String defaultCat = "api_generator";
     }
-    State myState;
+    private State myState = new State();
 
     /**
      * 服务管理器获取实例

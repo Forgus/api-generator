@@ -82,7 +82,7 @@ public class YApiSdk {
      * @return
      * @throws IOException
      */
-    public static YApiResponse addCategory(String token,String projectId,String name) throws IOException {
+    public static YApiResponse<YApiCat> addCategory(String token,String projectId,String name) throws IOException {
         return addCategory(token,projectId,name,"");
     }
 
@@ -100,7 +100,7 @@ public class YApiSdk {
         return gson.fromJson(string,YApiResponse.class);
     }
 
-    public static YApiResponse addCategory(String token,String projectId,String name,String desc) throws IOException {
+    public static YApiResponse<YApiCat> addCategory(String token,String projectId,String name,String desc) throws IOException {
         Map<String,String> params = new HashMap<>();
         params.put("desc",desc);
         params.put("name",name);
@@ -110,7 +110,8 @@ public class YApiSdk {
                 buildPostRequestWithJsonType(ProjectConfig.getInstance().getyApiUrl() + ADD_CATEGORY_URI, gson.toJson(params))
         );
         String string = HttpClientUtil.ObjectToString(httpResponse,"utf-8");
-        return gson.fromJson(string,YApiResponse.class);
+        Type type = new TypeToken<YApiResponse<YApiCat>>(){}.getType();
+        return gson.fromJson(string,type);
     }
 
 }
