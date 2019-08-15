@@ -1,7 +1,6 @@
 package site.forgus.plugins.apigenerator.yapi;
 
 import com.google.common.base.Strings;
-import com.intellij.lang.jvm.annotation.JvmAnnotationAttribute;
 import com.intellij.notification.NotificationType;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.Project;
@@ -11,7 +10,6 @@ import com.intellij.psi.search.GlobalSearchScope;
 import demo.*;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import site.forgus.plugins.apigenerator.normal.DesUtil;
 import site.forgus.plugins.apigenerator.normal.*;
 import site.forgus.plugins.apigenerator.yapi.model.*;
@@ -20,8 +18,6 @@ import site.forgus.plugins.apigenerator.yapi.util.JsonUtil;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class YApiGenerateAction extends ApiGenerateAction {
 
@@ -91,6 +87,7 @@ public class YApiGenerateAction extends ApiGenerateAction {
         PsiAnnotation methodMapping = getMethodMapping(psiMethod);
         YApiInterface yApiInterface = new YApiInterface();
         yApiInterface.setToken(config.getState().token);
+        yApiInterface.setReq_query(listYApiQueries(methodInfo.getRequestFields()));
         yApiInterface.setMethod(getMethodFromAnnotation(methodMapping));
         yApiInterface.setReq_params(listYApiPathVariables(methodInfo.getRequestFields()));
         yApiInterface.setPath(new StringBuilder()
@@ -117,6 +114,38 @@ public class YApiGenerateAction extends ApiGenerateAction {
         yApiInterface.setCatid(catId);
         yApiInterface.setTitle(methodInfo.getDesc());
         return yApiInterface;
+    }
+
+    private List<YApiQuery> listYApiQueries(List<FieldInfo> requestFields) {
+        List<YApiQuery> queries = new ArrayList<>();
+        for (FieldInfo fieldInfo : requestFields) {
+            if (fieldInfo.getAnnotations().size() == 0) {
+                if(ParamTypeEnum.LITERAL.equals(fieldInfo.getParamType())) {
+                    queries.add(buildYApiQuery(fieldInfo));
+                }else if(ParamTypeEnum.OBJECT.equals(fieldInfo.getParamType())) {
+                    List<FieldInfo> children = fieldInfo.getChildren();
+                    for(FieldInfo info : children) {
+                        queries.add(buildYApiQuery(info));
+                    }
+                }else {
+                    YApiQuery apiQuery = buildYApiQuery(fieldInfo);
+                    apiQuery.setExample("1,1,1");
+                    queries.add(apiQuery);
+                }
+            }
+        }
+        return queries;
+    }
+
+    private YApiQuery buildYApiQuery(FieldInfo fieldInfo) {
+        YApiQuery query = new YApiQuery();
+        query.setName(fieldInfo.getName());
+        query.setDesc(fieldInfo.getDesc());
+        if(fieldInfo.getValue() != null) {
+            query.setExample(fieldInfo.getValue().toString());
+        }
+        query.setRequired(Boolean.toString(fieldInfo.isRequire()));
+        return query;
     }
 
     private List<YApiPathVariable> listYApiPathVariables(List<FieldInfo> requestFields) {
