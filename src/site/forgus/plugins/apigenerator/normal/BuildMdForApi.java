@@ -9,10 +9,11 @@ import com.intellij.psi.javadoc.PsiDocComment;
 import com.intellij.psi.javadoc.PsiDocTag;
 import com.intellij.psi.util.PsiUtil;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
-public class BuildMdForDubbo {
+public class BuildMdForApi {
 
     private static NotificationGroup notificationGroup;
 
@@ -40,16 +41,7 @@ public class BuildMdForDubbo {
 
     private static List<FieldInfo> listParamFieldInfos(Project project,PsiMethod psiMethod) {
         List<FieldInfo> fieldInfos =  new ArrayList<>();
-        PsiDocComment docComment = psiMethod.getDocComment();
-        Map<String, String> paramDescMap = new HashMap<>();
-        for (PsiDocTag docTag : docComment.getTags()) {
-            String tagText = docTag.getText();
-            String tagName = docTag.getName();
-            String tagValue = docTag.getValueElement() == null ? "" : docTag.getValueElement().getText();
-            if ("param".equals(tagName) && StringUtils.isNotEmpty(tagValue)) {
-                paramDescMap.put(tagValue, getParamDesc(tagText));
-            }
-        }
+        Map<String, String> paramDescMap = getParamDescMap(psiMethod.getDocComment());
         PsiParameter[] psiParameters = psiMethod.getParameterList().getParameters();
         for (PsiParameter psiParameter : psiParameters) {
             PsiType psiType = psiParameter.getType();
@@ -65,12 +57,27 @@ public class BuildMdForDubbo {
         return fieldInfos;
     }
 
+    private static Map<String, String> getParamDescMap(PsiDocComment docComment) {
+        Map<String, String> paramDescMap = new HashMap<>();
+        if(docComment == null) {
+            return paramDescMap;
+        }
+        for (PsiDocTag docTag : docComment.getTags()) {
+            String tagValue = docTag.getValueElement() == null ? "" : docTag.getValueElement().getText();
+            if ("param".equals(docTag.getName()) && StringUtils.isNotEmpty(tagValue)) {
+                paramDescMap.put(tagValue, getParamDesc(docTag.getText()));
+            }
+        }
+        return paramDescMap;
+    }
+
     private static String getParamDesc(String tagText) {
         String desc = tagText.split(" ")[2];
         return desc.replace("\n", "");
     }
 
     public static List<FieldInfo> listResponseFieldInfo(PsiMethod psiMethodTarget, Project project) {
+        //todo
         PsiType psiType = psiMethodTarget.getReturnType();
         if(psiType == null) {
             return null;

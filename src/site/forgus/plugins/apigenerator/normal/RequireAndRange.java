@@ -11,7 +11,7 @@ public class RequireAndRange {
     }
 
     public static RequireAndRange instance() {
-        return new RequireAndRange(true,"N/A");
+        return new RequireAndRange(false,"N/A");
     }
 
     public boolean isRequire() {

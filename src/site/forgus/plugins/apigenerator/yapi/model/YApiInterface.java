@@ -10,7 +10,7 @@ public class YApiInterface implements Serializable {
     private String token;
     private List<YApiQuery> req_query = new ArrayList<>();
     private List<YApiHeader> req_headers = new ArrayList<>();
-    private String req_body_type = "json";
+    private String req_body_type;
     private List<YApiForm> req_body_form = new ArrayList<>();
     private Boolean req_body_is_json_schema = false;
     private String req_body_other;

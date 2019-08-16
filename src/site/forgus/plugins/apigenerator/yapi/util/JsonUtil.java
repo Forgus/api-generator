@@ -32,6 +32,9 @@ public class JsonUtil {
 
     public static Map<String,String> buildFieldDescMap(List<FieldInfo> fieldInfos) {
         Map<String,String> map = new HashMap<>(32);
+        if(fieldInfos == null) {
+            return map;
+        }
         for (FieldInfo fieldInfo : fieldInfos) {
             if (ParamTypeEnum.LITERAL.equals(fieldInfo.getParamType())) {
                 if(StringUtils.isEmpty(fieldInfo.getDesc())) {
@@ -50,7 +53,7 @@ public class JsonUtil {
         if(!fieldInfo.isRequire()) {
             return desc;
         }
-        return desc + ",必有";
+        return desc + ",必填";
     }
 
     public static String buildPrettyJson(List<FieldInfo> fieldInfos) {

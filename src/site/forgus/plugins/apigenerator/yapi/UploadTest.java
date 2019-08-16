@@ -60,7 +60,8 @@ public class UploadTest {
 
     @Test
     public void testSaveInterface() throws Exception {
-
+        YApiInterface yApiInterface = new YApiInterface();
+        YApiSdk.saveInterface(yApiInterface);
     }
 
     private String getPrettyJson() {

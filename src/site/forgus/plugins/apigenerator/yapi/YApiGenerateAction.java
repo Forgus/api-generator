@@ -21,6 +21,24 @@ import java.util.*;
 
 public class YApiGenerateAction extends ApiGenerateAction {
 
+//    @Override
+//    public void actionPerformed(AnActionEvent actionEvent) {
+//        Editor editor = actionEvent.getDataContext().getData(CommonDataKeys.EDITOR);
+//        if (editor == null) {
+//            return;
+//        }
+//        PsiFile psiFile = actionEvent.getData(CommonDataKeys.PSI_FILE);
+//        if (psiFile == null) {
+//            return;
+//        }
+//        Project project = editor.getProject();
+//        if (project == null) {
+//            return;
+//        }
+//        PersistentConfig.State state = config.getState();
+//        webApiUpload(actionEvent,project, state.token, state.projectId,state.yApiUrl,null,state.defaultCat);
+//    }
+
 
     @Override
     protected void generateDocsWithClass(Project project, PsiClass selectedClass) throws IOException {
@@ -83,22 +101,37 @@ public class YApiGenerateAction extends ApiGenerateAction {
             NotifyUtil.log(notificationGroup, project, "Invalid Class File!", NotificationType.INFORMATION);
             return null;
         }
-        MethodInfo methodInfo = BuildMdForDubbo.getMethodInfo(project, psiMethod);
+        MethodInfo methodInfo = BuildMdForApi.getMethodInfo(project, psiMethod);
         PsiAnnotation methodMapping = getMethodMapping(psiMethod);
         YApiInterface yApiInterface = new YApiInterface();
         yApiInterface.setToken(config.getState().token);
-        yApiInterface.setReq_query(listYApiQueries(methodInfo.getRequestFields()));
-        yApiInterface.setReq_headers(listRequestHeaders(methodInfo.getParamStr()));
+
         yApiInterface.setMethod(getMethodFromAnnotation(methodMapping));
-        yApiInterface.setReq_params(listYApiPathVariables(methodInfo.getRequestFields()));
-        yApiInterface.setPath(new StringBuilder()
-                .append(getPathFromAnnotation(classRequestMapping))
-                .append(getPathFromAnnotation(methodMapping)).toString());
-        yApiInterface.setDesc(Objects.nonNull(yApiInterface.getDesc()) ? yApiInterface.getDesc() : " <pre><code>  " + getMethodDesc(psiMethod) + "</code> </pre>");
-        yApiInterface.setRes_body(JsonUtil.buildJson5(methodInfo.getResponseFields()));
-        yApiInterface.setReq_body_other(JsonUtil.buildJson5(methodInfo.getRequestFields()));
+        if(methodInfo.getParamStr().contains("RequestBody")) {
+            yApiInterface.setReq_headers(Collections.singletonList(new YApiHeader("Content-Type","application/json")));
+            yApiInterface.setReq_body_type("json");
+            yApiInterface.setReq_body_other(JsonUtil.buildJson5(methodInfo.getRequestFields()));
+        }else {
+            yApiInterface.setReq_headers(Collections.singletonList(new YApiHeader("Content-Type","application/x-www-form-urlencoded")));
+            if(yApiInterface.getMethod().equals("POST")) {
+                yApiInterface.setReq_body_type("form");
+                yApiInterface.setReq_body_form(listYApiForms(methodInfo.getRequestFields()));
+            }else if("GET".equals(yApiInterface.getMethod())) {
+                yApiInterface.setReq_query(listYApiQueries(methodInfo.getRequestFields()));
+            }
+        }
         Map<String, YApiCat> catNameMap = getCatNameMap();
         PsiDocComment classDesc = containingClass.getDocComment();
+        yApiInterface.setCatid(getCatId(catNameMap, classDesc));
+        yApiInterface.setTitle(methodInfo.getDesc());
+        yApiInterface.setPath(getPathFromAnnotation(classRequestMapping) + getPathFromAnnotation(methodMapping));
+        yApiInterface.setRes_body(JsonUtil.buildJson5(methodInfo.getResponseFields()));
+        yApiInterface.setReq_params(listYApiPathVariables(methodInfo.getRequestFields()));
+        yApiInterface.setDesc(Objects.nonNull(yApiInterface.getDesc()) ? yApiInterface.getDesc() : "<pre><code data-language=\"java\" class=\"java\">" + getMethodDesc(psiMethod) + "</code> </pre>");
+        return yApiInterface;
+    }
+
+    private String getCatId(Map<String, YApiCat> catNameMap, PsiDocComment classDesc) throws IOException {
         String catId = null;
         String catName = config.getState().defaultCat;
         if (classDesc != null) {
@@ -112,9 +145,28 @@ public class YApiGenerateAction extends ApiGenerateAction {
             YApiResponse<YApiCat> yApiResponse = YApiSdk.addCategory(config.getState().token, config.getState().projectId, catName);
             catId = yApiResponse.getData().get_id().toString();
         }
-        yApiInterface.setCatid(catId);
-        yApiInterface.setTitle(methodInfo.getDesc());
-        return yApiInterface;
+        return catId;
+    }
+
+    private List<YApiForm> listYApiForms(List<FieldInfo> requestFields) {
+        List<YApiForm> yApiForms = new ArrayList<>();
+        for (FieldInfo fieldInfo : requestFields) {
+            if (fieldInfo.getAnnotations().size() == 0) {
+                if(ParamTypeEnum.LITERAL.equals(fieldInfo.getParamType())) {
+                    yApiForms.add(buildYApiForm(fieldInfo));
+                }else if(ParamTypeEnum.OBJECT.equals(fieldInfo.getParamType())) {
+                    List<FieldInfo> children = fieldInfo.getChildren();
+                    for(FieldInfo info : children) {
+                        yApiForms.add(buildYApiForm(info));
+                    }
+                }else {
+                    YApiForm apiQuery = buildYApiForm(fieldInfo);
+                    apiQuery.setExample("1,1,1");
+                    yApiForms.add(apiQuery);
+                }
+            }
+        }
+        return yApiForms;
     }
 
     private List<YApiHeader> listRequestHeaders(String paramStr) {
@@ -148,6 +200,7 @@ public class YApiGenerateAction extends ApiGenerateAction {
         return queries;
     }
 
+
     private YApiQuery buildYApiQuery(FieldInfo fieldInfo) {
         YApiQuery query = new YApiQuery();
         query.setName(fieldInfo.getName());
@@ -157,6 +210,17 @@ public class YApiGenerateAction extends ApiGenerateAction {
         }
         query.setRequired(Boolean.toString(fieldInfo.isRequire()));
         return query;
+    }
+
+    private YApiForm buildYApiForm(FieldInfo fieldInfo) {
+        YApiForm param = new YApiForm();
+        param.setName(fieldInfo.getName());
+        param.setDesc(fieldInfo.getDesc());
+        if(fieldInfo.getValue() != null) {
+            param.setExample(fieldInfo.getValue().toString());
+        }
+        param.setRequired(Boolean.toString(fieldInfo.isRequire()));
+        return param;
     }
 
     private List<YApiPathVariable> listYApiPathVariables(List<FieldInfo> requestFields) {

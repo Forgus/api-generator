@@ -100,7 +100,7 @@ public class ApiGenerateAction extends AnAction {
         if (!mkdirectory(project, dirPath)) {
             return;
         }
-        MethodInfo methodInfo = BuildMdForDubbo.getMethodInfo(project, selectedMethod);
+        MethodInfo methodInfo = BuildMdForApi.getMethodInfo(project, selectedMethod);
         String fileName = getFileName(methodInfo);
         File apiDoc = new File(dirPath + "/" + fileName + ".md");
         if (!apiDoc.exists()) {
