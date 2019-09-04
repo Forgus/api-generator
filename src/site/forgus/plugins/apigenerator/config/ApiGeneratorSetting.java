@@ -43,7 +43,7 @@ public class ApiGeneratorSetting implements Configurable {
         //normal setting
         JBPanel normalPanel = new JBPanel(layout);
 
-        normalPanel.add(buildLabel(layout,"Directory path:"));
+        normalPanel.add(buildLabel(layout,"Save Directory(absolute path):"));
         dirPathTextField = buildTextField(layout, state.dirPath);
         normalPanel.add(dirPathTextField);
 
@@ -71,7 +71,7 @@ public class ApiGeneratorSetting implements Configurable {
         projectIdTextField = buildTextField(layout,state.projectId);
         yApiPanel.add(projectIdTextField);
 
-        yApiPanel.add(buildLabel(layout,"Default category:"));
+        yApiPanel.add(buildLabel(layout,"Default save category:"));
         defaultCatTextField = buildTextField(layout,state.defaultCat);
         yApiPanel.add(defaultCatTextField);
 
