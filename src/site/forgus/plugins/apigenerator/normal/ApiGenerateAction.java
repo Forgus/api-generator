@@ -11,6 +11,7 @@ import com.intellij.psi.search.FilenameIndex;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.psi.util.PsiUtil;
+import demo.NotifyUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.model.Model;
@@ -165,6 +166,7 @@ public class ApiGenerateAction extends AnAction {
             return;
         }
         generateDocWithMethod(project,selectedMethod,dirPath);
+        NotifyUtil.log(notificationGroup, project, "generate api doc success.", NotificationType.INFORMATION);
     }
 
     private boolean mkdirectory(Project project, String dirPath) {
