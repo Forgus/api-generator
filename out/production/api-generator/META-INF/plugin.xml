@@ -6,7 +6,7 @@
 
   <description><![CDATA[
       Api Generator.<br>
-      <em>Support generate markdown for interface or upload to YApi for REST api.</em>
+      <em>Support generate markdown for interface or upload to YApi for REST api.</em> <br>
       Plugin settings:<br>
       Preferences —> Other Settings —> Api Generator Setting
     ]]></description>

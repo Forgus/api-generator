@@ -89,7 +89,7 @@ public class ApiGenerateAction extends AnAction {
     private String getDirPath(Project project) {
         String dirPath = config.getState().dirPath;
         if (StringUtils.isEmpty(dirPath)) {
-            return project.getBasePath() + "/target/generate_docs";
+            return project.getBasePath() + "/target/api_docs";
         }
         if (dirPath.endsWith("/")) {
             return dirPath.substring(0,dirPath.lastIndexOf("/"));
@@ -172,7 +172,7 @@ public class ApiGenerateAction extends AnAction {
     private boolean mkdirectory(Project project, String dirPath) {
         File dir = new File(dirPath);
         if (!dir.exists()) {
-            boolean success = dir.mkdir();
+            boolean success = dir.mkdirs();
             if (!success) {
                 Notification error = notificationGroup.createNotification("invalid directory path!", NotificationType.ERROR);
                 Notifications.Bus.notify(error, project);

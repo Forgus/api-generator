@@ -17,7 +17,7 @@ public class PersistentConfig implements PersistentStateComponent<PersistentConf
         public String token = "";
         public String projectId = "";
         public String yApiUrl = "";
-        public Boolean autoCat = true;
+        public Boolean autoCat = false;
         public String defaultCat = "api_generator";
     }
     private State myState = new State();
