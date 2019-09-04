@@ -5,15 +5,14 @@
   <vendor email="wenbin1876@gmail.com" url="http://www.forgus.site">Forgus</vendor>
 
   <description><![CDATA[
-      API Generator.<br>
-      <em>Support generate markdown for dubbo api</em>
+      Api Generator.<br>
+      <em>Support generate markdown for interface or upload to YApi for REST api.</em>
     ]]></description>
 
   <change-notes><![CDATA[
-      <em>2.0</em>
-      Support upload to Yapi for REST api<br>
       <em>1.0</em>
-      Support generate markdown for DUBBO api<br>
+      Support generate markdown for interface<br>
+      Support upload to YApi for REST api<br>
     ]]>
   </change-notes>
 
@@ -35,7 +34,7 @@
   <actions>
     <!-- Add your actions here -->
     <action id="api-generator.ID" class="site.forgus.plugins.apigenerator.normal.ApiGenerateAction" text="Api Generate"
-            description="generate markdown for Dubbo api">
+            description="generate markdown for interface">
       <add-to-group group-id="EditorLangPopupMenu" anchor="first"/>
     </action>
     <action id="yapi-generator.ID" class="site.forgus.plugins.apigenerator.yapi.YApiGenerateAction" text="YApi Generate"
