@@ -120,7 +120,7 @@ public class ApiGenerateAction extends AnAction {
         md.write("\t<version>" + pomModel.getVersion() + "</version>\n");
         md.write("</dependency>\n");
         md.write("```\n");
-        md.write("## Dubbo接口声明\n");
+        md.write("## 接口声明\n");
         md.write("```java\n");
         md.write("package " + methodInfo.getPackageName() + ";\n\n");
         md.write("public interface " + methodInfo.getClassName() + " {\n\n");
