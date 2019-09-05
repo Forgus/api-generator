@@ -17,7 +17,8 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import site.forgus.plugins.apigenerator.config.PersistentConfig;
-import site.forgus.plugins.apigenerator.yapi.util.JsonUtil;
+import site.forgus.plugins.apigenerator.util.JsonUtil;
+import site.forgus.plugins.apigenerator.util.MethodUtil;
 
 import java.io.*;
 
@@ -101,7 +102,7 @@ public class ApiGenerateAction extends AnAction {
         if (!mkdirectory(project, dirPath)) {
             return;
         }
-        MethodInfo methodInfo = BuildMdForApi.getMethodInfo(project, selectedMethod);
+        MethodInfo methodInfo = MethodUtil.getMethodInfo(project, selectedMethod);
         String fileName = getFileName(methodInfo);
         File apiDoc = new File(dirPath + "/" + fileName + ".md");
         if (!apiDoc.exists()) {

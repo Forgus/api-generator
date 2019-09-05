@@ -4,7 +4,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import demo.HttpClientUtil;
-import demo.YapiConstant;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import site.forgus.plugins.apigenerator.yapi.ProjectConfig;
 import site.forgus.plugins.apigenerator.yapi.model.*;
@@ -17,8 +16,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static site.forgus.plugins.apigenerator.yapi.util.HttpUtil.buildGetRequest;
-import static site.forgus.plugins.apigenerator.yapi.util.HttpUtil.buildPostRequestWithJsonType;
+import static site.forgus.plugins.apigenerator.util.HttpUtil.buildGetRequest;
+import static site.forgus.plugins.apigenerator.util.HttpUtil.buildPostRequestWithJsonType;
 
 public class YApiSdk {
 

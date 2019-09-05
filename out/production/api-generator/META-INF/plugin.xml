@@ -6,7 +6,9 @@
 
   <description><![CDATA[
       Api Generator.<br>
-      <em>Support generate markdown for interface or upload to YApi for REST api.</em> <br>
+      <em>Support generate markdown for interface or upload to YApi for REST api.</em> <br><br>
+      Usage:<br>
+      keep cursor on method area or class name,right click mouse,then click "Api Generate" or "YApi Generate".<br><br>
       Plugin settings:<br>
       Preferences —> Other Settings —> Api Generator Setting
     ]]></description>

@@ -2,16 +2,20 @@
   <id>site.forgus.plugins.api-generator</id>
   <name>API Generator</name>
   <version>2.0</version>
-  <vendor email="wenbin1876@gmail.com" url="http://www.forgus.site">Forgus</vendor>
+  <vendor email="wenbin1876@gmail.com" url="http://forgus.vicp.io">Forgus</vendor>
 
   <description><![CDATA[
       Api Generator.<br>
-      <em>Support generate markdown for interface or upload to YApi for REST api.</em> <br>
+      <em>Support generate markdown for interface or upload to YApi for REST api.</em> <br><br>
+      Usage:<br>
+      keep cursor on method area or class name,right click mouse,then click "Api Generate" or "YApi Generate".<br><br>
       Plugin settings:<br>
       Preferences —> Other Settings —> Api Generator Setting
     ]]></description>
 
   <change-notes><![CDATA[
+      <em>2.0.1</em>
+      Add plugin usage description.
       <em>2.0</em>
       Support upload to YApi for REST api.<br>
       <em>1.1</em>

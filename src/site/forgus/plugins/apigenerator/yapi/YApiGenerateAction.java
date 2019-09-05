@@ -3,8 +3,6 @@ package site.forgus.plugins.apigenerator.yapi;
 import com.google.common.base.Strings;
 import com.intellij.notification.NotificationType;
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.actionSystem.CommonDataKeys;
-import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
 import com.intellij.psi.javadoc.PsiDocComment;
@@ -12,12 +10,12 @@ import com.intellij.psi.search.GlobalSearchScope;
 import demo.*;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import site.forgus.plugins.apigenerator.config.PersistentConfig;
 import site.forgus.plugins.apigenerator.normal.DesUtil;
 import site.forgus.plugins.apigenerator.normal.*;
 import site.forgus.plugins.apigenerator.yapi.model.*;
 import site.forgus.plugins.apigenerator.yapi.sdk.YApiSdk;
-import site.forgus.plugins.apigenerator.yapi.util.JsonUtil;
+import site.forgus.plugins.apigenerator.util.JsonUtil;
+import site.forgus.plugins.apigenerator.util.MethodUtil;
 
 import java.io.IOException;
 import java.util.*;
@@ -104,7 +102,7 @@ public class YApiGenerateAction extends ApiGenerateAction {
             NotifyUtil.log(notificationGroup, project, "Invalid Class File!", NotificationType.INFORMATION);
             return null;
         }
-        MethodInfo methodInfo = BuildMdForApi.getMethodInfo(project, psiMethod);
+        MethodInfo methodInfo = MethodUtil.getMethodInfo(project, psiMethod);
         PsiAnnotation methodMapping = getMethodMapping(psiMethod);
         YApiInterface yApiInterface = new YApiInterface();
         yApiInterface.setToken(config.getState().token);

@@ -1,4 +1,4 @@
-package site.forgus.plugins.apigenerator.yapi.util;
+package site.forgus.plugins.apigenerator.util;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.HttpGet;

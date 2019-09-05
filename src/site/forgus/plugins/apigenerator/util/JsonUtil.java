@@ -1,4 +1,4 @@
-package site.forgus.plugins.apigenerator.yapi.util;
+package site.forgus.plugins.apigenerator.util;
 
 import com.google.gson.GsonBuilder;
 import com.intellij.psi.PsiClass;
