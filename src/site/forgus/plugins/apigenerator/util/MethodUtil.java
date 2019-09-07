@@ -18,7 +18,7 @@ public class MethodUtil {
     public static MethodInfo getMethodInfo(Project project, PsiMethod psiMethod) {
         MethodInfo methodInfo = new MethodInfo();
         List<FieldInfo> paramFieldInfoList = listParamFieldInfos(project, psiMethod);
-        List<FieldInfo> responseFieldInfoList = listResponseFieldInfo(psiMethod, project);
+        List<FieldInfo> responseFieldInfoList = listResponseFieldInfo(project,psiMethod);
         methodInfo.setDesc(DesUtil.getDescription(psiMethod));
         PsiClass psiClass = psiMethod.getContainingClass();
         methodInfo.setPackageName(PsiUtil.getPackageName(psiClass));
@@ -49,9 +49,8 @@ public class MethodUtil {
         return fieldInfoList;
     }
 
-    public static List<FieldInfo> listResponseFieldInfo(PsiMethod psiMethodTarget, Project project) {
-        //todo
-        PsiType psiType = psiMethodTarget.getReturnType();
+    public static List<FieldInfo> listResponseFieldInfo(Project project,PsiMethod psiMethod) {
+        PsiType psiType = psiMethod.getReturnType();
         if (psiType == null) {
             return null;
         }

@@ -10,6 +10,7 @@ import org.apache.commons.lang.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class FieldInfo {
@@ -59,6 +60,7 @@ public class FieldInfo {
         if(psiType == null) {
             return new ArrayList<>();
         }
+        List<FieldInfo> fieldInfos = new ArrayList<>();
         if(psiType instanceof PsiClassReferenceType) {
             PsiClass psiClass = PsiUtil.resolveClassInType(psiType);
             String typeName = psiType.getPresentableText();
@@ -74,21 +76,19 @@ public class FieldInfo {
                 if (iterableClass == null) {
                     return listFieldInfos(project,iterableType);
                 }
-                List<FieldInfo> fieldInfos = new ArrayList<>();
                 for (PsiField psiField : iterableClass.getAllFields()) {
                     resolveFields(project, fieldInfos, psiField);
                 }
                 return fieldInfos;
             }
             if(typeName.startsWith("Map")) {
-                //TODO
-                return new ArrayList<>();
+                fieldInfos.add(FieldInfo.child(typeName, psiType, "", new PsiAnnotation[0]));
+                return fieldInfos;
             }
             if (typeName.contains("<")) {
                 PsiClass outerClass = PsiUtil.resolveGenericsClassInType(psiType).getElement();
                 PsiType innerType = PsiUtil.substituteTypeParameter(psiType, outerClass, 0, false);
                 PsiElementFactory elementFactory = JavaPsiFacade.getInstance(project).getElementFactory();
-                List<FieldInfo> fieldInfos = new ArrayList<>();
                 for (PsiField outField : outerClass.getAllFields()) {
                     if (NormalTypes.genericList.contains(outField.getType().getPresentableText())) {
                         resolveFields(project, fieldInfos, elementFactory.createField(outField.getName(), innerType));
@@ -101,7 +101,6 @@ public class FieldInfo {
             if (psiClass == null) {
                 return new ArrayList<>();
             }
-            List<FieldInfo> fieldInfos = new ArrayList<>();
             for (PsiField psiField : psiClass.getAllFields()) {
                 resolveFields(project, fieldInfos, psiField);
             }
@@ -133,7 +132,7 @@ public class FieldInfo {
             return;
         }
         if (typeName.startsWith("Map")) {
-            //TODO
+            fieldInfos.add(FieldInfo.child(name, type, desc, psiField.getAnnotations()));
             return;
         }
         if (typeName.contains("<")) {

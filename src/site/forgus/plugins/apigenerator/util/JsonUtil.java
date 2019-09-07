@@ -72,7 +72,6 @@ public class JsonUtil {
         if (ParamTypeEnum.LITERAL.equals(fieldInfo.getParamType())) {
             return fieldInfo.getValue();
         }
-        Map<String, Object> map = new HashMap<>();
         if (ParamTypeEnum.ARRAY.equals(fieldInfo.getParamType())) {
             if (CollectionUtils.isNotEmpty(fieldInfo.getChildren())) {
                 return Collections.singletonList(buildJsonValue(fieldInfo.getChildren()));
@@ -86,6 +85,9 @@ public class JsonUtil {
 
     private static Object buildJsonValue(List<FieldInfo> fieldInfos) {
         Map<String, Object> map = new HashMap<>(32);
+        if(CollectionUtils.isEmpty(fieldInfos)) {
+            return map;
+        }
         for (FieldInfo fieldInfo : fieldInfos) {
             map.put(fieldInfo.getName(), buildJsonValue(fieldInfo));
         }

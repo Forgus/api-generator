@@ -2,7 +2,7 @@
   <id>site.forgus.plugins.api-generator</id>
   <name>API Generator</name>
   <version>2.0</version>
-  <vendor email="wenbin1876@gmail.com" url="http://www.forgus.site">Forgus</vendor>
+  <vendor email="wenbin1876@gmail.com" url="http://forgus.vicp.io">Forgus</vendor>
 
   <description><![CDATA[
       Api Generator.<br>
@@ -14,6 +14,8 @@
     ]]></description>
 
   <change-notes><![CDATA[
+      <em>2.0.1</em>
+      Add plugin usage description.
       <em>2.0</em>
       Support upload to YApi for REST api.<br>
       <em>1.1</em>
