@@ -14,9 +14,10 @@ public class PersistentConfig implements PersistentStateComponent<PersistentConf
         public String dirPath = "";
         public String prefix = "└";
         public Boolean cnFileName = false;
-        public String token = "";
-        public String projectId = "";
+
         public String yApiUrl = "";
+        public String projectToken = "";
+        public String projectId = "";
         public Boolean autoCat = false;
         public String defaultCat = "api_generator";
     }

@@ -79,12 +79,13 @@ public class ApiGenerateAction extends AnAction {
 
     protected void generateDocsWithClass(Project project, PsiClass selectedClass) throws IOException {
         String dirPath = getDirPath(project);
-        if (!mkdirectory(project, dirPath)) {
+        if (!mkDirectory(project, dirPath)) {
             return;
         }
         for (PsiMethod psiMethod : selectedClass.getMethods()) {
             generateDocWithMethod(project, psiMethod,dirPath);
         }
+        NotifyUtil.log(notificationGroup, project, "generate api doc success.", NotificationType.INFORMATION);
     }
 
     private String getDirPath(Project project) {
@@ -99,7 +100,7 @@ public class ApiGenerateAction extends AnAction {
     }
 
     protected void generateDocWithMethod(Project project, PsiMethod selectedMethod,String dirPath) throws IOException {
-        if (!mkdirectory(project, dirPath)) {
+        if (!mkDirectory(project, dirPath)) {
             return;
         }
         MethodInfo methodInfo = MethodUtil.getMethodInfo(project, selectedMethod);
@@ -163,14 +164,14 @@ public class ApiGenerateAction extends AnAction {
 
     protected void generateDocWithMethod(Project project, PsiMethod selectedMethod) throws IOException {
         String dirPath = getDirPath(project);
-        if (!mkdirectory(project, dirPath)) {
+        if (!mkDirectory(project, dirPath)) {
             return;
         }
         generateDocWithMethod(project,selectedMethod,dirPath);
         NotifyUtil.log(notificationGroup, project, "generate api doc success.", NotificationType.INFORMATION);
     }
 
-    private boolean mkdirectory(Project project, String dirPath) {
+    private boolean mkDirectory(Project project, String dirPath) {
         File dir = new File(dirPath);
         if (!dir.exists()) {
             boolean success = dir.mkdirs();

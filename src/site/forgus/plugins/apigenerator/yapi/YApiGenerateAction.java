@@ -42,13 +42,46 @@ public class YApiGenerateAction extends ApiGenerateAction {
 
 
     @Override
-    protected void generateDocsWithClass(Project project, PsiClass selectedClass) throws IOException {
-        PsiMethod[] methods = selectedClass.getMethods();
+    protected void generateDocsWithClass(Project project, PsiClass psiClass) throws IOException {
+        if(!haveControllerAnnotation(psiClass)) {
+            NotifyUtil.log(notificationGroup, project, "Upload api failed, reason:\n not REST api.", NotificationType.WARNING);
+            return;
+        }
+        if(StringUtils.isEmpty(config.getState().yApiUrl)){
+            NotifyUtil.log(notificationGroup, project, "YApi url can not be empty.", NotificationType.WARNING);
+            return;
+        }
+        if(StringUtils.isEmpty(config.getState().projectToken)){
+            NotifyUtil.log(notificationGroup, project, "Project token can not be empty.", NotificationType.WARNING);
+            return;
+        }
+        if(StringUtils.isEmpty(config.getState().projectId)){
+            NotifyUtil.log(notificationGroup, project, "Project id can not be empty.", NotificationType.WARNING);
+            return;
+        }
+        PsiMethod[] methods = psiClass.getMethods();
+        boolean uploadSuccess = false;
         for (PsiMethod method : methods) {
             if (hasMappingAnnotation(method)) {
                 uploadToYApi(project, method);
+                uploadSuccess = true;
             }
         }
+        if(uploadSuccess) {
+            NotifyUtil.log(notificationGroup, project, "Upload api success.", NotificationType.INFORMATION);
+            return;
+        }
+        NotifyUtil.log(notificationGroup, project, "Upload api failed, reason:\n not REST api.", NotificationType.WARNING);
+    }
+
+    private boolean haveControllerAnnotation(PsiClass psiClass) {
+        PsiAnnotation[] annotations = psiClass.getAnnotations();
+        for (PsiAnnotation annotation : annotations) {
+            if (annotation.getText().contains("Controller")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private boolean hasMappingAnnotation(PsiMethod method) {
@@ -64,7 +97,7 @@ public class YApiGenerateAction extends ApiGenerateAction {
     @Override
     protected void generateDocWithMethod(Project project, PsiMethod selectedMethod) throws IOException {
         if (!hasMappingAnnotation(selectedMethod)) {
-            NotifyUtil.log(notificationGroup, project, "Upload api failed, reason:\n not http method!", NotificationType.ERROR);
+            NotifyUtil.log(notificationGroup, project, "Upload api failed, reason:\n not REST api.", NotificationType.WARNING);
             return;
         }
         uploadToYApi(project, selectedMethod);
@@ -105,7 +138,7 @@ public class YApiGenerateAction extends ApiGenerateAction {
         MethodInfo methodInfo = MethodUtil.getMethodInfo(project, psiMethod);
         PsiAnnotation methodMapping = getMethodMapping(psiMethod);
         YApiInterface yApiInterface = new YApiInterface();
-        yApiInterface.setToken(config.getState().token);
+        yApiInterface.setToken(config.getState().projectToken);
 
         yApiInterface.setMethod(getMethodFromAnnotation(methodMapping));
         if(methodInfo.getParamStr().contains("RequestBody")) {
@@ -143,7 +176,7 @@ public class YApiGenerateAction extends ApiGenerateAction {
             catId = apiCat.get_id().toString();
         }
         if (catId == null) {
-            YApiResponse<YApiCat> yApiResponse = YApiSdk.addCategory(config.getState().token, config.getState().projectId, catName);
+            YApiResponse<YApiCat> yApiResponse = YApiSdk.addCategory(config.getState().projectToken, config.getState().projectId, catName);
             catId = yApiResponse.getData().get_id().toString();
         }
         return catId;
@@ -353,7 +386,7 @@ public class YApiGenerateAction extends ApiGenerateAction {
     }
 
     private Map<String, YApiCat> getCatNameMap() throws IOException {
-        List<YApiCat> yApiCats = YApiSdk.listCategories(config.getState().token);
+        List<YApiCat> yApiCats = YApiSdk.listCategories(config.getState().projectToken);
         Map<String, YApiCat> catNameMap = new HashMap<>();
         for (YApiCat cat : yApiCats) {
             catNameMap.put(cat.getName(), cat);

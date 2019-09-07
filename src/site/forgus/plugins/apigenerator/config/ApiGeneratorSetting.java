@@ -64,7 +64,7 @@ public class ApiGeneratorSetting implements Configurable {
         yApiPanel.add(yApiUrlTextField);
 
         yApiPanel.add(buildLabel(layout,"Project token:"));
-        tokenTextField = buildTextField(layout,state.token);
+        tokenTextField = buildTextField(layout,state.projectToken);
         yApiPanel.add(tokenTextField);
 
         yApiPanel.add(buildLabel(layout,"Project id:"));
@@ -116,7 +116,7 @@ public class ApiGeneratorSetting implements Configurable {
         return !state.prefix.equals(prefixTextField.getText()) ||
                 state.cnFileName != cnFileNameCheckBox.isSelected() ||
                 !state.yApiUrl.equals(yApiUrlTextField.getText()) ||
-                !state.token.equals(yApiUrlTextField.getText()) ||
+                !state.projectToken.equals(yApiUrlTextField.getText()) ||
                 !state.projectId.equals(projectIdTextField.getText()) ||
                 !state.defaultCat.equals(defaultCatTextField.getText()) ||
                 state.autoCat != autoCatCheckBox.isSelected() ||
@@ -129,7 +129,7 @@ public class ApiGeneratorSetting implements Configurable {
         config.getState().prefix = prefixTextField.getText();
         config.getState().cnFileName = cnFileNameCheckBox.isSelected();
         config.getState().yApiUrl = yApiUrlTextField.getText();
-        config.getState().token = tokenTextField.getText();
+        config.getState().projectToken = tokenTextField.getText();
         config.getState().projectId = projectIdTextField.getText();
         config.getState().defaultCat = defaultCatTextField.getText();
         config.getState().autoCat = autoCatCheckBox.isSelected();
