@@ -267,10 +267,13 @@ public class ApiGenerateAction extends AnAction {
             }
             return "Object";
         }
-        if (presentableText.contains("<")) {
+        if (presentableText.contains("List") || presentableText.contains("Set")) {
             PsiType iterableType = PsiUtil.extractIterableTypeParameter(psiType, false);
             String iterableTypePresentableText = iterableType == null ? "" : iterableType.getPresentableText();
             return iterableTypePresentableText + "[]";
+        }
+        if(presentableText.contains("Map")) {
+            return "{}";
         }
         return presentableText;
     }

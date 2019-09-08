@@ -86,7 +86,7 @@ public class FieldInfo {
                 return fieldInfos;
             }
             if (typeName.contains("<")) {
-                PsiClass outerClass = PsiUtil.resolveGenericsClassInType(psiType).getElement();
+                PsiClass outerClass = PsiUtil.resolveClassInType(psiType);
                 PsiType innerType = PsiUtil.substituteTypeParameter(psiType, outerClass, 0, false);
                 PsiElementFactory elementFactory = JavaPsiFacade.getInstance(project).getElementFactory();
                 for (PsiField outField : outerClass.getAllFields()) {
@@ -132,11 +132,21 @@ public class FieldInfo {
             return;
         }
         if (typeName.startsWith("Map")) {
-            fieldInfos.add(FieldInfo.child(name, type, desc, psiField.getAnnotations()));
+            PsiType keyType = PsiUtil.substituteTypeParameter(type, PsiUtil.resolveClassInType(type), 0, false);
+            PsiType valueType = PsiUtil.substituteTypeParameter(type, PsiUtil.resolveClassInType(type), 1, false);
+            String containingClassName = psiField.getContainingClass().getName();
+            String valueClassName = valueType.getPresentableText();
+            if(containingClassName.equals(valueClassName)) {
+                fieldInfos.add(child(name,type,desc,new PsiAnnotation[0]));
+                return;
+            }
+            List<FieldInfo> children = new ArrayList<>();
+            children.add(normal(keyType.getPresentableText(),valueType,"",listFieldInfos(project,valueType),new PsiAnnotation[0]));
+            fieldInfos.add(parent(name, type, desc, children,psiField.getAnnotations()));
             return;
         }
         if (typeName.contains("<")) {
-            PsiClass outerClass = PsiUtil.resolveGenericsClassInType(type).getElement();
+            PsiClass outerClass = PsiUtil.resolveClassInType(type);
             PsiType innerType = PsiUtil.substituteTypeParameter(type, outerClass, 0, false);
             PsiElementFactory elementFactory = JavaPsiFacade.getInstance(project).getElementFactory();
             for (PsiField outField : outerClass.getAllFields()) {
@@ -150,7 +160,7 @@ public class FieldInfo {
         }
         PsiClass containingClass = psiField.getContainingClass();
         PsiClass psiClass = PsiUtil.resolveClassInType(type);
-        if(psiClass.isEnum() || containingClass.getText().equals(psiClass.getText())) {
+        if(psiClass.isEnum() || containingClass.getName().equals(psiClass.getName())) {
             fieldInfos.add(FieldInfo.normal(name,type,desc,new ArrayList<>(),psiField.getAnnotations()));
             return;
         }
