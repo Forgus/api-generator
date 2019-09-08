@@ -1,7 +1,7 @@
 <idea-plugin>
   <id>site.forgus.plugins.api-generator</id>
   <name>API Generator</name>
-  <version>2.0</version>
+  <version>2.0.1</version>
   <vendor email="wenbin1876@gmail.com" url="http://forgus.vicp.io">Forgus</vendor>
 
   <description><![CDATA[
@@ -51,5 +51,7 @@
       <add-to-group group-id="EditorLangPopupMenu" anchor="first"/>
     </action>
   </actions>
+
+  <depends>com.intellij.modules.java</depends>
 
 </idea-plugin>
