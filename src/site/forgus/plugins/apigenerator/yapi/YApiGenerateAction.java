@@ -166,20 +166,32 @@ public class YApiGenerateAction extends ApiGenerateAction {
     }
 
     private String getCatId(Map<String, YApiCat> catNameMap, PsiDocComment classDesc) throws IOException {
-        String catId = null;
-        String catName = config.getState().defaultCat;
-        if (classDesc != null) {
-            catName = DesUtil.getDescription(classDesc).split(" ")[0];
+        String defaultCatName = getDefaultCatName();
+        String catName;
+        if(config.getState().autoCat) {
+            String classCatName = getClassCatName(classDesc);
+            catName = StringUtils.isEmpty(classCatName) ? defaultCatName : classCatName;
+        }else {
+            catName = defaultCatName;
         }
         YApiCat apiCat = catNameMap.get(catName);
         if (apiCat != null) {
-            catId = apiCat.get_id().toString();
+            return apiCat.get_id().toString();
         }
-        if (catId == null) {
-            YApiResponse<YApiCat> yApiResponse = YApiSdk.addCategory(config.getState().projectToken, config.getState().projectId, catName);
-            catId = yApiResponse.getData().get_id().toString();
+        YApiResponse<YApiCat> yApiResponse = YApiSdk.addCategory(config.getState().projectToken, config.getState().projectId, catName);
+        return yApiResponse.getData().get_id().toString();
+    }
+
+    private String getClassCatName(PsiDocComment classDesc) {
+        if(classDesc == null) {
+            return "";
         }
-        return catId;
+        return DesUtil.getDescription(classDesc).split(" ")[0];
+    }
+
+    private String getDefaultCatName() {
+        String defaultCat = config.getState().defaultCat;
+        return StringUtils.isEmpty(defaultCat) ? "api_generator" : defaultCat;
     }
 
     private List<YApiForm> listYApiForms(List<FieldInfo> requestFields) {
