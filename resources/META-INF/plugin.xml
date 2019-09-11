@@ -1,7 +1,7 @@
 <idea-plugin>
   <id>site.forgus.plugins.api-generator</id>
   <name>API Generator</name>
-  <version>2.0.1</version>
+  <version>2.1.0</version>
   <vendor email="wenbin1876@gmail.com" url="http://forgus.vicp.io">Forgus</vendor>
 
   <description><![CDATA[
@@ -14,8 +14,10 @@
     ]]></description>
 
   <change-notes><![CDATA[
+      <em>2.1.0</em>
+      Support generate markdown for class.<br>
       <em>2.0.1</em>
-      Add plugin usage description.
+      Add plugin usage description.<br>
       <em>2.0</em>
       Support upload to YApi for REST api.<br>
       <em>1.1</em>
@@ -37,17 +39,13 @@
   <extensions defaultExtensionNs="com.intellij">
     <!-- Add your extensions here -->
     <applicationConfigurable instance="site.forgus.plugins.apigenerator.config.ApiGeneratorSetting"  />
-    <applicationService serviceInterface="site.forgus.plugins.apigenerator.config.PersistentConfig" serviceImplementation="site.forgus.plugins.apigenerator.config.PersistentConfig"/>
+    <applicationService serviceImplementation="site.forgus.plugins.apigenerator.config.PersistentConfig"/>
   </extensions>
 
   <actions>
     <!-- Add your actions here -->
-    <action id="api-generator.ID" class="site.forgus.plugins.apigenerator.normal.ApiGenerateAction" text="Api Generate"
-            description="generate markdown for interface">
-      <add-to-group group-id="EditorLangPopupMenu" anchor="first"/>
-    </action>
-    <action id="yapi-generator.ID" class="site.forgus.plugins.apigenerator.yapi.YApiGenerateAction" text="YApi Generate"
-            description="upload to YApi for REST api">
+    <action id="api-generator.ID" class="site.forgus.plugins.apigenerator.normal.ApiGenerateAction" text="Generate Api"
+            description="Generate api for target code.">
       <add-to-group group-id="EditorLangPopupMenu" anchor="first"/>
     </action>
   </actions>

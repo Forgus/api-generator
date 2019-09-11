@@ -54,6 +54,10 @@ public class MethodUtil {
         if (psiType == null) {
             return null;
         }
+        return listFieldInfos(project, psiType);
+    }
+
+    public static List<FieldInfo> listFieldInfos(Project project, PsiType psiType) {
         if (NormalTypes.isNormalType(psiType.getPresentableText())) {
             return Collections.singletonList(FieldInfo.child(psiType.getPresentableText(), psiType, "", new PsiAnnotation[0]));
         }

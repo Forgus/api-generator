@@ -42,7 +42,7 @@ public class YApiGenerateAction extends ApiGenerateAction {
 
 
     @Override
-    protected void generateDocsWithClass(Project project, PsiClass psiClass) throws IOException {
+    protected void generateMarkdownsForAllMethods(Project project, PsiClass psiClass) throws IOException {
         if(!haveControllerAnnotation(psiClass)) {
             NotifyUtil.log(notificationGroup, project, "Upload api failed, reason:\n not REST api.", NotificationType.WARNING);
             return;
@@ -95,7 +95,7 @@ public class YApiGenerateAction extends ApiGenerateAction {
     }
 
     @Override
-    protected void generateDocWithMethod(Project project, PsiMethod selectedMethod) throws IOException {
+    protected void generateMarkdownForSelectedMethod(Project project, PsiMethod selectedMethod) throws IOException {
         if (!hasMappingAnnotation(selectedMethod)) {
             NotifyUtil.log(notificationGroup, project, "Upload api failed, reason:\n not REST api.", NotificationType.WARNING);
             return;

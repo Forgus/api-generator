@@ -1,5 +1,6 @@
 package site.forgus.plugins.apigenerator.normal;
 
+import com.google.common.base.Strings;
 import com.intellij.notification.*;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
@@ -7,9 +8,11 @@ import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
+import com.intellij.psi.javadoc.PsiDocComment;
 import com.intellij.psi.search.FilenameIndex;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.util.PsiTreeUtil;
+import com.intellij.psi.util.PsiTypesUtil;
 import com.intellij.psi.util.PsiUtil;
 import demo.NotifyUtil;
 import org.apache.commons.collections.CollectionUtils;
@@ -19,12 +22,15 @@ import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import site.forgus.plugins.apigenerator.config.PersistentConfig;
 import site.forgus.plugins.apigenerator.util.JsonUtil;
 import site.forgus.plugins.apigenerator.util.MethodUtil;
+import site.forgus.plugins.apigenerator.yapi.model.*;
+import site.forgus.plugins.apigenerator.yapi.sdk.YApiSdk;
 
 import java.io.*;
+import java.util.*;
 
 public class ApiGenerateAction extends AnAction {
 
-    protected static NotificationGroup notificationGroup =  new NotificationGroup("Java2Json.NotificationGroup",NotificationDisplayType.BALLOON, true);
+    protected static NotificationGroup notificationGroup = new NotificationGroup("Java2Json.NotificationGroup", NotificationDisplayType.BALLOON, true);
 
     protected PersistentConfig config = PersistentConfig.getInstance();
     protected AnActionEvent actionEvent;
@@ -51,11 +57,22 @@ public class ApiGenerateAction extends AnAction {
             Notifications.Bus.notify(error, project);
             return;
         }
+        if (selectedClass.isInterface()) {
+            generateMarkdownForInterface(project, referenceAt, selectedClass);
+            return;
+        }
+        if (haveControllerAnnotation(selectedClass)) {
+            uploadApiToYApi(project, referenceAt, selectedClass);
+            return;
+        }
+        generateMarkdownForClass(project, selectedClass);
+    }
 
+    private void uploadApiToYApi(Project project, PsiElement referenceAt, PsiClass selectedClass) {
         PsiMethod selectedMethod = PsiTreeUtil.getContextOfType(referenceAt, PsiMethod.class);
         if (selectedMethod != null) {
             try {
-                generateDocWithMethod(project, selectedMethod);
+                uploadSelectedMethodToYApi(project, selectedMethod);
             } catch (IOException e) {
                 Notification error = notificationGroup.createNotification(e.getMessage(), NotificationType.ERROR);
                 Notifications.Bus.notify(error, project);
@@ -63,11 +80,399 @@ public class ApiGenerateAction extends AnAction {
             return;
         }
         try {
-            generateDocsWithClass(project, selectedClass);
+            uploadHttpMethodsToYApi(project, selectedClass);
         } catch (IOException e) {
             Notification error = notificationGroup.createNotification(e.getMessage(), NotificationType.ERROR);
             Notifications.Bus.notify(error, project);
         }
+    }
+
+    private void uploadHttpMethodsToYApi(Project project, PsiClass psiClass) throws IOException {
+        if (!haveControllerAnnotation(psiClass)) {
+            NotifyUtil.log(notificationGroup, project, "Upload api failed, reason:\n not REST api.", NotificationType.WARNING);
+            return;
+        }
+        if (StringUtils.isEmpty(config.getState().yApiUrl)) {
+            NotifyUtil.log(notificationGroup, project, "YApi url can not be empty.", NotificationType.WARNING);
+            return;
+        }
+        if (StringUtils.isEmpty(config.getState().projectToken)) {
+            NotifyUtil.log(notificationGroup, project, "Project token can not be empty.", NotificationType.WARNING);
+            return;
+        }
+        if (StringUtils.isEmpty(config.getState().projectId)) {
+            NotifyUtil.log(notificationGroup, project, "Project id can not be empty.", NotificationType.WARNING);
+            return;
+        }
+        PsiMethod[] methods = psiClass.getMethods();
+        boolean uploadSuccess = false;
+        for (PsiMethod method : methods) {
+            if (hasMappingAnnotation(method)) {
+                uploadToYApi(project, method);
+                uploadSuccess = true;
+            }
+        }
+        if (uploadSuccess) {
+            NotifyUtil.log(notificationGroup, project, "Upload api success.", NotificationType.INFORMATION);
+            return;
+        }
+        NotifyUtil.log(notificationGroup, project, "Upload api failed, reason:\n not REST api.", NotificationType.WARNING);
+    }
+
+    private void generateMarkdownForInterface(Project project, PsiElement referenceAt, PsiClass selectedClass) {
+        PsiMethod selectedMethod = PsiTreeUtil.getContextOfType(referenceAt, PsiMethod.class);
+        if (selectedMethod != null) {
+            try {
+                generateMarkdownForSelectedMethod(project, selectedMethod);
+            } catch (IOException e) {
+                Notification error = notificationGroup.createNotification(e.getMessage(), NotificationType.ERROR);
+                Notifications.Bus.notify(error, project);
+            }
+            return;
+        }
+        try {
+            generateMarkdownsForAllMethods(project, selectedClass);
+        } catch (IOException e) {
+            Notification error = notificationGroup.createNotification(e.getMessage(), NotificationType.ERROR);
+            Notifications.Bus.notify(error, project);
+        }
+    }
+
+    private void generateMarkdownForClass(Project project, PsiClass psiClass){
+        String dirPath = getDirPath(project);
+        if (!mkDirectory(project, dirPath)) {
+            return;
+        }
+        try {
+            generateDocForClass(project,psiClass,dirPath);
+        } catch (IOException e) {
+            Notification error = notificationGroup.createNotification(e.getMessage(), NotificationType.ERROR);
+            Notifications.Bus.notify(error, project);
+        }
+        NotifyUtil.log(notificationGroup, project, "generate api doc success.", NotificationType.INFORMATION);
+    }
+
+    protected void generateMarkdownForSelectedMethod(Project project, PsiMethod selectedMethod) throws IOException {
+        String dirPath = getDirPath(project);
+        if (!mkDirectory(project, dirPath)) {
+            return;
+        }
+        generateDocForMethod(project, selectedMethod, dirPath);
+        NotifyUtil.log(notificationGroup, project, "generate api doc success.", NotificationType.INFORMATION);
+    }
+
+    protected void generateMarkdownsForAllMethods(Project project, PsiClass selectedClass) throws IOException {
+        String dirPath = getDirPath(project);
+        if (!mkDirectory(project, dirPath)) {
+            return;
+        }
+        for (PsiMethod psiMethod : selectedClass.getMethods()) {
+            generateDocForMethod(project, psiMethod, dirPath);
+        }
+        NotifyUtil.log(notificationGroup, project, "generate api doc success.", NotificationType.INFORMATION);
+    }
+
+
+    private void uploadSelectedMethodToYApi(Project project, PsiMethod method) throws IOException {
+        if (!hasMappingAnnotation(method)) {
+            NotifyUtil.log(notificationGroup, project, "Upload api failed, reason:\n not REST api.", NotificationType.WARNING);
+            return;
+        }
+        uploadToYApi(project, method);
+    }
+
+    private void uploadToYApi(Project project, PsiMethod psiMethod) throws IOException {
+        YApiInterface yApiInterface = buildYApiInterface(project, psiMethod);
+        if (yApiInterface == null) {
+            return;
+        }
+        YApiResponse yApiResponse = YApiSdk.saveInterface(yApiInterface);
+        if (yApiResponse.getErrcode() != 0) {
+            NotifyUtil.log(notificationGroup, project, "Upload api failed, cause:" + yApiResponse.getErrmsg(), NotificationType.ERROR);
+            return;
+        }
+        NotifyUtil.log(notificationGroup, project, "Upload api success.", NotificationType.INFORMATION);
+    }
+
+    private YApiInterface buildYApiInterface(Project project, PsiMethod psiMethod) throws IOException {
+        PsiClass containingClass = psiMethod.getContainingClass();
+        if (containingClass == null) {
+            return null;
+        }
+        PsiAnnotation controller = null;
+        PsiAnnotation classRequestMapping = null;
+        for (PsiAnnotation annotation : containingClass.getAnnotations()) {
+            String text = annotation.getText();
+            if (text.contains("Controller")) {
+                controller = annotation;
+            } else if (text.contains("RequestMapping")) {
+                classRequestMapping = annotation;
+            }
+        }
+        if (controller == null) {
+            NotifyUtil.log(notificationGroup, project, "Invalid Class File!", NotificationType.INFORMATION);
+            return null;
+        }
+        MethodInfo methodInfo = MethodUtil.getMethodInfo(project, psiMethod);
+        PsiAnnotation methodMapping = getMethodMapping(psiMethod);
+        YApiInterface yApiInterface = new YApiInterface();
+        yApiInterface.setToken(config.getState().projectToken);
+
+        yApiInterface.setMethod(getMethodFromAnnotation(methodMapping));
+        if (methodInfo.getParamStr().contains("RequestBody")) {
+            yApiInterface.setReq_headers(Collections.singletonList(new YApiHeader("Content-Type", "application/json")));
+            yApiInterface.setReq_body_type("json");
+            yApiInterface.setReq_body_other(JsonUtil.buildJson5(methodInfo.getRequestFields()));
+        } else {
+            yApiInterface.setReq_headers(Collections.singletonList(new YApiHeader("Content-Type", "application/x-www-form-urlencoded")));
+            if (yApiInterface.getMethod().equals("POST")) {
+                yApiInterface.setReq_body_type("form");
+                yApiInterface.setReq_body_form(listYApiForms(methodInfo.getRequestFields()));
+            } else if ("GET".equals(yApiInterface.getMethod())) {
+                yApiInterface.setReq_query(listYApiQueries(methodInfo.getRequestFields()));
+            }
+        }
+        Map<String, YApiCat> catNameMap = getCatNameMap();
+        PsiDocComment classDesc = containingClass.getDocComment();
+        yApiInterface.setCatid(getCatId(catNameMap, classDesc));
+        yApiInterface.setTitle(methodInfo.getDesc());
+        yApiInterface.setPath(getPathFromAnnotation(classRequestMapping) + getPathFromAnnotation(methodMapping));
+        yApiInterface.setRes_body(JsonUtil.buildJson5(methodInfo.getResponseFields()));
+        yApiInterface.setReq_params(listYApiPathVariables(methodInfo.getRequestFields()));
+        yApiInterface.setDesc(Objects.nonNull(yApiInterface.getDesc()) ? yApiInterface.getDesc() : "<pre><code data-language=\"java\" class=\"java\">" + getMethodDesc(psiMethod) + "</code> </pre>");
+        return yApiInterface;
+    }
+
+    private String getMethodDesc(PsiMethod psiMethod) {
+        String methodDesc = psiMethod.getText().replace(Objects.nonNull(psiMethod.getBody()) ? psiMethod.getBody().getText() : "", "");
+        if (!Strings.isNullOrEmpty(methodDesc)) {
+            methodDesc = methodDesc.replace("<", "&lt;").replace(">", "&gt;");
+        }
+        return methodDesc;
+    }
+
+    private List<YApiPathVariable> listYApiPathVariables(List<FieldInfo> requestFields) {
+        List<YApiPathVariable> yApiPathVariables = new ArrayList<>();
+        for (FieldInfo fieldInfo : requestFields) {
+            List<PsiAnnotation> annotations = fieldInfo.getAnnotations();
+            PsiAnnotation pathVariable = findAnnotationByName(annotations, "PathVariable");
+            if (pathVariable != null) {
+                YApiPathVariable yApiPathVariable = new YApiPathVariable();
+                PsiNameValuePair[] psiNameValuePairs = pathVariable.getParameterList().getAttributes();
+                if (psiNameValuePairs.length > 0) {
+                    for (PsiNameValuePair psiNameValuePair : psiNameValuePairs) {
+                        String name = psiNameValuePair.getName();
+                        String literalValue = psiNameValuePair.getLiteralValue();
+                        if (StringUtils.isNotEmpty(literalValue)) {
+                            if ("value".equals(name) || "name".equals(name)) {
+                                yApiPathVariable.setName(literalValue);
+                                break;
+                            }
+                        }
+                    }
+                } else {
+                    yApiPathVariable.setName(fieldInfo.getName());
+                }
+                yApiPathVariable.setDesc(fieldInfo.getDesc());
+                yApiPathVariable.setExample(fieldInfo.getValue().toString());
+                yApiPathVariables.add(yApiPathVariable);
+            }
+        }
+        return yApiPathVariables;
+    }
+
+    private PsiAnnotation findAnnotationByName(List<PsiAnnotation> annotations, String text) {
+        for (PsiAnnotation annotation : annotations) {
+            if (annotation.getText().contains(text)) {
+                return annotation;
+            }
+        }
+        return null;
+    }
+
+    private String getPathFromAnnotation(PsiAnnotation annotation) {
+        if (annotation == null) {
+            return "";
+        }
+        PsiNameValuePair[] psiNameValuePairs = annotation.getParameterList().getAttributes();
+        if (psiNameValuePairs.length == 1 && psiNameValuePairs[0].getName() == null) {
+            return psiNameValuePairs[0].getLiteralValue();
+        }
+        if (psiNameValuePairs.length > 1) {
+            for (PsiNameValuePair psiNameValuePair : psiNameValuePairs) {
+                if (psiNameValuePair.getName().equals("value") || psiNameValuePair.getName().equals("path")) {
+                    return psiNameValuePair.getLiteralValue();
+                }
+            }
+        }
+        return "";
+    }
+
+    private String getDefaultCatName() {
+        String defaultCat = config.getState().defaultCat;
+        return StringUtils.isEmpty(defaultCat) ? "api_generator" : defaultCat;
+    }
+
+    private String getClassCatName(PsiDocComment classDesc) {
+        if (classDesc == null) {
+            return "";
+        }
+        return DesUtil.getDescription(classDesc).split(" ")[0];
+    }
+
+    private String getCatId(Map<String, YApiCat> catNameMap, PsiDocComment classDesc) throws IOException {
+        String defaultCatName = getDefaultCatName();
+        String catName;
+        if (config.getState().autoCat) {
+            String classCatName = getClassCatName(classDesc);
+            catName = StringUtils.isEmpty(classCatName) ? defaultCatName : classCatName;
+        } else {
+            catName = defaultCatName;
+        }
+        YApiCat apiCat = catNameMap.get(catName);
+        if (apiCat != null) {
+            return apiCat.get_id().toString();
+        }
+        YApiResponse<YApiCat> yApiResponse = YApiSdk.addCategory(config.getState().projectToken, config.getState().projectId, catName);
+        return yApiResponse.getData().get_id().toString();
+    }
+
+    private Map<String, YApiCat> getCatNameMap() throws IOException {
+        List<YApiCat> yApiCats = YApiSdk.listCategories(config.getState().projectToken);
+        Map<String, YApiCat> catNameMap = new HashMap<>();
+        for (YApiCat cat : yApiCats) {
+            catNameMap.put(cat.getName(), cat);
+        }
+        return catNameMap;
+    }
+
+    private List<YApiQuery> listYApiQueries(List<FieldInfo> requestFields) {
+        List<YApiQuery> queries = new ArrayList<>();
+        for (FieldInfo fieldInfo : requestFields) {
+            if (fieldInfo.getAnnotations().size() == 0) {
+                if (ParamTypeEnum.LITERAL.equals(fieldInfo.getParamType())) {
+                    queries.add(buildYApiQuery(fieldInfo));
+                } else if (ParamTypeEnum.OBJECT.equals(fieldInfo.getParamType())) {
+                    List<FieldInfo> children = fieldInfo.getChildren();
+                    for (FieldInfo info : children) {
+                        queries.add(buildYApiQuery(info));
+                    }
+                } else {
+                    YApiQuery apiQuery = buildYApiQuery(fieldInfo);
+                    apiQuery.setExample("1,1,1");
+                    queries.add(apiQuery);
+                }
+            }
+        }
+        return queries;
+    }
+
+    private YApiQuery buildYApiQuery(FieldInfo fieldInfo) {
+        YApiQuery query = new YApiQuery();
+        query.setName(fieldInfo.getName());
+        query.setDesc(fieldInfo.getDesc());
+        if (fieldInfo.getValue() != null) {
+            query.setExample(fieldInfo.getValue().toString());
+        }
+        query.setRequired(Boolean.toString(fieldInfo.isRequire()));
+        return query;
+    }
+
+    private List<YApiForm> listYApiForms(List<FieldInfo> requestFields) {
+        List<YApiForm> yApiForms = new ArrayList<>();
+        for (FieldInfo fieldInfo : requestFields) {
+            if (fieldInfo.getAnnotations().size() == 0) {
+                if (ParamTypeEnum.LITERAL.equals(fieldInfo.getParamType())) {
+                    yApiForms.add(buildYApiForm(fieldInfo));
+                } else if (ParamTypeEnum.OBJECT.equals(fieldInfo.getParamType())) {
+                    List<FieldInfo> children = fieldInfo.getChildren();
+                    for (FieldInfo info : children) {
+                        yApiForms.add(buildYApiForm(info));
+                    }
+                } else {
+                    YApiForm apiQuery = buildYApiForm(fieldInfo);
+                    apiQuery.setExample("1,1,1");
+                    yApiForms.add(apiQuery);
+                }
+            }
+        }
+        return yApiForms;
+    }
+
+    private YApiForm buildYApiForm(FieldInfo fieldInfo) {
+        YApiForm param = new YApiForm();
+        param.setName(fieldInfo.getName());
+        param.setDesc(fieldInfo.getDesc());
+        if (fieldInfo.getValue() != null) {
+            param.setExample(fieldInfo.getValue().toString());
+        }
+        param.setRequired(Boolean.toString(fieldInfo.isRequire()));
+        return param;
+    }
+
+    private String getMethodFromAnnotation(PsiAnnotation methodMapping) {
+        String text = methodMapping.getText();
+        if (text.contains("RequestMapping")) {
+            return extractMethodFromAttribute(methodMapping);
+        }
+        return extractMethodFromMappingText(text);
+    }
+
+    private String extractMethodFromMappingText(String text) {
+        if (text.contains("GetMapping")) {
+            return "GET";
+        }
+        if (text.contains("PutMapping")) {
+            return "PUT";
+        }
+        if (text.contains("DeleteMapping")) {
+            return "DELETE";
+        }
+        if (text.contains("PatchMapping")) {
+            return "PATCH";
+        }
+        return "POST";
+    }
+
+    private String extractMethodFromAttribute(PsiAnnotation annotation) {
+        PsiNameValuePair[] psiNameValuePairs = annotation.getParameterList().getAttributes();
+        for (PsiNameValuePair psiNameValuePair : psiNameValuePairs) {
+            if ("method".equals(psiNameValuePair.getName())) {
+                return psiNameValuePair.getValue().getReference().resolve().getText();
+            }
+        }
+        return "POST";
+    }
+
+    private PsiAnnotation getMethodMapping(PsiMethod psiMethod) {
+        PsiAnnotation methodMapping = null;
+        for (PsiAnnotation annotation : psiMethod.getAnnotations()) {
+            String text = annotation.getText();
+            if (text.contains("Mapping")) {
+                methodMapping = annotation;
+            }
+        }
+        return methodMapping;
+    }
+
+    private boolean hasMappingAnnotation(PsiMethod method) {
+        PsiAnnotation[] annotations = method.getAnnotations();
+        for (PsiAnnotation annotation : annotations) {
+            if (annotation.getText().contains("Mapping")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean haveControllerAnnotation(PsiClass psiClass) {
+        PsiAnnotation[] annotations = psiClass.getAnnotations();
+        for (PsiAnnotation annotation : annotations) {
+            if (annotation.getText().contains("Controller")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -77,29 +482,45 @@ public class ApiGenerateAction extends AnAction {
         e.getPresentation().setEnabledAndVisible(enabled);
     }
 
-    protected void generateDocsWithClass(Project project, PsiClass selectedClass) throws IOException {
-        String dirPath = getDirPath(project);
-        if (!mkDirectory(project, dirPath)) {
-            return;
-        }
-        for (PsiMethod psiMethod : selectedClass.getMethods()) {
-            generateDocWithMethod(project, psiMethod,dirPath);
-        }
-        NotifyUtil.log(notificationGroup, project, "generate api doc success.", NotificationType.INFORMATION);
-    }
-
     private String getDirPath(Project project) {
         String dirPath = config.getState().dirPath;
         if (StringUtils.isEmpty(dirPath)) {
             return project.getBasePath() + "/target/api_docs";
         }
         if (dirPath.endsWith("/")) {
-            return dirPath.substring(0,dirPath.lastIndexOf("/"));
+            return dirPath.substring(0, dirPath.lastIndexOf("/"));
         }
         return dirPath;
     }
 
-    protected void generateDocWithMethod(Project project, PsiMethod selectedMethod,String dirPath) throws IOException {
+    private void generateDocForClass(Project project, PsiClass psiClass, String dirPath) throws IOException {
+        if (!mkDirectory(project, dirPath)) {
+            return;
+        }
+        File apiDoc = new File(dirPath + "/" + psiClass.getName() + ".md");
+        if (!apiDoc.exists()) {
+            apiDoc.createNewFile();
+        }
+        Writer md = new FileWriter(apiDoc);
+        List<FieldInfo> fieldInfos = FieldInfo.listFieldInfos(psiClass,project);
+        md.write("## 示例\n");
+        if (CollectionUtils.isNotEmpty(fieldInfos)) {
+            md.write("```json\n");
+            md.write(JsonUtil.buildPrettyJson(fieldInfos) + "\n");
+            md.write("```\n");
+        }
+        md.write("## 参数说明\n");
+        if (CollectionUtils.isNotEmpty(fieldInfos)) {
+            md.write("名称|类型|必填|值域范围|描述/示例\n");
+            md.write("--|--|--|--|--\n");
+            for (FieldInfo fieldInfo : fieldInfos) {
+                writeFieldInfo(md, fieldInfo);
+            }
+        }
+        md.close();
+    }
+
+    protected void generateDocForMethod(Project project, PsiMethod selectedMethod, String dirPath) throws IOException {
         if (!mkDirectory(project, dirPath)) {
             return;
         }
@@ -162,15 +583,6 @@ public class ApiGenerateAction extends AnAction {
         md.close();
     }
 
-    protected void generateDocWithMethod(Project project, PsiMethod selectedMethod) throws IOException {
-        String dirPath = getDirPath(project);
-        if (!mkDirectory(project, dirPath)) {
-            return;
-        }
-        generateDocWithMethod(project,selectedMethod,dirPath);
-        NotifyUtil.log(notificationGroup, project, "generate api doc success.", NotificationType.INFORMATION);
-    }
-
     private boolean mkDirectory(Project project, String dirPath) {
         File dir = new File(dirPath);
         if (!dir.exists()) {
@@ -191,7 +603,7 @@ public class ApiGenerateAction extends AnAction {
     }
 
     private String getFileName(MethodInfo methodInfo) {
-        if(!config.getState().cnFileName) {
+        if (!config.getState().cnFileName) {
             return methodInfo.getMethodName();
         }
         if (StringUtils.isEmpty(methodInfo.getDesc()) || !methodInfo.getDesc().contains(" ")) {
@@ -253,7 +665,7 @@ public class ApiGenerateAction extends AnAction {
 
     private String getPrefix() {
         String prefix = config.getState().prefix;
-        if(" ".equals(prefix)) {
+        if (" ".equals(prefix)) {
             return "&emsp";
         }
         return prefix;
@@ -272,7 +684,7 @@ public class ApiGenerateAction extends AnAction {
             String iterableTypePresentableText = iterableType == null ? "" : iterableType.getPresentableText();
             return iterableTypePresentableText + "[]";
         }
-        if(presentableText.contains("Map")) {
+        if (presentableText.contains("Map")) {
             return "{}";
         }
         return presentableText;
@@ -281,10 +693,6 @@ public class ApiGenerateAction extends AnAction {
     private String getRequireStr(boolean isRequire) {
         return isRequire ? "Y" : "N";
     }
-
-
-
-
 
     public Model readPom(String pom) {
         MavenXpp3Reader reader = new MavenXpp3Reader();
