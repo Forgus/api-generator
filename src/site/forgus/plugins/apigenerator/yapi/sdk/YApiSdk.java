@@ -30,8 +30,8 @@ public class YApiSdk {
 
     static {
         GsonBuilder builder = new GsonBuilder();
-        builder.registerTypeAdapter(Date.class, new DateDeserializer()).setDateFormat(DateFormat.LONG);
         builder.registerTypeAdapter(Date.class, new DateSerializer()).setDateFormat(DateFormat.LONG);
+        builder.registerTypeAdapter(Date.class, new DateDeserializer()).setDateFormat(DateFormat.LONG);
         gson = builder.create();
     }
 

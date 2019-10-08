@@ -1,5 +1,6 @@
 package site.forgus.plugins.apigenerator.util;
 
+import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.util.PsiUtil;
@@ -9,9 +10,15 @@ import site.forgus.plugins.apigenerator.normal.FieldInfo;
 import site.forgus.plugins.apigenerator.normal.NormalTypes;
 import site.forgus.plugins.apigenerator.normal.ParamTypeEnum;
 
-import java.util.*;
+import java.lang.reflect.Modifier;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class JsonUtil {
+
+    private static final Gson gson = new GsonBuilder().excludeFieldsWithModifiers(Modifier.STATIC, Modifier.FINAL).setPrettyPrinting().create();
 
     public static String buildJson5(String prettyJson, Map<String, String> fieldDescMap) {
         String[] split = prettyJson.split("\n");
@@ -61,36 +68,38 @@ public class JsonUtil {
     }
 
     public static String buildPrettyJson(List<FieldInfo> fieldInfos) {
-        Map<String, Object> map = new HashMap<>(32);
-        for (FieldInfo fieldInfo : fieldInfos) {
-            map.put(fieldInfo.getName(), buildJsonValue(fieldInfo));
-        }
-        return new GsonBuilder().setPrettyPrinting().create().toJson(map);
+        Map<String, Object> map = getStringObjectMap(fieldInfos);
+        return gson.toJson(map);
     }
 
-    private static Object buildJsonValue(FieldInfo fieldInfo) {
+    private static Map<String, Object> getStringObjectMap(List<FieldInfo> fieldInfos) {
+        Map<String, Object> map = new HashMap<>(64);
+        for (FieldInfo fieldInfo : fieldInfos) {
+            buildJsonValue(map, fieldInfo);
+        }
+        return map;
+    }
+
+    private static void buildJsonValue(Map<String, Object> map, FieldInfo fieldInfo) {
         if (ParamTypeEnum.LITERAL.equals(fieldInfo.getParamType())) {
-            return fieldInfo.getValue();
+            map.put(fieldInfo.getName(), fieldInfo.getValue());
         }
         if (ParamTypeEnum.ARRAY.equals(fieldInfo.getParamType())) {
             if (CollectionUtils.isNotEmpty(fieldInfo.getChildren())) {
-                return Collections.singletonList(buildJsonValue(fieldInfo.getChildren()));
+                map.put(fieldInfo.getName(), Collections.singletonList(getStringObjectMap(fieldInfo.getChildren())));
+                return;
             }
             PsiClass psiClass = PsiUtil.resolveClassInType(fieldInfo.getPsiType());
             String innerType = PsiUtil.substituteTypeParameter(fieldInfo.getPsiType(), psiClass, 0, true).getPresentableText();
-            return Collections.singletonList(NormalTypes.normalTypes.get(innerType));
+            map.put(fieldInfo.getName(), Collections.singletonList(NormalTypes.normalTypes.get(innerType)));
         }
-        return buildJsonValue(fieldInfo.getChildren());
-    }
-
-    private static Object buildJsonValue(List<FieldInfo> fieldInfos) {
-        Map<String, Object> map = new HashMap<>(32);
-        if(CollectionUtils.isEmpty(fieldInfos)) {
-            return map;
+        if (fieldInfo.getChildren() == null) {
+            return;
         }
-        for (FieldInfo fieldInfo : fieldInfos) {
-            map.put(fieldInfo.getName(), buildJsonValue(fieldInfo));
+        for (FieldInfo info : fieldInfo.getChildren()) {
+            if (!info.getName().equals(fieldInfo.getName())) {
+                map.put(fieldInfo.getName(), getStringObjectMap(fieldInfo.getChildren()));
+            }
         }
-        return map;
     }
 }

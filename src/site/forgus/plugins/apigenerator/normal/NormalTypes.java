@@ -42,6 +42,7 @@ public class NormalTypes {
         normalTypes.put("Date", new SimpleDateFormat("YYYY-MM-dd HH:mm:ss").format(new Date()));
         normalTypes.put("BigDecimal",0.111111);
         normalTypes.put("Timestamp",new Timestamp(System.currentTimeMillis()));
+        normalTypes.put("JSONObject","JSONObject");
         collectTypes.put("HashMap","HashMap");
         collectTypes.put("Map","Map");
         collectTypes.put("LinkedHashMap","LinkedHashMap");
