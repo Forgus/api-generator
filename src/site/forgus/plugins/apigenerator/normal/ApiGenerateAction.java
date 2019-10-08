@@ -19,6 +19,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
+import org.jetbrains.annotations.NotNull;
 import site.forgus.plugins.apigenerator.config.PersistentConfig;
 import site.forgus.plugins.apigenerator.util.JsonUtil;
 import site.forgus.plugins.apigenerator.util.MethodUtil;
@@ -401,12 +402,19 @@ public class ApiGenerateAction extends AnAction {
     private YApiQuery buildYApiQuery(FieldInfo fieldInfo) {
         YApiQuery query = new YApiQuery();
         query.setName(fieldInfo.getName());
-        query.setDesc(fieldInfo.getDesc());
+        query.setDesc(generateDesc(fieldInfo));
         if (fieldInfo.getValue() != null) {
             query.setExample(fieldInfo.getValue().toString());
         }
         query.setRequired(fieldInfo.isRequire() ? "1" : "0");
         return query;
+    }
+
+    private String generateDesc(FieldInfo fieldInfo) {
+        if("N/A".equals(fieldInfo.getRange())) {
+            return fieldInfo.getDesc();
+        }
+        return fieldInfo.getDesc() + "，值范围：" + fieldInfo.getRange();
     }
 
     private List<YApiForm> listYApiForms(List<FieldInfo> requestFields) {
