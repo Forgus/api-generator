@@ -3,9 +3,7 @@ package site.forgus.plugins.apigenerator.yapi.sdk;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
-import demo.HttpClientUtil;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import site.forgus.plugins.apigenerator.yapi.ProjectConfig;
+import site.forgus.plugins.apigenerator.util.HttpUtil;
 import site.forgus.plugins.apigenerator.yapi.model.*;
 
 import java.io.IOException;
@@ -15,9 +13,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import static site.forgus.plugins.apigenerator.util.HttpUtil.buildGetRequest;
-import static site.forgus.plugins.apigenerator.util.HttpUtil.buildPostRequestWithJsonType;
 
 public class YApiSdk {
 
@@ -37,80 +32,73 @@ public class YApiSdk {
 
     /**
      * 获取项目信息
+     *
      * @param token
      * @return
      * @throws IOException
      */
-    public static YApiProject getProjectInfo(String serverUrl,String token) throws IOException {
-        Map<String,String> params = new HashMap<>();
-        params.put("token",token);
-        String responseStr = HttpClientUtil.ObjectToString(
-                HttpClientUtil.getHttpclient().execute(
-                        buildGetRequest(serverUrl + PROJECT_INFO_URI,params)
-                ), "utf-8"
-        );
-        Type type = new TypeToken<YApiResponse<YApiProject>>(){}.getType();
+    public static YApiProject getProjectInfo(String serverUrl, String token) throws IOException {
+        Map<String, String> params = new HashMap<>();
+        params.put("token", token);
+        String responseStr = HttpUtil.doGet(serverUrl + PROJECT_INFO_URI, params);
+        Type type = new TypeToken<YApiResponse<YApiProject>>() {
+        }.getType();
         YApiResponse<YApiProject> yApiResponse = gson.fromJson(responseStr, type);
         return yApiResponse.getData();
     }
 
     /**
      * 获取分类列表
+     *
      * @param token
      * @return
      * @throws IOException
      */
-    public static List<YApiCat> listCategories(String serverUrl,String token) throws IOException {
-        Map<String,String> params = new HashMap<>();
-        params.put("token",token);
-        String responseStr = HttpClientUtil.ObjectToString(
-                HttpClientUtil.getHttpclient().execute(
-                        buildGetRequest(serverUrl + LIST_CATEGORY_URI,params)
-                ), "utf-8"
-        );
-        Type type = new TypeToken<YApiResponse<List<YApiCat>>>(){}.getType();
-        YApiResponse<List<YApiCat>> yApiResponse = gson.fromJson(responseStr,type);
+    public static List<YApiCat> listCategories(String serverUrl, String token) throws IOException {
+        Map<String, String> params = new HashMap<>();
+        params.put("token", token);
+        String responseStr = HttpUtil.doGet(serverUrl + LIST_CATEGORY_URI, params);
+        Type type = new TypeToken<YApiResponse<List<YApiCat>>>() {
+        }.getType();
+        YApiResponse<List<YApiCat>> yApiResponse = gson.fromJson(responseStr, type);
         return yApiResponse.getData();
     }
 
     /**
      * 添加分类
+     *
      * @param token
      * @param projectId
-     * @param name 分类名称
+     * @param name      分类名称
      * @return
      * @throws IOException
      */
-    public static YApiResponse<YApiCat> addCategory(String serverUrl,String token,String projectId,String name) throws IOException {
-        return addCategory(serverUrl,token,projectId,name,"");
+    public static YApiResponse<YApiCat> addCategory(String serverUrl, String token, String projectId, String name) throws IOException {
+        return addCategory(serverUrl, token, projectId, name, "");
     }
 
     /**
      * 保存接口（新增或更新）
+     *
      * @param yApiInterface
      * @return
      * @throws IOException
      */
-    public static YApiResponse saveInterface(String serverUrl,YApiInterface yApiInterface) throws IOException {
-        CloseableHttpResponse httpResponse = HttpClientUtil.getHttpclient().execute(
-                buildPostRequestWithJsonType(serverUrl + SAVE_INTERFACE_URI, gson.toJson(yApiInterface))
-        );
-        String string = HttpClientUtil.ObjectToString(httpResponse,"utf-8");
-        return gson.fromJson(string,YApiResponse.class);
+    public static YApiResponse saveInterface(String serverUrl, YApiInterface yApiInterface) throws IOException {
+        String string = HttpUtil.doPost(serverUrl + SAVE_INTERFACE_URI,gson.toJson(yApiInterface));
+        return gson.fromJson(string, YApiResponse.class);
     }
 
-    public static YApiResponse<YApiCat> addCategory(String serverUrl,String token,String projectId,String name,String desc) throws IOException {
-        Map<String,String> params = new HashMap<>();
-        params.put("desc",desc);
-        params.put("name",name);
-        params.put("project_id",projectId);
-        params.put("token",token);
-        CloseableHttpResponse httpResponse = HttpClientUtil.getHttpclient().execute(
-                buildPostRequestWithJsonType(serverUrl + ADD_CATEGORY_URI, gson.toJson(params))
-        );
-        String string = HttpClientUtil.ObjectToString(httpResponse,"utf-8");
-        Type type = new TypeToken<YApiResponse<YApiCat>>(){}.getType();
-        return gson.fromJson(string,type);
+    public static YApiResponse<YApiCat> addCategory(String serverUrl, String token, String projectId, String name, String desc) throws IOException {
+        Map<String, String> params = new HashMap<>();
+        params.put("desc", desc);
+        params.put("name", name);
+        params.put("project_id", projectId);
+        params.put("token", token);
+        String string = HttpUtil.doPost(serverUrl + ADD_CATEGORY_URI, gson.toJson(params));
+        Type type = new TypeToken<YApiResponse<YApiCat>>() {
+        }.getType();
+        return gson.fromJson(string, type);
     }
 
 }

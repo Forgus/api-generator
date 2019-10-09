@@ -3,8 +3,8 @@ package site.forgus.plugins.apigenerator.normal;
 import com.intellij.psi.*;
 import com.intellij.psi.impl.source.PsiClassReferenceType;
 import com.intellij.psi.util.PsiUtil;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
+import site.forgus.plugins.apigenerator.util.CollectionUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
