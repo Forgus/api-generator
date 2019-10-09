@@ -7,6 +7,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.Messages;
 import com.intellij.psi.*;
 import com.intellij.psi.javadoc.PsiDocComment;
 import com.intellij.psi.search.FilenameIndex;
@@ -14,12 +15,10 @@ import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.psi.util.PsiUtil;
 import demo.NotifyUtil;
-import gherkin.lexer.Fi;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
-import org.jetbrains.annotations.NotNull;
 import site.forgus.plugins.apigenerator.config.PersistentConfig;
 import site.forgus.plugins.apigenerator.util.JsonUtil;
 import site.forgus.plugins.apigenerator.util.MethodUtil;
@@ -34,14 +33,12 @@ import java.util.*;
 
 public class ApiGenerateAction extends AnAction {
 
-    protected static NotificationGroup notificationGroup = new NotificationGroup("Java2Json.NotificationGroup", NotificationDisplayType.BALLOON, true);
+    private static NotificationGroup notificationGroup = new NotificationGroup("Java2Json.NotificationGroup", NotificationDisplayType.BALLOON, true);
 
     protected PersistentConfig config = PersistentConfig.getInstance();
-    protected AnActionEvent actionEvent;
 
     @Override
     public void actionPerformed(AnActionEvent actionEvent) {
-        this.actionEvent = actionEvent;
         Editor editor = actionEvent.getDataContext().getData(CommonDataKeys.EDITOR);
         if (editor == null) {
             return;
@@ -96,17 +93,30 @@ public class ApiGenerateAction extends AnAction {
             NotifyUtil.log(notificationGroup, project, "Upload api failed, reason:\n not REST api.", NotificationType.WARNING);
             return;
         }
-        if (StringUtils.isEmpty(config.getState().yApiUrl)) {
-            NotifyUtil.log(notificationGroup, project, "YApi url can not be empty.", NotificationType.WARNING);
-            return;
+        if (StringUtils.isEmpty(config.getState().yApiServerUrl)) {
+            String serverUrl = Messages.showInputDialog("Input YApi Server Url", "YApi Server Url", Messages.getInformationIcon());
+            if (StringUtils.isEmpty(serverUrl)) {
+                NotifyUtil.log(notificationGroup, project, "YApi server url can not be empty.", NotificationType.WARNING);
+                return;
+            }
+            config.getState().yApiServerUrl = serverUrl;
         }
         if (StringUtils.isEmpty(config.getState().projectToken)) {
-            NotifyUtil.log(notificationGroup, project, "Project token can not be empty.", NotificationType.WARNING);
-            return;
+            String projectToken = Messages.showInputDialog("Input Project Token", "Project Token", Messages.getInformationIcon());
+            if (StringUtils.isEmpty(projectToken)) {
+                NotifyUtil.log(notificationGroup, project, "Project token can not be empty.", NotificationType.WARNING);
+                return;
+            }
+            config.getState().projectToken = projectToken;
         }
         if (StringUtils.isEmpty(config.getState().projectId)) {
-            NotifyUtil.log(notificationGroup, project, "Project id can not be empty.", NotificationType.WARNING);
-            return;
+            YApiProject projectInfo = YApiSdk.getProjectInfo(config.getState().yApiServerUrl,config.getState().projectToken);
+            String projectId = projectInfo.get_id() == null ? Messages.showInputDialog("Input Project Id", "Project Id", Messages.getInformationIcon()) : projectInfo.get_id().toString();
+            if(StringUtils.isEmpty(projectId)) {
+                NotifyUtil.log(notificationGroup, project, "Project id can not be empty.", NotificationType.WARNING);
+                return;
+            }
+            config.getState().projectId = projectId;
         }
         PsiMethod[] methods = psiClass.getMethods();
         boolean uploadSuccess = false;
@@ -182,17 +192,30 @@ public class ApiGenerateAction extends AnAction {
             NotifyUtil.log(notificationGroup, project, "Upload api failed, reason:\n not REST api.", NotificationType.WARNING);
             return;
         }
-        if (StringUtils.isEmpty(config.getState().yApiUrl)) {
-            NotifyUtil.log(notificationGroup, project, "YApi url can not be empty.", NotificationType.WARNING);
-            return;
+        if (StringUtils.isEmpty(config.getState().yApiServerUrl)) {
+            String serverUrl = Messages.showInputDialog("Input YApi Server Url", "YApi Server Url", Messages.getInformationIcon());
+            if (StringUtils.isEmpty(serverUrl)) {
+                NotifyUtil.log(notificationGroup, project, "YApi server url can not be empty.", NotificationType.WARNING);
+                return;
+            }
+            config.getState().yApiServerUrl = serverUrl;
         }
         if (StringUtils.isEmpty(config.getState().projectToken)) {
-            NotifyUtil.log(notificationGroup, project, "Project token can not be empty.", NotificationType.WARNING);
-            return;
+            String projectToken = Messages.showInputDialog("Input Project Token", "Project Token", Messages.getInformationIcon());
+            if (StringUtils.isEmpty(projectToken)) {
+                NotifyUtil.log(notificationGroup, project, "Project token can not be empty.", NotificationType.WARNING);
+                return;
+            }
+            config.getState().projectToken = projectToken;
         }
         if (StringUtils.isEmpty(config.getState().projectId)) {
-            NotifyUtil.log(notificationGroup, project, "Project id can not be empty.", NotificationType.WARNING);
-            return;
+            YApiProject projectInfo = YApiSdk.getProjectInfo(config.getState().yApiServerUrl,config.getState().projectToken);
+            String projectId = projectInfo.get_id() == null ? Messages.showInputDialog("Input Project Id", "Project Id", Messages.getInformationIcon()) : projectInfo.get_id().toString();
+            if(StringUtils.isEmpty(projectId)) {
+                NotifyUtil.log(notificationGroup, project, "Project id can not be empty.", NotificationType.WARNING);
+                return;
+            }
+            config.getState().projectId = projectId;
         }
         uploadToYApi(project, method);
     }
@@ -202,7 +225,7 @@ public class ApiGenerateAction extends AnAction {
         if (yApiInterface == null) {
             return;
         }
-        YApiResponse yApiResponse = YApiSdk.saveInterface(yApiInterface);
+        YApiResponse yApiResponse = YApiSdk.saveInterface(config.getState().yApiServerUrl,yApiInterface);
         if (yApiResponse.getErrcode() != 0) {
             NotifyUtil.log(notificationGroup, project, "Upload api failed, cause:" + yApiResponse.getErrmsg(), NotificationType.ERROR);
             return;
@@ -229,7 +252,7 @@ public class ApiGenerateAction extends AnAction {
             NotifyUtil.log(notificationGroup, project, "Invalid Class File!", NotificationType.INFORMATION);
             return null;
         }
-        MethodInfo methodInfo = MethodUtil.getMethodInfo(project, psiMethod);
+        MethodInfo methodInfo = MethodUtil.getMethodInfo(psiMethod);
         PsiAnnotation methodMapping = getMethodMapping(psiMethod);
         YApiInterface yApiInterface = new YApiInterface();
         yApiInterface.setToken(config.getState().projectToken);
@@ -266,8 +289,8 @@ public class ApiGenerateAction extends AnAction {
     }
 
     private boolean containResponseBodyAnnotation(PsiAnnotation[] annotations) {
-        for(PsiAnnotation annotation : annotations) {
-            if(annotation.getText().contains("ResponseBody")) {
+        for (PsiAnnotation annotation : annotations) {
+            if (annotation.getText().contains("ResponseBody")) {
                 return true;
             }
         }
@@ -313,7 +336,7 @@ public class ApiGenerateAction extends AnAction {
     }
 
     private PsiAnnotation findAnnotationByName(List<PsiAnnotation> annotations, String text) {
-        if(annotations == null) {
+        if (annotations == null) {
             return null;
         }
         for (PsiAnnotation annotation : annotations) {
@@ -367,12 +390,12 @@ public class ApiGenerateAction extends AnAction {
         if (apiCat != null) {
             return apiCat.get_id().toString();
         }
-        YApiResponse<YApiCat> yApiResponse = YApiSdk.addCategory(config.getState().projectToken, config.getState().projectId, catName);
+        YApiResponse<YApiCat> yApiResponse = YApiSdk.addCategory(config.getState().yApiServerUrl,config.getState().projectToken, config.getState().projectId, catName);
         return yApiResponse.getData().get_id().toString();
     }
 
     private Map<String, YApiCat> getCatNameMap() throws IOException {
-        List<YApiCat> yApiCats = YApiSdk.listCategories(config.getState().projectToken);
+        List<YApiCat> yApiCats = YApiSdk.listCategories(config.getState().yApiServerUrl,config.getState().projectToken);
         Map<String, YApiCat> catNameMap = new HashMap<>();
         for (YApiCat cat : yApiCats) {
             catNameMap.put(cat.getName(), cat);
@@ -411,7 +434,7 @@ public class ApiGenerateAction extends AnAction {
     }
 
     private String generateDesc(FieldInfo fieldInfo) {
-        if("N/A".equals(fieldInfo.getRange())) {
+        if ("N/A".equals(fieldInfo.getRange())) {
             return fieldInfo.getDesc();
         }
         return fieldInfo.getDesc() + "，值范围：" + fieldInfo.getRange();
@@ -540,7 +563,7 @@ public class ApiGenerateAction extends AnAction {
             apiDoc.createNewFile();
         }
         Writer md = new FileWriter(apiDoc);
-        List<FieldInfo> fieldInfos = FieldInfo.listFieldInfos(psiClass, project);
+        List<FieldInfo> fieldInfos = FieldInfo.listFieldInfos(psiClass);
         md.write("## 示例\n");
         if (CollectionUtils.isNotEmpty(fieldInfos)) {
             md.write("```json\n");
@@ -562,7 +585,7 @@ public class ApiGenerateAction extends AnAction {
         if (!mkDirectory(project, dirPath)) {
             return;
         }
-        MethodInfo methodInfo = MethodUtil.getMethodInfo(project, selectedMethod);
+        MethodInfo methodInfo = MethodUtil.getMethodInfo(selectedMethod);
         String fileName = getFileName(methodInfo);
         File apiDoc = new File(dirPath + "/" + fileName + ".md");
         if (!apiDoc.exists()) {

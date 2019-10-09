@@ -41,12 +41,12 @@ public class YApiSdk {
      * @return
      * @throws IOException
      */
-    public static YApiProject getProjectInfo(String token) throws IOException {
+    public static YApiProject getProjectInfo(String serverUrl,String token) throws IOException {
         Map<String,String> params = new HashMap<>();
         params.put("token",token);
         String responseStr = HttpClientUtil.ObjectToString(
                 HttpClientUtil.getHttpclient().execute(
-                        buildGetRequest(ProjectConfig.getInstance().getyApiUrl() + PROJECT_INFO_URI,params)
+                        buildGetRequest(serverUrl + PROJECT_INFO_URI,params)
                 ), "utf-8"
         );
         Type type = new TypeToken<YApiResponse<YApiProject>>(){}.getType();
@@ -60,12 +60,12 @@ public class YApiSdk {
      * @return
      * @throws IOException
      */
-    public static List<YApiCat> listCategories(String token) throws IOException {
+    public static List<YApiCat> listCategories(String serverUrl,String token) throws IOException {
         Map<String,String> params = new HashMap<>();
         params.put("token",token);
         String responseStr = HttpClientUtil.ObjectToString(
                 HttpClientUtil.getHttpclient().execute(
-                        buildGetRequest(ProjectConfig.getInstance().getyApiUrl() + LIST_CATEGORY_URI,params)
+                        buildGetRequest(serverUrl + LIST_CATEGORY_URI,params)
                 ), "utf-8"
         );
         Type type = new TypeToken<YApiResponse<List<YApiCat>>>(){}.getType();
@@ -81,8 +81,8 @@ public class YApiSdk {
      * @return
      * @throws IOException
      */
-    public static YApiResponse<YApiCat> addCategory(String token,String projectId,String name) throws IOException {
-        return addCategory(token,projectId,name,"");
+    public static YApiResponse<YApiCat> addCategory(String serverUrl,String token,String projectId,String name) throws IOException {
+        return addCategory(serverUrl,token,projectId,name,"");
     }
 
     /**
@@ -91,22 +91,22 @@ public class YApiSdk {
      * @return
      * @throws IOException
      */
-    public static YApiResponse saveInterface(YApiInterface yApiInterface) throws IOException {
+    public static YApiResponse saveInterface(String serverUrl,YApiInterface yApiInterface) throws IOException {
         CloseableHttpResponse httpResponse = HttpClientUtil.getHttpclient().execute(
-                buildPostRequestWithJsonType(ProjectConfig.getInstance().getyApiUrl() + SAVE_INTERFACE_URI, gson.toJson(yApiInterface))
+                buildPostRequestWithJsonType(serverUrl + SAVE_INTERFACE_URI, gson.toJson(yApiInterface))
         );
         String string = HttpClientUtil.ObjectToString(httpResponse,"utf-8");
         return gson.fromJson(string,YApiResponse.class);
     }
 
-    public static YApiResponse<YApiCat> addCategory(String token,String projectId,String name,String desc) throws IOException {
+    public static YApiResponse<YApiCat> addCategory(String serverUrl,String token,String projectId,String name,String desc) throws IOException {
         Map<String,String> params = new HashMap<>();
         params.put("desc",desc);
         params.put("name",name);
         params.put("project_id",projectId);
         params.put("token",token);
         CloseableHttpResponse httpResponse = HttpClientUtil.getHttpclient().execute(
-                buildPostRequestWithJsonType(ProjectConfig.getInstance().getyApiUrl() + ADD_CATEGORY_URI, gson.toJson(params))
+                buildPostRequestWithJsonType(serverUrl + ADD_CATEGORY_URI, gson.toJson(params))
         );
         String string = HttpClientUtil.ObjectToString(httpResponse,"utf-8");
         Type type = new TypeToken<YApiResponse<YApiCat>>(){}.getType();

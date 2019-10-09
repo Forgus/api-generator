@@ -2,12 +2,20 @@ package site.forgus.plugins.apigenerator.yapi;
 
 public class ProjectConfig {
 
-    private String token = "6b7971300cd908c425588d957b9700eed83c2f06347bbc3e9f8ca549d929348d";
-    private Integer projectId = 241;
-    private String yApiUrl = "http://yapi.cai-inc.com";
+    private String token;
+    private Integer projectId;
+    private String yApiUrl;
     private String menu = "api_generator";
 
     private static ProjectConfig projectConfig = new ProjectConfig();
+
+    private ProjectConfig() {
+
+    }
+
+    public static ProjectConfig getInstance() {
+        return projectConfig;
+    }
 
     public String getToken() {
         return token;
@@ -41,12 +49,11 @@ public class ProjectConfig {
         this.menu = menu;
     }
 
-    private ProjectConfig() {
-
-    }
-
-    public static ProjectConfig getInstance() {
+    public static ProjectConfig getProjectConfig() {
         return projectConfig;
     }
 
+    public static void setProjectConfig(ProjectConfig projectConfig) {
+        ProjectConfig.projectConfig = projectConfig;
+    }
 }

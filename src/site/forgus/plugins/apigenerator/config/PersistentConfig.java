@@ -15,7 +15,7 @@ public class PersistentConfig implements PersistentStateComponent<PersistentConf
         public String prefix = "└";
         public Boolean cnFileName = false;
 
-        public String yApiUrl = "";
+        public String yApiServerUrl = "";
         public String projectToken = "";
         public String projectId = "";
         public Boolean autoCat = false;

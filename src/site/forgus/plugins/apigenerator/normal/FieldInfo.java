@@ -1,6 +1,5 @@
 package site.forgus.plugins.apigenerator.normal;
 
-import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
 import com.intellij.psi.impl.source.PsiClassReferenceType;
 import com.intellij.psi.util.PsiUtil;
@@ -31,32 +30,35 @@ public class FieldInfo {
         this.require = require;
         this.range = range == null ? "N/A" : range;
         this.desc = desc == null ? "" : desc;
-        String presentableText = psiType.getPresentableText();
-        if (NormalTypes.isNormalType(presentableText)) {
-            paramType = ParamTypeEnum.LITERAL;
-            value = NormalTypes.normalTypes.get(presentableText);
-        } else if (presentableText.contains("<") && (presentableText.startsWith("List") || presentableText.startsWith("Set"))) {
-            paramType = ParamTypeEnum.ARRAY;
-        } else {
+        if(psiType != null) {
+            String presentableText = psiType.getPresentableText();
+            if (NormalTypes.isNormalType(presentableText)) {
+                paramType = ParamTypeEnum.LITERAL;
+                value = NormalTypes.normalTypes.get(presentableText);
+            } else if (presentableText.contains("<") && (presentableText.startsWith("List") || presentableText.startsWith("Set"))) {
+                paramType = ParamTypeEnum.ARRAY;
+            } else {
+                paramType = ParamTypeEnum.OBJECT;
+            }
+            this.children = listFieldInfos(psiType);
+        }else {
             paramType = ParamTypeEnum.OBJECT;
         }
     }
 
-    public static FieldInfo normal(Project project, PsiType psiType, String desc, PsiAnnotation[] annotations) {
+    public static FieldInfo normal(PsiType psiType, String desc, PsiAnnotation[] annotations) {
         RequireAndRange requireAndRange = getRequireAndRange(annotations);
-        FieldInfo fieldInfo = new FieldInfo(getParamName(psiType.getPresentableText(), annotations), psiType, requireAndRange.isRequire(), requireAndRange.getRange(), desc);
-        fieldInfo.setChildren(listFieldInfos(project, psiType));
-        return fieldInfo;
+        String fieldName = getParamName(psiType.getPresentableText(), annotations);
+        return new FieldInfo(fieldName, psiType, requireAndRange.isRequire(), requireAndRange.getRange(), desc);
     }
 
-    public static FieldInfo normal(Project project, String name, PsiType psiType, String desc, PsiAnnotation[] annotations) {
+    public static FieldInfo normal(String name, PsiType psiType, String desc, PsiAnnotation[] annotations) {
         RequireAndRange requireAndRange = getRequireAndRange(annotations);
-        FieldInfo fieldInfo = new FieldInfo(getParamName(name, annotations), psiType, requireAndRange.isRequire(), requireAndRange.getRange(), desc);
-        fieldInfo.setChildren(listFieldInfos(project, psiType));
-        return fieldInfo;
+        String fieldName = getParamName(name, annotations);
+        return new FieldInfo(fieldName, psiType, requireAndRange.isRequire(), requireAndRange.getRange(), desc);
     }
 
-    public static FieldInfo child(String name, PsiType type, String desc, PsiAnnotation[] annotations) {
+    private static FieldInfo child(String name, PsiType type, String desc, PsiAnnotation[] annotations) {
         RequireAndRange requireAndRange = getRequireAndRange(annotations);
         return new FieldInfo(name, type, requireAndRange.isRequire(), requireAndRange.getRange(), desc);
     }
@@ -88,7 +90,7 @@ public class FieldInfo {
         return null;
     }
 
-    public static List<FieldInfo> listFieldInfos(Project project, PsiType psiType) {
+    private List<FieldInfo> listFieldInfos(PsiType psiType) {
         if (psiType == null) {
             return new ArrayList<>();
         }
@@ -104,10 +106,10 @@ public class FieldInfo {
                 if (iterableType == null || NormalTypes.isNormalType(iterableType.getPresentableText())) {
                     return new ArrayList<>();
                 }
-                return listFieldInfos(project, iterableType);
+                return listFieldInfos(iterableType);
             }
             if (typeName.startsWith("Map")) {
-                fieldInfos.add(FieldInfo.child(typeName, psiType, "", new PsiAnnotation[0]));
+                fieldInfos.add(FieldInfo.child(typeName, null, "", new PsiAnnotation[0]));
                 return fieldInfos;
             }
             if (typeName.contains("<")) {
@@ -118,7 +120,7 @@ public class FieldInfo {
                     if(excludeFieldNames.contains(outField.getName())) {
                         continue;
                     }
-                    fieldInfos.add(FieldInfo.normal(project, outField.getName(), type, DesUtil.getDescription(outField.getDocComment()), outField.getAnnotations()));
+                    fieldInfos.add(FieldInfo.normal(outField.getName(), type, DesUtil.getDescription(outField.getDocComment()), outField.getAnnotations()));
                 }
                 return fieldInfos;
             }
@@ -130,7 +132,8 @@ public class FieldInfo {
                 if(excludeFieldNames.contains(psiField.getName())) {
                     continue;
                 }
-                fieldInfos.add(FieldInfo.normal(project, psiField.getName(), psiField.getType(), DesUtil.getDescription(psiField.getDocComment()), psiField.getAnnotations()));
+                PsiType type = psiField.getType().getPresentableText().equals(psiType.getPresentableText()) ? null : psiField.getType();
+                fieldInfos.add(FieldInfo.normal(psiField.getName(), type, DesUtil.getDescription(psiField.getDocComment()), psiField.getAnnotations()));
             }
             return fieldInfos;
         }
@@ -146,13 +149,13 @@ public class FieldInfo {
         return false;
     }
 
-    public static List<FieldInfo> listFieldInfos(PsiClass psiClass, Project project) {
+    public static List<FieldInfo> listFieldInfos(PsiClass psiClass) {
         List<FieldInfo> fieldInfos = new ArrayList<>();
         for (PsiField psiField : psiClass.getAllFields()) {
             if(excludeFieldNames.contains(psiField.getName())) {
                 continue;
             }
-            fieldInfos.add(normal(project, psiField.getName(), psiField.getType(), DesUtil.getDescription(psiField.getDocComment()), psiField.getAnnotations()));
+            fieldInfos.add(normal(psiField.getName(), psiField.getType(), DesUtil.getDescription(psiField.getDocComment()), psiField.getAnnotations()));
         }
         return fieldInfos;
     }
@@ -212,29 +215,8 @@ public class FieldInfo {
         return annotationText.contains("NotNull") || annotationText.contains("NotBlank") || annotationText.contains("NotEmpty");
     }
 
-    public PsiAnnotation getAnnotation(String annotationText) {
-        for (PsiAnnotation annotation : annotations) {
-            if (annotation.getText().contains(annotationText)) {
-                return annotation;
-            }
-        }
-        return null;
-    }
-
-    public List<PsiAnnotation> getAnnotations() {
-        return annotations;
-    }
-
-    public void setAnnotations(List<PsiAnnotation> annotations) {
-        this.annotations = annotations;
-    }
-
-    public ParamTypeEnum getParamType() {
-        return paramType;
-    }
-
-    public void setParamType(ParamTypeEnum paramType) {
-        this.paramType = paramType;
+    public boolean isHasChildren() {
+        return CollectionUtils.isNotEmpty(children);
     }
 
     public String getName() {
@@ -285,8 +267,12 @@ public class FieldInfo {
         this.desc = desc;
     }
 
-    public boolean isHasChildren() {
-        return CollectionUtils.isNotEmpty(children);
+    public ParamTypeEnum getParamType() {
+        return paramType;
+    }
+
+    public void setParamType(ParamTypeEnum paramType) {
+        this.paramType = paramType;
     }
 
     public List<FieldInfo> getChildren() {
@@ -295,5 +281,21 @@ public class FieldInfo {
 
     public void setChildren(List<FieldInfo> children) {
         this.children = children;
+    }
+
+    public List<PsiAnnotation> getAnnotations() {
+        return annotations;
+    }
+
+    public void setAnnotations(List<PsiAnnotation> annotations) {
+        this.annotations = annotations;
+    }
+
+    public static List<String> getExcludeFieldNames() {
+        return excludeFieldNames;
+    }
+
+    public static void setExcludeFieldNames(List<String> excludeFieldNames) {
+        FieldInfo.excludeFieldNames = excludeFieldNames;
     }
 }

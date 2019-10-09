@@ -16,7 +16,7 @@ public class MethodUtil {
 
     private static final List<String> excludeParamTypes = Arrays.asList("RedirectAttributes", "HttpServletRequest", "HttpServletResponse");
 
-    public static MethodInfo getMethodInfo(Project project, PsiMethod psiMethod) {
+    public static MethodInfo getMethodInfo(PsiMethod psiMethod) {
         MethodInfo methodInfo = new MethodInfo();
         methodInfo.setDesc(DesUtil.getDescription(psiMethod));
         PsiClass psiClass = psiMethod.getContainingClass();
@@ -25,12 +25,12 @@ public class MethodUtil {
         methodInfo.setReturnStr(psiMethod.getReturnType().getPresentableText());
         methodInfo.setParamStr(psiMethod.getParameterList().getText());
         methodInfo.setMethodName(psiMethod.getName());
-        methodInfo.setRequestFields(listParamFieldInfos(project, psiMethod));
-        methodInfo.setResponseFields(listResponseFieldInfos(project, psiMethod));
+        methodInfo.setRequestFields(listParamFieldInfos(psiMethod));
+        methodInfo.setResponseFields(listResponseFieldInfos(psiMethod));
         return methodInfo;
     }
 
-    private static List<FieldInfo> listParamFieldInfos(Project project, PsiMethod psiMethod) {
+    private static List<FieldInfo> listParamFieldInfos(PsiMethod psiMethod) {
         List<FieldInfo> fieldInfoList = new ArrayList<>();
         Map<String, String> paramNameDescMap = getParamDescMap(psiMethod.getDocComment());
         PsiParameter[] psiParameters = psiMethod.getParameterList().getParameters();
@@ -39,7 +39,7 @@ public class MethodUtil {
             if (excludeParamTypes.contains(psiType.getPresentableText())) {
                 continue;
             }
-            FieldInfo fieldInfo = FieldInfo.normal(project,
+            FieldInfo fieldInfo = FieldInfo.normal(
                     psiParameter.getName(),
                     psiType,
                     paramNameDescMap.get(psiParameter.getName()),
@@ -50,12 +50,12 @@ public class MethodUtil {
         return fieldInfoList;
     }
 
-    public static List<FieldInfo> listResponseFieldInfos(Project project, PsiMethod psiMethod) {
-        return getResponseFieldInfo(project,psiMethod).getChildren();
+    public static List<FieldInfo> listResponseFieldInfos( PsiMethod psiMethod) {
+        return getResponseFieldInfo(psiMethod).getChildren();
     }
 
-    public static FieldInfo getResponseFieldInfo(Project project,PsiMethod psiMethod) {
-        return FieldInfo.normal(project,psiMethod.getReturnType(), "",  new PsiAnnotation[0]);
+    public static FieldInfo getResponseFieldInfo(PsiMethod psiMethod) {
+        return FieldInfo.normal(psiMethod.getReturnType(), "",  new PsiAnnotation[0]);
     }
 
     private static Map<String, String> getParamDescMap(PsiDocComment docComment) {
@@ -73,7 +73,7 @@ public class MethodUtil {
     }
 
     private static String getParamDesc(String tagText) {
-        String[] strings = tagText.split(" ");
+        String[] strings = tagText.replace("*","").trim().split(" ");
         if (strings.length == 3) {
             String desc = strings[2];
             return desc.replace("\n", "");

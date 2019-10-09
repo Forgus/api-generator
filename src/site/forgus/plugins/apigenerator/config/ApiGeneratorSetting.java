@@ -59,8 +59,8 @@ public class ApiGeneratorSetting implements Configurable {
         //YApi setting
         JBPanel yApiPanel = new JBPanel(layout);
 
-        yApiPanel.add(buildLabel(layout,"YApi url:"));
-        yApiUrlTextField = buildTextField(layout,state.yApiUrl);
+        yApiPanel.add(buildLabel(layout,"YApi server url:"));
+        yApiUrlTextField = buildTextField(layout,state.yApiServerUrl);
         yApiPanel.add(yApiUrlTextField);
 
         yApiPanel.add(buildLabel(layout,"Project token:"));
@@ -75,7 +75,7 @@ public class ApiGeneratorSetting implements Configurable {
         defaultCatTextField = buildTextField(layout,state.defaultCat);
         yApiPanel.add(defaultCatTextField);
 
-        autoCatCheckBox = buildJBCheckBox(layout,"Classify APIs automatically",state.autoCat);
+        autoCatCheckBox = buildJBCheckBox(layout,"Classify API automatically",state.autoCat);
         yApiPanel.add(autoCatCheckBox);
 
         jbTabbedPane.addTab("YApi Setting",yApiPanel);
@@ -115,7 +115,7 @@ public class ApiGeneratorSetting implements Configurable {
     public boolean isModified() {
         return !state.prefix.equals(prefixTextField.getText()) ||
                 state.cnFileName != cnFileNameCheckBox.isSelected() ||
-                !state.yApiUrl.equals(yApiUrlTextField.getText()) ||
+                !state.yApiServerUrl.equals(yApiUrlTextField.getText()) ||
                 !state.projectToken.equals(yApiUrlTextField.getText()) ||
                 !state.projectId.equals(projectIdTextField.getText()) ||
                 !state.defaultCat.equals(defaultCatTextField.getText()) ||
@@ -128,7 +128,7 @@ public class ApiGeneratorSetting implements Configurable {
         config.getState().dirPath = dirPathTextField.getText();
         config.getState().prefix = prefixTextField.getText();
         config.getState().cnFileName = cnFileNameCheckBox.isSelected();
-        config.getState().yApiUrl = yApiUrlTextField.getText();
+        config.getState().yApiServerUrl = yApiUrlTextField.getText();
         config.getState().projectToken = tokenTextField.getText();
         config.getState().projectId = projectIdTextField.getText();
         config.getState().defaultCat = defaultCatTextField.getText();
