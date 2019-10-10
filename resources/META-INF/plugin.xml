@@ -1,21 +1,21 @@
 <idea-plugin>
   <id>site.forgus.plugins.api-generator</id>
   <name>Api Generator</name>
-  <version>3.1.1</version>
+  <version>3.2.1</version>
   <vendor email="wenbin1876@gmail.com" url="http://forgus.vicp.io">孤峰</vendor>
 
   <description><![CDATA[
-      Api开发利器，接口文档自动生成。<br>
-      <em>自动识别类文件，支持为接口和类生成markdown文档以及上传REST接口到YApi。<em><br><br>
+      Api开发利器，接口文档自动生成<br>
+      <em>自动识别类文件，支持为接口和类生成markdown文档以及上传REST接口到YApi<em><br><br>
       用法：<br>
-      将光标定位到方法区域或者类名，鼠标右键单击“Generate Api”。<br><br>
+      将光标定位到方法区域或者类名，鼠标右键单击“Generate Api”.<br><br>
       插件配置：<br>
       Preferences —> Other Settings —> Api Generator Setting.<br><br>
       配置项：<br>
-      Exclude Fields：排除字段<br>
+      Exclude Fields：过滤字段<br>
       Save Directory：markdown文档保存目录（绝对路径，默认保存位置：当前项目根路径下的target目录）<br>
       Indent Style：二级字段缩进前缀<br>
-      Extract filename from doc comments：是否从javadoc抽取文件名<br><br>YApiSdk
+      Extract filename from doc comments：是否从javadoc抽取文件名<br><br>
       YApi server url：YApi部署服务器地址<br>
       Project token：项目token<br>
       Default save category：默认保存目录<br>
