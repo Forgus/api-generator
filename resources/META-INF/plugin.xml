@@ -1,31 +1,67 @@
 <idea-plugin>
-  <id>site.forgus.plugins.api-generator</id>
-  <name>Api Generator</name>
-  <version>3.2.1</version>
-  <vendor email="wenbin1876@gmail.com" url="http://forgus.vicp.io">孤峰</vendor>
+    <id>site.forgus.plugins.api-generator</id>
+    <name>Api Generator</name>
+    <version>3.3.1</version>
+    <vendor email="wenbin1876@gmail.com" url="http://forgus.vicp.io">孤峰</vendor>
 
-  <description><![CDATA[
-      Api开发利器，接口文档自动生成<br>
-      <em>自动识别类文件，支持为接口和类生成markdown文档以及上传REST接口到YApi<em><br><br>
+    <description><![CDATA[
+      <em>Api开发利器，接口文档自动生成</em><br><br>
+      特点：<br>
+      <ul>
+      <li>自动识别类文件，生成markdown文档或YApi文档</li>
+      <li>基于javadoc解析，无代码入侵</li>
+      <li>支持常用注解的解析，基于json5生成YApi文档</li>
+      <li>支持嵌套泛型解析，涵盖多种数据结构</li>
+      <li>支持字段过滤，自动忽略过滤字段的解析</li>
+      </ul><br>
       用法：<br>
-      将光标定位到方法区域或者类名，鼠标右键单击“Generate Api”.<br><br>
+      <ul><li>将光标定位到方法区域或者类名，鼠标右键单击"Generate Api".</li></ul><br>
       插件配置：<br>
-      Preferences —> Other Settings —> Api Generator Setting.<br><br>
-      配置项：<br>
-      Exclude Fields：过滤字段<br>
-      Save Directory：markdown文档保存目录（绝对路径，默认保存位置：当前项目根路径下的target目录）<br>
-      Indent Style：二级字段缩进前缀<br>
-      Extract filename from doc comments：是否从javadoc抽取文件名<br><br>
-      YApi server url：YApi部署服务器地址<br>
-      Project token：项目token<br>
-      Default save category：默认保存目录<br>
-      Classify API automatically：是否自动分类<br><br>
+      Preferences —> Other Settings —> Api Generator Setting<br><br>
+      <table border="1">
+        <tr>
+          <th>配置项</th>
+          <th>含义</th>
+        </tr>
+        <tr>
+          <td>Exclude Fields</td>
+          <td>过滤字段（多个字段以","分隔）</td>
+        </tr>
+        <tr>
+          <td>Save Directory</td>
+          <td>markdown文档保存目录（绝对路径，默认保存位置：当前项目根路径下的target目录）</td>
+        </tr>
+        <tr>
+          <td>Indent Style</td>
+          <td>二级字段缩进前缀</td>
+        </tr>
+        <tr>
+          <td>Extract filename from doc comments</td>
+          <td>是否从javadoc抽取文件名</td>
+        </tr>
+        <tr>
+          <td>YApi server url</td>
+          <td>YApi部署服务器地址</td>
+        </tr>
+        <tr>
+          <td>Project token</td>
+          <td>项目token</td>
+        </tr>
+        <tr>
+          <td>Default save category</td>
+          <td>默认保存目录</td>
+        </tr>
+        <tr>
+          <td>Classify API automatically</td>
+          <td>是否自动分类</td>
+        </tr>
+      </table><br>
       <em>Support generate markdown for interface or upload to YApi for REST api.</em> <br><br>
       Usage:<br>
       Keep cursor on method area or class name,right click mouse,then click "Generate Api".<br><br>
       Plugin settings:<br>
       Preferences —> Other Settings —> Api Generator Setting.<br><br>
-      <em>Support annotations：<em><br>
+      <em>Support annotations：</em><br>
       javax.validation.constraints.Min<br>
       javax.validation.constraints.Max<br>
       javax.validation.constraints.NotNull<br>
@@ -44,7 +80,7 @@
       org.springframework.web.bind.annotation.RequestBody<br>
       org.springframework.web.bind.annotation.RequestParam<br>
       org.springframework.web.bind.annotation.ResponseBody<br><br>
-      <em>Compatible IDE versions:<em><br>
+      <em>Compatible IDE versions:</em><br>
       IU-193.4099.13<br>
       IU-192.6817.14 (2019.2.3)<br>
       IU-191.8026.42 (2019.1.4)<br>
@@ -53,7 +89,7 @@
       IU-181.5684.4 (2018.1.8)<br>
     ]]></description>
 
-  <change-notes><![CDATA[
+    <change-notes><![CDATA[
       <em>3.0</em>
       Support upload to YApi for REST api.<br>
       <em>2.0</em>
@@ -61,31 +97,32 @@
       <em>1.0</em>
       Support generate markdown for interface.<br>
     ]]>
-  </change-notes>
+    </change-notes>
 
-  <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->
-  <idea-version since-build="173.0"/>
+    <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->
+    <idea-version since-build="173.0"/>
 
-  <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
-       on how to target different products -->
-  <!-- uncomment to enable plugin in all products
-  <depends>com.intellij.modules.lang</depends>
-  -->
+    <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
+         on how to target different products -->
+    <!-- uncomment to enable plugin in all products
+    <depends>com.intellij.modules.lang</depends>
+    -->
 
-  <extensions defaultExtensionNs="com.intellij">
-    <!-- Add your extensions here -->
-    <applicationConfigurable instance="site.forgus.plugins.apigenerator.config.ApiGeneratorSetting"  />
-    <applicationService serviceImplementation="site.forgus.plugins.apigenerator.config.PersistentConfig"/>
-  </extensions>
+    <extensions defaultExtensionNs="com.intellij">
+        <!-- Add your extensions here -->
+        <applicationConfigurable instance="site.forgus.plugins.apigenerator.config.ApiGeneratorSetting"/>
+        <applicationService serviceImplementation="site.forgus.plugins.apigenerator.config.PersistentConfig"/>
+    </extensions>
 
-  <actions>
-    <!-- Add your actions here -->
-    <action id="api-generator.ID" class="site.forgus.plugins.apigenerator.normal.ApiGenerateAction" text="Generate Api"
-            description="Generate api for target code.">
-      <add-to-group group-id="EditorLangPopupMenu" anchor="first"/>
-    </action>
-  </actions>
+    <actions>
+        <!-- Add your actions here -->
+        <action id="api-generator.ID" class="site.forgus.plugins.apigenerator.normal.ApiGenerateAction"
+                text="Generate Api"
+                description="Generate api for target code.">
+            <add-to-group group-id="EditorLangPopupMenu" anchor="first"/>
+        </action>
+    </actions>
 
-  <depends>com.intellij.modules.java</depends>
+    <depends>com.intellij.modules.java</depends>
 
 </idea-plugin>
