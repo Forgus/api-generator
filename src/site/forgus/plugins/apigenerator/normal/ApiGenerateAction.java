@@ -554,7 +554,7 @@ public class ApiGenerateAction extends AnAction {
             apiDoc.createNewFile();
         }
         Writer md = new FileWriter(apiDoc);
-        List<FieldInfo> fieldInfos = FieldInfo.listFieldInfos(psiClass);
+        List<FieldInfo> fieldInfos = listFieldInfos(psiClass);
         md.write("## 示例\n");
         if (CollectionUtils.isNotEmpty(fieldInfos)) {
             md.write("```json\n");
@@ -570,6 +570,17 @@ public class ApiGenerateAction extends AnAction {
             }
         }
         md.close();
+    }
+
+    public List<FieldInfo> listFieldInfos(PsiClass psiClass) {
+        List<FieldInfo> fieldInfos = new ArrayList<>();
+        for (PsiField psiField : psiClass.getAllFields()) {
+            if(FieldInfo.excludeFieldNames.contains(psiField.getName())) {
+                continue;
+            }
+            fieldInfos.add(new FieldInfo(psiField.getName(), psiField.getType(), DesUtil.getDescription(psiField.getDocComment()), psiField.getAnnotations()));
+        }
+        return fieldInfos;
     }
 
     protected void generateDocForMethod(Project project, PsiMethod selectedMethod, String dirPath) throws IOException {

@@ -1,18 +1,31 @@
 <idea-plugin>
   <id>site.forgus.plugins.api-generator</id>
   <name>Api Generator</name>
-  <version>3.0.0</version>
+  <version>3.1.1</version>
   <vendor email="wenbin1876@gmail.com" url="http://forgus.vicp.io">孤峰</vendor>
 
   <description><![CDATA[
       Api开发利器，接口文档自动生成。<br>
       <em>自动识别类文件，支持为接口和类生成markdown文档以及上传REST接口到YApi。<em><br><br>
       用法：<br>
-      将光标定位到方法区域或者类名，鼠标右键单击“Generate Api”。<br>
-      markdown文档默认保存位置：当前项目根路径下的target目录。<br><br>
+      将光标定位到方法区域或者类名，鼠标右键单击“Generate Api”。<br><br>
       插件配置：<br>
       Preferences —> Other Settings —> Api Generator Setting.<br><br>
-      支持的注解：<br>
+      配置项：<br>
+      Save Directory：markdown文档保存目录（绝对路径，默认保存位置：当前项目根路径下的target目录）<br>
+      Indent Style：二级字段缩进前缀<br>
+      Extract filename from doc comments：是否从javadoc抽取文件名<br><br>YApiSdk
+      YApi server url：YApi部署服务器地址<br>
+      Project token：项目token<br>
+      Project id：项目id<br>
+      Default save category：默认保存目录<br>
+      Classify API automatically：是否自动分类<br><br>
+      <em>Support generate markdown for interface or upload to YApi for REST api.</em> <br><br>
+      Usage:<br>
+      Keep cursor on method area or class name,right click mouse,then click "Generate Api".<br><br>
+      Plugin settings:<br>
+      Preferences —> Other Settings —> Api Generator Setting.<br><br>
+      <em>Support annotations：<em><br>
       javax.validation.constraints.Min<br>
       javax.validation.constraints.Max<br>
       javax.validation.constraints.NotNull<br>
@@ -31,11 +44,13 @@
       org.springframework.web.bind.annotation.RequestBody<br>
       org.springframework.web.bind.annotation.RequestParam<br>
       org.springframework.web.bind.annotation.ResponseBody<br><br>
-      <em>Support generate markdown for interface or upload to YApi for REST api.</em> <br><br>
-      Usage:<br>
-      Keep cursor on method area or class name,right click mouse,then click "Generate Api".<br><br>
-      Plugin settings:<br>
-      Preferences —> Other Settings —> Api Generator Setting.
+      <em>Compatible IDE versions:<em><br>
+      IU-193.4099.13<br>
+      IU-192.6817.14 (2019.2.3)<br>
+      IU-191.8026.42 (2019.1.4)<br>
+      IU-183.6156.11 (2018.3.6)<br>
+      IU-182.5262.2 (2018.2.8)<br>
+      IU-181.5684.4 (2018.1.8)<br>
     ]]></description>
 
   <change-notes><![CDATA[

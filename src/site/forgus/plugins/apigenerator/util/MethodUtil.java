@@ -1,6 +1,5 @@
 package site.forgus.plugins.apigenerator.util;
 
-import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
 import com.intellij.psi.javadoc.PsiDocComment;
 import com.intellij.psi.javadoc.PsiDocTag;
@@ -20,9 +19,15 @@ public class MethodUtil {
         MethodInfo methodInfo = new MethodInfo();
         methodInfo.setDesc(DesUtil.getDescription(psiMethod));
         PsiClass psiClass = psiMethod.getContainingClass();
+        if(psiClass == null) {
+            return null;
+        }
         methodInfo.setPackageName(PsiUtil.getPackageName(psiClass));
         methodInfo.setClassName(psiClass.getName());
-        methodInfo.setReturnStr(psiMethod.getReturnType().getPresentableText());
+        PsiType returnType = psiMethod.getReturnType();
+        if(returnType != null) {
+            methodInfo.setReturnStr(returnType.getPresentableText());
+        }
         methodInfo.setParamStr(psiMethod.getParameterList().getText());
         methodInfo.setMethodName(psiMethod.getName());
         methodInfo.setRequestFields(listParamFieldInfos(psiMethod));
@@ -39,7 +44,7 @@ public class MethodUtil {
             if (excludeParamTypes.contains(psiType.getPresentableText())) {
                 continue;
             }
-            FieldInfo fieldInfo = FieldInfo.normal(
+            FieldInfo fieldInfo = new FieldInfo(
                     psiParameter.getName(),
                     psiType,
                     paramNameDescMap.get(psiParameter.getName()),
@@ -50,12 +55,12 @@ public class MethodUtil {
         return fieldInfoList;
     }
 
-    public static List<FieldInfo> listResponseFieldInfos( PsiMethod psiMethod) {
+    public static List<FieldInfo> listResponseFieldInfos(PsiMethod psiMethod) {
         return getResponseFieldInfo(psiMethod).getChildren();
     }
 
     public static FieldInfo getResponseFieldInfo(PsiMethod psiMethod) {
-        return FieldInfo.normal(psiMethod.getReturnType(), "",  new PsiAnnotation[0]);
+        return new FieldInfo(psiMethod.getReturnType(), "", new PsiAnnotation[0]);
     }
 
     private static Map<String, String> getParamDescMap(PsiDocComment docComment) {
@@ -73,7 +78,7 @@ public class MethodUtil {
     }
 
     private static String getParamDesc(String tagText) {
-        String[] strings = tagText.replace("*","").trim().split(" ");
+        String[] strings = tagText.replace("*", "").trim().split(" ");
         if (strings.length == 3) {
             String desc = strings[2];
             return desc.replace("\n", "");

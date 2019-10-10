@@ -22,7 +22,7 @@ public class FieldInfo {
     private List<FieldInfo> children;
     private List<PsiAnnotation> annotations;
 
-    private static List<String> excludeFieldNames = Arrays.asList("serialVersionUID");
+    public static List<String> excludeFieldNames = Arrays.asList("serialVersionUID");
 
     private FieldInfo(String name, PsiType psiType, boolean require, String range, String desc) {
         this.name = name == null ? "N/A" : name;
@@ -30,7 +30,7 @@ public class FieldInfo {
         this.require = require;
         this.range = range == null ? "N/A" : range;
         this.desc = desc == null ? "" : desc;
-        if(psiType != null) {
+        if (psiType != null) {
             String presentableText = psiType.getPresentableText();
             if (NormalTypes.isNormalType(presentableText)) {
                 paramType = ParamTypeEnum.LITERAL;
@@ -41,21 +41,37 @@ public class FieldInfo {
                 paramType = ParamTypeEnum.OBJECT;
             }
             this.children = listFieldInfos(psiType);
-        }else {
+        } else {
             paramType = ParamTypeEnum.OBJECT;
         }
     }
 
-    public static FieldInfo normal(PsiType psiType, String desc, PsiAnnotation[] annotations) {
-        RequireAndRange requireAndRange = getRequireAndRange(annotations);
-        String fieldName = getParamName(psiType.getPresentableText(), annotations);
-        return new FieldInfo(fieldName, psiType, requireAndRange.isRequire(), requireAndRange.getRange(), desc);
-    }
-
-    public static FieldInfo normal(String name, PsiType psiType, String desc, PsiAnnotation[] annotations) {
+    public FieldInfo(String name, PsiType psiType, String desc, PsiAnnotation[] annotations) {
         RequireAndRange requireAndRange = getRequireAndRange(annotations);
         String fieldName = getParamName(name, annotations);
-        return new FieldInfo(fieldName, psiType, requireAndRange.isRequire(), requireAndRange.getRange(), desc);
+        this.name = fieldName == null ? "N/A" : fieldName;
+        this.psiType = psiType;
+        this.require = requireAndRange.isRequire();
+        this.range = requireAndRange.getRange() == null ? "N/A" : requireAndRange.getRange();
+        this.desc = desc == null ? "" : desc;
+        if (psiType != null) {
+            String presentableText = psiType.getPresentableText();
+            if (NormalTypes.isNormalType(presentableText)) {
+                paramType = ParamTypeEnum.LITERAL;
+                value = NormalTypes.normalTypes.get(presentableText);
+            } else if (presentableText.contains("<") && (presentableText.startsWith("List") || presentableText.startsWith("Set"))) {
+                paramType = ParamTypeEnum.ARRAY;
+            } else {
+                paramType = ParamTypeEnum.OBJECT;
+            }
+            this.children = listFieldInfos(psiType);
+        } else {
+            paramType = ParamTypeEnum.OBJECT;
+        }
+    }
+
+    public FieldInfo(PsiType psiType, String desc, PsiAnnotation[] annotations) {
+        this(psiType.getPresentableText(), psiType, desc, annotations);
     }
 
     private static FieldInfo child(String name, PsiType type, String desc, PsiAnnotation[] annotations) {
@@ -117,10 +133,10 @@ public class FieldInfo {
                 PsiType innerType = PsiUtil.substituteTypeParameter(psiType, outerClass, 0, false);
                 for (PsiField outField : outerClass.getAllFields()) {
                     PsiType type = containGeneric(outField.getType().getPresentableText()) ? innerType : outField.getType();
-                    if(excludeFieldNames.contains(outField.getName())) {
+                    if (excludeFieldNames.contains(outField.getName())) {
                         continue;
                     }
-                    fieldInfos.add(FieldInfo.normal(outField.getName(), type, DesUtil.getDescription(outField.getDocComment()), outField.getAnnotations()));
+                    fieldInfos.add(new FieldInfo(outField.getName(), type, DesUtil.getDescription(outField.getDocComment()), outField.getAnnotations()));
                 }
                 return fieldInfos;
             }
@@ -129,11 +145,11 @@ public class FieldInfo {
                 return new ArrayList<>();
             }
             for (PsiField psiField : psiClass.getAllFields()) {
-                if(excludeFieldNames.contains(psiField.getName())) {
+                if (excludeFieldNames.contains(psiField.getName())) {
                     continue;
                 }
                 PsiType type = psiField.getType().getPresentableText().equals(psiType.getPresentableText()) ? null : psiField.getType();
-                fieldInfos.add(FieldInfo.normal(psiField.getName(), type, DesUtil.getDescription(psiField.getDocComment()), psiField.getAnnotations()));
+                fieldInfos.add(new FieldInfo(psiField.getName(), type, DesUtil.getDescription(psiField.getDocComment()), psiField.getAnnotations()));
             }
             return fieldInfos;
         }
@@ -148,18 +164,6 @@ public class FieldInfo {
         }
         return false;
     }
-
-    public static List<FieldInfo> listFieldInfos(PsiClass psiClass) {
-        List<FieldInfo> fieldInfos = new ArrayList<>();
-        for (PsiField psiField : psiClass.getAllFields()) {
-            if(excludeFieldNames.contains(psiField.getName())) {
-                continue;
-            }
-            fieldInfos.add(normal(psiField.getName(), psiField.getType(), DesUtil.getDescription(psiField.getDocComment()), psiField.getAnnotations()));
-        }
-        return fieldInfos;
-    }
-
 
     private static RequireAndRange getRequireAndRange(PsiAnnotation[] annotations) {
         if (annotations.length == 0) {
