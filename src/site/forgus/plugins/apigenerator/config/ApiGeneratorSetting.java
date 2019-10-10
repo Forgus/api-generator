@@ -1,12 +1,23 @@
 package site.forgus.plugins.apigenerator.config;
 
 import com.intellij.openapi.options.Configurable;
+import com.intellij.refactoring.changeSignature.JavaParameterTableModel;
+import com.intellij.structuralsearch.plugin.ui.filters.FilterPanel;
 import com.intellij.ui.components.*;
+import com.intellij.ui.table.JBTable;
+import com.intellij.util.ui.table.*;
+import com.jgoodies.common.collect.ArrayListModel;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nls;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
+import javax.swing.event.ListDataListener;
+import javax.swing.table.TableModel;
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ApiGeneratorSetting implements Configurable {
 
@@ -27,6 +38,7 @@ public class ApiGeneratorSetting implements Configurable {
     JBLabel projectIdLabel;
     JBTextField defaultCatTextField;
     JBCheckBox autoCatCheckBox;
+    JBTextField excludeFields;
 
     @Nls(capitalization = Nls.Capitalization.Title)
     @Override
@@ -42,6 +54,11 @@ public class ApiGeneratorSetting implements Configurable {
         GridBagLayout layout = new GridBagLayout();
         //normal setting
         JBPanel normalPanel = new JBPanel(layout);
+
+        normalPanel.add(buildLabel(layout,"Exclude Fields:"));
+        excludeFields = new JBTextField(state.excludeFields);
+        layout.setConstraints(excludeFields,getValueConstraints());
+        normalPanel.add(excludeFields);
 
         normalPanel.add(buildLabel(layout,"Save Directory:"));
         dirPathTextField = buildTextField(layout, state.dirPath);
@@ -68,9 +85,7 @@ public class ApiGeneratorSetting implements Configurable {
         yApiPanel.add(tokenTextField);
 
         yApiPanel.add(buildLabel(layout,"Project id:"));
-        GridBagConstraints textConstraints = new GridBagConstraints();
-        textConstraints.fill = GridBagConstraints.WEST;
-        textConstraints.gridwidth = GridBagConstraints.REMAINDER;
+        GridBagConstraints textConstraints = getValueConstraints();
         projectIdLabel = new JBLabel(state.projectId);
         layout.setConstraints(projectIdLabel,textConstraints);
         yApiPanel.add(projectIdLabel);
@@ -90,29 +105,34 @@ public class ApiGeneratorSetting implements Configurable {
         JBCheckBox checkBox = new JBCheckBox();
         checkBox.setText(text);
         checkBox.setSelected(selected);
-        GridBagConstraints labelConstraints = new GridBagConstraints();
-        labelConstraints.fill = GridBagConstraints.WEST;
-        labelConstraints.gridwidth =  GridBagConstraints.REMAINDER;
-        layout.setConstraints(checkBox,labelConstraints);
+        layout.setConstraints(checkBox,getValueConstraints());
         return checkBox;
     }
 
     private JBLabel buildLabel(GridBagLayout layout,String name) {
         JBLabel jbLabel = new JBLabel(name);
-        GridBagConstraints labelConstraints = new GridBagConstraints();
-        labelConstraints.fill = GridBagConstraints.EAST;
-        labelConstraints.gridwidth = 1;
-        layout.setConstraints(jbLabel,labelConstraints);
+        layout.setConstraints(jbLabel,getLabelConstraints());
         return jbLabel;
     }
 
     private JBTextField buildTextField(GridBagLayout layout,String text) {
+        JBTextField textField = new JBTextField(text);
+        layout.setConstraints(textField,getValueConstraints());
+        return textField;
+    }
+
+    private GridBagConstraints getLabelConstraints() {
+        GridBagConstraints labelConstraints = new GridBagConstraints();
+        labelConstraints.fill = GridBagConstraints.EAST;
+        labelConstraints.gridwidth = 1;
+        return labelConstraints;
+    }
+
+    private GridBagConstraints getValueConstraints() {
         GridBagConstraints textConstraints = new GridBagConstraints();
         textConstraints.fill = GridBagConstraints.WEST;
         textConstraints.gridwidth = GridBagConstraints.REMAINDER;
-        JBTextField textField = new JBTextField(text);
-        layout.setConstraints(textField,textConstraints);
-        return textField;
+        return textConstraints;
     }
 
     @Override
@@ -124,11 +144,19 @@ public class ApiGeneratorSetting implements Configurable {
                 !state.projectId.equals(projectIdLabel.getText()) ||
                 !state.defaultCat.equals(defaultCatTextField.getText()) ||
                 state.autoCat != autoCatCheckBox.isSelected() ||
-                !state.dirPath.equals(dirPathTextField.getText());
+                !state.dirPath.equals(dirPathTextField.getText())||
+                !state.excludeFields.equals(excludeFields.getText());
     }
 
     @Override
     public void apply() {
+        config.getState().excludeFields = excludeFields.getText();
+        if (!StringUtils.isEmpty(excludeFields.getText())) {
+            String[] split = excludeFields.getText().split(",");
+            for(String str : split) {
+                config.getState().excludeFieldNames.add(str);
+            }
+        }
         config.getState().dirPath = dirPathTextField.getText();
         config.getState().prefix = prefixTextField.getText();
         config.getState().cnFileName = cnFileNameCheckBox.isSelected();

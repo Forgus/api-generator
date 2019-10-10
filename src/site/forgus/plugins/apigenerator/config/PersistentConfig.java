@@ -6,11 +6,18 @@ import com.intellij.openapi.components.State;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 
 @State(name = "ApiGeneratorConfig", storages = {@com.intellij.openapi.components.Storage(value = "$APP_CONFIG$/ApiGeneratorConfig.xml")})
 public class PersistentConfig implements PersistentStateComponent<PersistentConfig.State> {
 
     public static class State {
+        public Set<String> excludeFieldNames = new HashSet<>();
+        public String excludeFields = "serialVersionUID";
         public String dirPath = "";
         public String prefix = "└";
         public Boolean cnFileName = false;

@@ -4,10 +4,10 @@ import com.intellij.psi.*;
 import com.intellij.psi.impl.source.PsiClassReferenceType;
 import com.intellij.psi.util.PsiUtil;
 import org.apache.commons.lang.StringUtils;
+import site.forgus.plugins.apigenerator.config.PersistentConfig;
 import site.forgus.plugins.apigenerator.util.CollectionUtils;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class FieldInfo {
@@ -22,7 +22,7 @@ public class FieldInfo {
     private List<FieldInfo> children;
     private List<PsiAnnotation> annotations;
 
-    public static List<String> excludeFieldNames = Arrays.asList("serialVersionUID");
+    protected PersistentConfig config = PersistentConfig.getInstance();
 
     private FieldInfo(String name, PsiType psiType, boolean require, String range, String desc) {
         this.name = name == null ? "N/A" : name;
@@ -133,7 +133,7 @@ public class FieldInfo {
                 PsiType innerType = PsiUtil.substituteTypeParameter(psiType, outerClass, 0, false);
                 for (PsiField outField : outerClass.getAllFields()) {
                     PsiType type = containGeneric(outField.getType().getPresentableText()) ? innerType : outField.getType();
-                    if (excludeFieldNames.contains(outField.getName())) {
+                    if (config.getState().excludeFields.contains(outField.getName())) {
                         continue;
                     }
                     fieldInfos.add(new FieldInfo(outField.getName(), type, DesUtil.getDescription(outField.getDocComment()), outField.getAnnotations()));
@@ -145,7 +145,7 @@ public class FieldInfo {
                 return new ArrayList<>();
             }
             for (PsiField psiField : psiClass.getAllFields()) {
-                if (excludeFieldNames.contains(psiField.getName())) {
+                if (config.getState().excludeFields.contains(psiField.getName())) {
                     continue;
                 }
                 PsiType type = psiField.getType().getPresentableText().equals(psiType.getPresentableText()) ? null : psiField.getType();
@@ -293,13 +293,5 @@ public class FieldInfo {
 
     public void setAnnotations(List<PsiAnnotation> annotations) {
         this.annotations = annotations;
-    }
-
-    public static List<String> getExcludeFieldNames() {
-        return excludeFieldNames;
-    }
-
-    public static void setExcludeFieldNames(List<String> excludeFieldNames) {
-        FieldInfo.excludeFieldNames = excludeFieldNames;
     }
 }

@@ -12,12 +12,12 @@
       插件配置：<br>
       Preferences —> Other Settings —> Api Generator Setting.<br><br>
       配置项：<br>
+      Exclude Fields：排除字段<br>
       Save Directory：markdown文档保存目录（绝对路径，默认保存位置：当前项目根路径下的target目录）<br>
       Indent Style：二级字段缩进前缀<br>
       Extract filename from doc comments：是否从javadoc抽取文件名<br><br>YApiSdk
       YApi server url：YApi部署服务器地址<br>
       Project token：项目token<br>
-      Project id：项目id<br>
       Default save category：默认保存目录<br>
       Classify API automatically：是否自动分类<br><br>
       <em>Support generate markdown for interface or upload to YApi for REST api.</em> <br><br>
