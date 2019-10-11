@@ -253,7 +253,7 @@ public class ApiGenerateAction extends AnAction {
         yApiInterface.setMethod(requestMethodEnum.name());
         if (methodInfo.getParamStr().contains("RequestBody")) {
             yApiInterface.setReq_body_type(RequestBodyTypeEnum.JSON.getValue());
-            yApiInterface.setReq_body_other(JsonUtil.buildJson5(methodInfo.getRequestFields()));
+            yApiInterface.setReq_body_other(JsonUtil.buildJson5(methodInfo.getRequestFields().get(0).getChildren()));
         } else {
             if (yApiInterface.getMethod().equals("POST")) {
                 yApiInterface.setReq_body_type(RequestBodyTypeEnum.FORM.getValue());

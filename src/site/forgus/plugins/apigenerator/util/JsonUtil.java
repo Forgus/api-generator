@@ -73,6 +73,9 @@ public class JsonUtil {
 
     private static Map<String, Object> getStringObjectMap(List<FieldInfo> fieldInfos) {
         Map<String, Object> map = new HashMap<>(64);
+        if(fieldInfos == null) {
+            return map;
+        }
         for (FieldInfo fieldInfo : fieldInfos) {
             buildJsonValue(map, fieldInfo);
         }
