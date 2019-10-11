@@ -11,11 +11,13 @@ import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import site.forgus.plugins.apigenerator.yapi.sdk.YApiSdk;
 
 import javax.swing.*;
 import javax.swing.event.ListDataListener;
 import javax.swing.table.TableModel;
 import java.awt.*;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -140,7 +142,7 @@ public class ApiGeneratorSetting implements Configurable {
         return !state.prefix.equals(prefixTextField.getText()) ||
                 state.cnFileName != cnFileNameCheckBox.isSelected() ||
                 !state.yApiServerUrl.equals(yApiUrlTextField.getText()) ||
-                !state.projectToken.equals(yApiUrlTextField.getText()) ||
+                !state.projectToken.equals(tokenTextField.getText()) ||
                 !state.projectId.equals(projectIdLabel.getText()) ||
                 !state.defaultCat.equals(defaultCatTextField.getText()) ||
                 state.autoCat != autoCatCheckBox.isSelected() ||
@@ -162,7 +164,11 @@ public class ApiGeneratorSetting implements Configurable {
         config.getState().cnFileName = cnFileNameCheckBox.isSelected();
         config.getState().yApiServerUrl = yApiUrlTextField.getText();
         config.getState().projectToken = tokenTextField.getText();
-        config.getState().projectId = projectIdLabel.getText();
+        try {
+            config.getState().projectId = YApiSdk.getProjectInfo(yApiUrlTextField.getText(),tokenTextField.getText()).get_id().toString();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         config.getState().defaultCat = defaultCatTextField.getText();
         config.getState().autoCat = autoCatCheckBox.isSelected();
     }
