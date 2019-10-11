@@ -301,7 +301,7 @@ public class ApiGenerateAction extends AnAction {
         List<YApiPathVariable> yApiPathVariables = new ArrayList<>();
         for (FieldInfo fieldInfo : requestFields) {
             List<PsiAnnotation> annotations = fieldInfo.getAnnotations();
-            PsiAnnotation pathVariable = findAnnotationByName(annotations, "PathVariable");
+            PsiAnnotation pathVariable = getPathVariableAnnotation(annotations);
             if (pathVariable != null) {
                 YApiPathVariable yApiPathVariable = new YApiPathVariable();
                 PsiNameValuePair[] psiNameValuePairs = pathVariable.getParameterList().getAttributes();
@@ -325,6 +325,10 @@ public class ApiGenerateAction extends AnAction {
             }
         }
         return yApiPathVariables;
+    }
+
+    private PsiAnnotation getPathVariableAnnotation(List<PsiAnnotation> annotations) {
+        return findAnnotationByName(annotations, "PathVariable");
     }
 
     private PsiAnnotation findAnnotationByName(List<PsiAnnotation> annotations, String text) {
@@ -398,6 +402,9 @@ public class ApiGenerateAction extends AnAction {
     private List<YApiQuery> listYApiQueries(List<FieldInfo> requestFields) {
         List<YApiQuery> queries = new ArrayList<>();
         for (FieldInfo fieldInfo : requestFields) {
+            if(getPathVariableAnnotation(fieldInfo.getAnnotations()) != null) {
+                continue;
+            }
             if (ParamTypeEnum.LITERAL.equals(fieldInfo.getParamType())) {
                 queries.add(buildYApiQuery(fieldInfo));
             } else if (ParamTypeEnum.OBJECT.equals(fieldInfo.getParamType())) {

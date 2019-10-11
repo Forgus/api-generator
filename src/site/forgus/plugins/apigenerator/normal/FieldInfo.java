@@ -8,6 +8,7 @@ import site.forgus.plugins.apigenerator.config.PersistentConfig;
 import site.forgus.plugins.apigenerator.util.CollectionUtils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class FieldInfo {
@@ -21,6 +22,8 @@ public class FieldInfo {
     private ParamTypeEnum paramType;
     private List<FieldInfo> children;
     private List<PsiAnnotation> annotations;
+
+    private static List<String> requiredTexts = Arrays.asList("NotNull","NotBlank","NotEmpty","PathVariable");
 
     protected PersistentConfig config = PersistentConfig.getInstance();
 
@@ -54,6 +57,7 @@ public class FieldInfo {
         this.require = requireAndRange.isRequire();
         this.range = requireAndRange.getRange() == null ? "N/A" : requireAndRange.getRange();
         this.desc = desc == null ? "" : desc;
+        this.annotations = Arrays.asList(annotations);
         if (psiType != null) {
             String presentableText = psiType.getPresentableText();
             if (NormalTypes.isNormalType(presentableText)) {
@@ -216,7 +220,7 @@ public class FieldInfo {
             }
             return true;
         }
-        return annotationText.contains("NotNull") || annotationText.contains("NotBlank") || annotationText.contains("NotEmpty");
+        return requiredTexts.contains(annotationText);
     }
 
     public boolean isHasChildren() {
