@@ -16,11 +16,9 @@ import com.intellij.psi.util.PsiUtil;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
-import org.jetbrains.annotations.NotNull;
 import site.forgus.plugins.apigenerator.config.PersistentConfig;
 import site.forgus.plugins.apigenerator.util.CollectionUtils;
 import site.forgus.plugins.apigenerator.util.JsonUtil;
-import site.forgus.plugins.apigenerator.util.MethodUtil;
 import site.forgus.plugins.apigenerator.util.NotificationUtil;
 import site.forgus.plugins.apigenerator.yapi.enums.RequestBodyTypeEnum;
 import site.forgus.plugins.apigenerator.yapi.enums.RequestMethodEnum;
@@ -244,7 +242,7 @@ public class ApiGenerateAction extends AnAction {
             NotificationUtil.warnNotify("Invalid Class File!", project);
             return null;
         }
-        MethodInfo methodInfo = MethodUtil.getMethodInfo(psiMethod);
+        MethodInfo methodInfo = new MethodInfo(psiMethod);
         PsiAnnotation methodMapping = getMethodMapping(psiMethod);
         YApiInterface yApiInterface = new YApiInterface();
         yApiInterface.setToken(config.getState().projectToken);
@@ -597,7 +595,7 @@ public class ApiGenerateAction extends AnAction {
         if (!mkDirectory(project, dirPath)) {
             return;
         }
-        MethodInfo methodInfo = MethodUtil.getMethodInfo(selectedMethod);
+        MethodInfo methodInfo = new MethodInfo(selectedMethod);
         String fileName = getFileName(methodInfo);
         File apiDoc = new File(dirPath + "/" + fileName + ".md");
         if (!apiDoc.exists()) {
