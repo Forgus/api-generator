@@ -41,7 +41,7 @@ public class JsonUtil {
     }
 
     public static String buildJson5(FieldInfo fieldInfo) {
-        return buildJson5(buildPrettyJson(fieldInfo),buildFieldDescMap(fieldInfo));
+        return buildJson5(buildPrettyJson(fieldInfo), buildFieldDescMap(fieldInfo));
     }
 
     public static Map<String, String> buildFieldDescMap(List<FieldInfo> children) {
@@ -50,12 +50,11 @@ public class JsonUtil {
             return map;
         }
         for (FieldInfo fieldInfo : children) {
-            if (ParamTypeEnum.LITERAL.equals(fieldInfo.getParamType())) {
-                if (StringUtils.isEmpty(fieldInfo.getDesc())) {
-                    continue;
-                }
-                map.put(fieldInfo.getName(), buildDesc(fieldInfo));
-            } else {
+            if (StringUtils.isEmpty(fieldInfo.getDesc())) {
+                continue;
+            }
+            map.put(fieldInfo.getName(), buildDesc(fieldInfo));
+            if (!ParamTypeEnum.LITERAL.equals(fieldInfo.getParamType())) {
                 map.putAll(buildFieldDescMap(fieldInfo.getChildren()));
             }
         }
@@ -91,10 +90,10 @@ public class JsonUtil {
     }
 
     public static String buildPrettyJson(FieldInfo fieldInfo) {
-        if(ParamTypeEnum.LITERAL.equals(fieldInfo.getParamType())) {
+        if (ParamTypeEnum.LITERAL.equals(fieldInfo.getParamType())) {
             return fieldInfo.getValue().toString();
         }
-        if(ParamTypeEnum.ARRAY.equals(fieldInfo.getParamType())) {
+        if (ParamTypeEnum.ARRAY.equals(fieldInfo.getParamType())) {
             return gson.toJson(Collections.singletonList(getStringObjectMap(fieldInfo.getChildren())));
         }
         return gson.toJson(getStringObjectMap(fieldInfo.getChildren()));
@@ -102,7 +101,7 @@ public class JsonUtil {
 
     private static Map<String, Object> getStringObjectMap(List<FieldInfo> fieldInfos) {
         Map<String, Object> map = new HashMap<>(64);
-        if(fieldInfos == null) {
+        if (fieldInfos == null) {
             return map;
         }
         for (FieldInfo fieldInfo : fieldInfos) {

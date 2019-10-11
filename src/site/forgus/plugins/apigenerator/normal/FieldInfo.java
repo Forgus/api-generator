@@ -23,7 +23,7 @@ public class FieldInfo {
     private List<FieldInfo> children;
     private List<PsiAnnotation> annotations;
 
-    private static List<String> requiredTexts = Arrays.asList("NotNull","NotBlank","NotEmpty","PathVariable");
+    private static List<String> requiredTexts = Arrays.asList("@NotNull","@NotBlank","@NotEmpty","@PathVariable");
 
     protected PersistentConfig config = PersistentConfig.getInstance();
 
@@ -178,28 +178,42 @@ public class FieldInfo {
         String max = "";
         String range = "N/A";
         for (PsiAnnotation annotation : annotations) {
+            if(isParamRequired(annotation)) {
+                require = true;
+                break;
+            }
+        }
+        for (PsiAnnotation annotation : annotations) {
             String qualifiedName = annotation.getText();
-            require = isParamRequired(annotation);
-            if (qualifiedName.contains("Length") || qualifiedName.contains("Range")) {
-                PsiAnnotationMemberValue maxValue = annotation.findAttributeValue("max");
+            if (qualifiedName.contains("Length") || qualifiedName.contains("Range") || qualifiedName.contains("Size")) {
                 PsiAnnotationMemberValue minValue = annotation.findAttributeValue("min");
-                if (maxValue != null) {
-                    max = maxValue.getText();
-                }
                 if (minValue != null) {
                     min = minValue.getText();
+                    break;
                 }
             }
             if (qualifiedName.contains("Min")) {
                 PsiAnnotationMemberValue minValue = annotation.findAttributeValue("value");
                 if (minValue != null) {
                     min = minValue.getText();
+                    break;
+                }
+            }
+        }
+        for (PsiAnnotation annotation : annotations) {
+            String qualifiedName = annotation.getText();
+            if (qualifiedName.contains("Length") || qualifiedName.contains("Range") || qualifiedName.contains("Size")) {
+                PsiAnnotationMemberValue maxValue = annotation.findAttributeValue("max");
+                if (maxValue != null) {
+                    max = maxValue.getText();
+                    break;
                 }
             }
             if (qualifiedName.contains("Max")) {
                 PsiAnnotationMemberValue maxValue = annotation.findAttributeValue("value");
                 if (maxValue != null) {
                     max = maxValue.getText();
+                    break;
                 }
             }
         }
