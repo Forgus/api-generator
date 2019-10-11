@@ -20,6 +20,10 @@ public class YApiHeader implements Serializable {
         return new YApiHeader("Content-Type","application/json");
     }
 
+    public static YApiHeader form() {
+        return new YApiHeader("Content-Type", "application/x-www-form-urlencoded");
+    }
+
     public String getName() {
         return name;
     }

@@ -256,7 +256,7 @@ public class ApiGenerateAction extends AnAction {
             yApiInterface.setReq_body_other(JsonUtil.buildJson5(methodInfo.getRequestFields()));
         } else {
             if (yApiInterface.getMethod().equals("POST")) {
-                yApiInterface.setReq_body_type("form");
+                yApiInterface.setReq_body_type(RequestBodyTypeEnum.FORM.getValue());
                 yApiInterface.setReq_body_form(listYApiForms(methodInfo.getRequestFields()));
             } else if (RequestMethodEnum.GET.equals(requestMethodEnum)) {
                 yApiInterface.setReq_query(listYApiQueries(methodInfo.getRequestFields()));
@@ -271,7 +271,7 @@ public class ApiGenerateAction extends AnAction {
             yApiInterface.setReq_headers(Collections.singletonList(YApiHeader.json()));
             yApiInterface.setRes_body(JsonUtil.buildJson5(methodInfo.getResponseFields()));
         } else {
-            yApiInterface.setReq_headers(Collections.singletonList(new YApiHeader("Content-Type", "application/x-www-form-urlencoded")));
+            yApiInterface.setReq_headers(Collections.singletonList(YApiHeader.form()));
             yApiInterface.setRes_body_type(ResponseBodyTypeEnum.RAW.getValue());
             yApiInterface.setRes_body("");
         }
@@ -439,19 +439,17 @@ public class ApiGenerateAction extends AnAction {
     private List<YApiForm> listYApiForms(List<FieldInfo> requestFields) {
         List<YApiForm> yApiForms = new ArrayList<>();
         for (FieldInfo fieldInfo : requestFields) {
-            if (fieldInfo.getAnnotations().size() == 0) {
-                if (ParamTypeEnum.LITERAL.equals(fieldInfo.getParamType())) {
-                    yApiForms.add(buildYApiForm(fieldInfo));
-                } else if (ParamTypeEnum.OBJECT.equals(fieldInfo.getParamType())) {
-                    List<FieldInfo> children = fieldInfo.getChildren();
-                    for (FieldInfo info : children) {
-                        yApiForms.add(buildYApiForm(info));
-                    }
-                } else {
-                    YApiForm apiQuery = buildYApiForm(fieldInfo);
-                    apiQuery.setExample("1,1,1");
-                    yApiForms.add(apiQuery);
+            if (ParamTypeEnum.LITERAL.equals(fieldInfo.getParamType())) {
+                yApiForms.add(buildYApiForm(fieldInfo));
+            } else if (ParamTypeEnum.OBJECT.equals(fieldInfo.getParamType())) {
+                List<FieldInfo> children = fieldInfo.getChildren();
+                for (FieldInfo info : children) {
+                    yApiForms.add(buildYApiForm(info));
                 }
+            } else {
+                YApiForm apiQuery = buildYApiForm(fieldInfo);
+                apiQuery.setExample("1,1,1");
+                yApiForms.add(apiQuery);
             }
         }
         return yApiForms;
