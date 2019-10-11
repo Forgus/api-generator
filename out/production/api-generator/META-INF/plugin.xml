@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>site.forgus.plugins.api-generator</id>
     <name>Api Generator</name>
-    <version>3.2.1</version>
+    <version>3.3.3</version>
     <vendor email="wenbin1876@gmail.com" url="http://forgus.vicp.io">孤峰</vendor>
 
     <description><![CDATA[
@@ -20,8 +20,8 @@
       Preferences —> Other Settings —> Api Generator Setting<br><br>
       <table border="1">
         <tr>
-          <th>配置项</th>
-          <th>含义</th>
+          <th align="left">配置项</th>
+          <th align="left">含义</th>
         </tr>
         <tr>
           <td>Exclude Fields</td>
@@ -29,7 +29,7 @@
         </tr>
         <tr>
           <td>Save Directory</td>
-          <td>markdown文档保存目录（绝对路径，默认保存位置：当前项目根路径下的target目录）</td>
+          <td>markdown文档保存目录（默认保存在当前项目根路径下的target目录，绝对路径）</td>
         </tr>
         <tr>
           <td>Indent Style</td>

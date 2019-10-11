@@ -16,6 +16,7 @@ import com.intellij.psi.util.PsiUtil;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
+import org.jetbrains.annotations.NotNull;
 import site.forgus.plugins.apigenerator.config.PersistentConfig;
 import site.forgus.plugins.apigenerator.util.CollectionUtils;
 import site.forgus.plugins.apigenerator.util.JsonUtil;
@@ -420,8 +421,12 @@ public class ApiGenerateAction extends AnAction {
         if (fieldInfo.getValue() != null) {
             query.setExample(fieldInfo.getValue().toString());
         }
-        query.setRequired(fieldInfo.isRequire() ? "1" : "0");
+        query.setRequired(convertRequired(fieldInfo.isRequire()));
         return query;
+    }
+
+    private String convertRequired(boolean required) {
+        return required ? "1" : "0";
     }
 
     private String generateDesc(FieldInfo fieldInfo) {
@@ -459,7 +464,7 @@ public class ApiGenerateAction extends AnAction {
         if (fieldInfo.getValue() != null) {
             param.setExample(fieldInfo.getValue().toString());
         }
-        param.setRequired(Boolean.toString(fieldInfo.isRequire()));
+        param.setRequired(convertRequired(fieldInfo.isRequire()));
         return param;
     }
 
