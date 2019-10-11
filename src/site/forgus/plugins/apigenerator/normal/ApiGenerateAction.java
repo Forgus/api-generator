@@ -265,7 +265,7 @@ public class ApiGenerateAction extends AnAction {
         Map<String, YApiCat> catNameMap = getCatNameMap();
         PsiDocComment classDesc = containingClass.getDocComment();
         yApiInterface.setCatid(getCatId(catNameMap, classDesc));
-        yApiInterface.setTitle(methodInfo.getDesc());
+        yApiInterface.setTitle( requestMethodEnum.name() + " "+ methodInfo.getDesc());
         yApiInterface.setPath(getPathFromAnnotation(classRequestMapping) + getPathFromAnnotation(methodMapping));
         if (containResponseBodyAnnotation(psiMethod.getAnnotations()) || controller.getText().contains("Rest")) {
             yApiInterface.setReq_headers(Collections.singletonList(YApiHeader.json()));
