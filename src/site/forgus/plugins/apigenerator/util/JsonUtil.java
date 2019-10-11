@@ -36,16 +36,20 @@ public class JsonUtil {
         return json5.toString();
     }
 
-    public static String buildJson5(List<FieldInfo> fieldInfos) {
-        return buildJson5(buildPrettyJson(fieldInfos), buildFieldDescMap(fieldInfos));
+    public static String buildJson5(List<FieldInfo> children) {
+        return buildJson5(buildPrettyJson(children), buildFieldDescMap(children));
     }
 
-    public static Map<String, String> buildFieldDescMap(List<FieldInfo> fieldInfos) {
+    public static String buildJson5(FieldInfo fieldInfo) {
+        return buildJson5(buildPrettyJson(fieldInfo),buildFieldDescMap(fieldInfo));
+    }
+
+    public static Map<String, String> buildFieldDescMap(List<FieldInfo> children) {
         Map<String, String> map = new HashMap<>(32);
-        if (fieldInfos == null) {
+        if (children == null) {
             return map;
         }
-        for (FieldInfo fieldInfo : fieldInfos) {
+        for (FieldInfo fieldInfo : children) {
             if (ParamTypeEnum.LITERAL.equals(fieldInfo.getParamType())) {
                 if (StringUtils.isEmpty(fieldInfo.getDesc())) {
                     continue;
@@ -58,6 +62,22 @@ public class JsonUtil {
         return map;
     }
 
+    public static Map<String, String> buildFieldDescMap(FieldInfo fieldInfo) {
+        Map<String, String> map = new HashMap<>(32);
+        if (fieldInfo == null) {
+            return map;
+        }
+        if (ParamTypeEnum.LITERAL.equals(fieldInfo.getParamType())) {
+            if (StringUtils.isEmpty(fieldInfo.getDesc())) {
+                return map;
+            }
+            map.put(fieldInfo.getName(), buildDesc(fieldInfo));
+        } else {
+            map.putAll(buildFieldDescMap(fieldInfo.getChildren()));
+        }
+        return map;
+    }
+
     private static String buildDesc(FieldInfo fieldInfo) {
         String desc = fieldInfo.getDesc();
         if (!fieldInfo.isRequire()) {
@@ -66,9 +86,18 @@ public class JsonUtil {
         return desc + ",必填";
     }
 
-    public static String buildPrettyJson(List<FieldInfo> fieldInfos) {
-        Map<String, Object> map = getStringObjectMap(fieldInfos);
-        return gson.toJson(map);
+    public static String buildPrettyJson(List<FieldInfo> children) {
+        return gson.toJson(getStringObjectMap(children));
+    }
+
+    public static String buildPrettyJson(FieldInfo fieldInfo) {
+        if(ParamTypeEnum.LITERAL.equals(fieldInfo.getParamType())) {
+            return fieldInfo.getValue().toString();
+        }
+        if(ParamTypeEnum.ARRAY.equals(fieldInfo.getParamType())) {
+            return gson.toJson(Collections.singletonList(getStringObjectMap(fieldInfo.getChildren())));
+        }
+        return gson.toJson(getStringObjectMap(fieldInfo.getChildren()));
     }
 
     private static Map<String, Object> getStringObjectMap(List<FieldInfo> fieldInfos) {
