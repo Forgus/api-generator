@@ -1,4 +1,4 @@
-package site.forgus.plugins.apigenerator.normal;
+package site.forgus.plugins.apigenerator.util;
 
 import com.google.common.base.Strings;
 import com.intellij.openapi.project.Project;

@@ -4,11 +4,14 @@ import com.intellij.psi.*;
 import com.intellij.psi.javadoc.PsiDocComment;
 import com.intellij.psi.javadoc.PsiDocTag;
 import com.intellij.psi.util.PsiUtil;
+import lombok.Data;
 import org.apache.commons.lang.StringUtils;
+import site.forgus.plugins.apigenerator.util.DesUtil;
 
 import java.io.Serializable;
 import java.util.*;
 
+@Data
 public class MethodInfo implements Serializable {
     private static final long serialVersionUID = -9143203778013000538L;
 
@@ -89,69 +92,5 @@ public class MethodInfo implements Serializable {
             return desc.replace("\n", "");
         }
         return "";
-    }
-
-    public String getMethodName() {
-        return methodName;
-    }
-
-    public void setMethodName(String methodName) {
-        this.methodName = methodName;
-    }
-
-    public String getPackageName() {
-        return packageName;
-    }
-
-    public void setPackageName(String packageName) {
-        this.packageName = packageName;
-    }
-
-    public String getClassName() {
-        return className;
-    }
-
-    public void setClassName(String className) {
-        this.className = className;
-    }
-
-    public String getReturnStr() {
-        return returnStr;
-    }
-
-    public void setReturnStr(String returnStr) {
-        this.returnStr = returnStr;
-    }
-
-    public String getParamStr() {
-        return paramStr;
-    }
-
-    public void setParamStr(String paramStr) {
-        this.paramStr = paramStr;
-    }
-
-    public String getDesc() {
-        return desc;
-    }
-
-    public void setDesc(String desc) {
-        this.desc = desc;
-    }
-
-    public List<FieldInfo> getRequestFields() {
-        return requestFields;
-    }
-
-    public void setRequestFields(List<FieldInfo> requestFields) {
-        this.requestFields = requestFields;
-    }
-
-    public List<FieldInfo> getResponseFields() {
-        return responseFields;
-    }
-
-    public void setResponseFields(List<FieldInfo> responseFields) {
-        this.responseFields = responseFields;
     }
 }

@@ -6,8 +6,7 @@ import com.intellij.psi.PsiClass;
 import com.intellij.psi.util.PsiUtil;
 import org.apache.commons.lang.StringUtils;
 import site.forgus.plugins.apigenerator.normal.FieldInfo;
-import site.forgus.plugins.apigenerator.normal.NormalTypes;
-import site.forgus.plugins.apigenerator.normal.ParamTypeEnum;
+import site.forgus.plugins.apigenerator.constant.TypeEnum;
 
 import java.lang.reflect.Modifier;
 import java.util.Collections;
@@ -54,7 +53,7 @@ public class JsonUtil {
                 continue;
             }
             map.put(fieldInfo.getName(), buildDesc(fieldInfo));
-            if (!ParamTypeEnum.LITERAL.equals(fieldInfo.getParamType())) {
+            if (!TypeEnum.LITERAL.equals(fieldInfo.getParamType())) {
                 map.putAll(buildFieldDescMap(fieldInfo.getChildren()));
             }
         }
@@ -66,7 +65,7 @@ public class JsonUtil {
         if (fieldInfo == null) {
             return map;
         }
-        if (ParamTypeEnum.LITERAL.equals(fieldInfo.getParamType())) {
+        if (TypeEnum.LITERAL.equals(fieldInfo.getParamType())) {
             if (StringUtils.isEmpty(fieldInfo.getDesc())) {
                 return map;
             }
@@ -90,10 +89,10 @@ public class JsonUtil {
     }
 
     public static String buildPrettyJson(FieldInfo fieldInfo) {
-        if (ParamTypeEnum.LITERAL.equals(fieldInfo.getParamType())) {
-            return fieldInfo.getValue().toString();
+        if (TypeEnum.LITERAL.equals(fieldInfo.getParamType())) {
+            return FieldUtil.getValue(fieldInfo.getPsiType()).toString();
         }
-        if (ParamTypeEnum.ARRAY.equals(fieldInfo.getParamType())) {
+        if (TypeEnum.ARRAY.equals(fieldInfo.getParamType())) {
             return gson.toJson(Collections.singletonList(getStringObjectMap(fieldInfo.getChildren())));
         }
         return gson.toJson(getStringObjectMap(fieldInfo.getChildren()));
@@ -111,17 +110,17 @@ public class JsonUtil {
     }
 
     private static void buildJsonValue(Map<String, Object> map, FieldInfo fieldInfo) {
-        if (ParamTypeEnum.LITERAL.equals(fieldInfo.getParamType())) {
-            map.put(fieldInfo.getName(), fieldInfo.getValue());
+        if (TypeEnum.LITERAL.equals(fieldInfo.getParamType())) {
+            map.put(fieldInfo.getName(), FieldUtil.getValue(fieldInfo.getPsiType()));
         }
-        if (ParamTypeEnum.ARRAY.equals(fieldInfo.getParamType())) {
-            if (CollectionUtils.isNotEmpty(fieldInfo.getChildren())) {
+        if (TypeEnum.ARRAY.equals(fieldInfo.getParamType())) {
+            if (AssertUtils.isNotEmpty(fieldInfo.getChildren())) {
                 map.put(fieldInfo.getName(), Collections.singletonList(getStringObjectMap(fieldInfo.getChildren())));
                 return;
             }
             PsiClass psiClass = PsiUtil.resolveClassInType(fieldInfo.getPsiType());
             String innerType = PsiUtil.substituteTypeParameter(fieldInfo.getPsiType(), psiClass, 0, true).getPresentableText();
-            map.put(fieldInfo.getName(), Collections.singletonList(NormalTypes.normalTypes.get(innerType)));
+            map.put(fieldInfo.getName(), Collections.singletonList(FieldUtil.normalTypes.get(innerType)));
         }
         if (fieldInfo.getChildren() == null) {
             return;

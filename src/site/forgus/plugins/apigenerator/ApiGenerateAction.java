@@ -1,4 +1,4 @@
-package site.forgus.plugins.apigenerator.normal;
+package site.forgus.plugins.apigenerator;
 
 import com.google.common.base.Strings;
 import com.intellij.openapi.actionSystem.AnAction;
@@ -11,18 +11,17 @@ import com.intellij.psi.*;
 import com.intellij.psi.javadoc.PsiDocComment;
 import com.intellij.psi.search.FilenameIndex;
 import com.intellij.psi.search.GlobalSearchScope;
-import com.intellij.psi.util.PsiClassUtil;
 import com.intellij.psi.util.PsiTreeUtil;
-import com.intellij.psi.util.PsiTypesUtil;
 import com.intellij.psi.util.PsiUtil;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import site.forgus.plugins.apigenerator.config.PersistentConfig;
+import site.forgus.plugins.apigenerator.constant.TypeEnum;
 import site.forgus.plugins.apigenerator.constant.WebAnnotation;
-import site.forgus.plugins.apigenerator.util.CollectionUtils;
-import site.forgus.plugins.apigenerator.util.JsonUtil;
-import site.forgus.plugins.apigenerator.util.NotificationUtil;
+import site.forgus.plugins.apigenerator.normal.FieldInfo;
+import site.forgus.plugins.apigenerator.normal.MethodInfo;
+import site.forgus.plugins.apigenerator.util.*;
 import site.forgus.plugins.apigenerator.yapi.enums.RequestBodyTypeEnum;
 import site.forgus.plugins.apigenerator.yapi.enums.RequestMethodEnum;
 import site.forgus.plugins.apigenerator.yapi.enums.ResponseBodyTypeEnum;
@@ -266,7 +265,7 @@ public class ApiGenerateAction extends AnAction {
         Map<String, YApiCat> catNameMap = getCatNameMap();
         PsiDocComment classDesc = containingClass.getDocComment();
         yApiInterface.setCatid(getCatId(catNameMap, classDesc));
-        yApiInterface.setTitle( requestMethodEnum.name() + " "+ methodInfo.getDesc());
+        yApiInterface.setTitle(requestMethodEnum.name() + " " + methodInfo.getDesc());
         yApiInterface.setPath(getPathFromAnnotation(classRequestMapping) + getPathFromAnnotation(methodMapping));
         if (containResponseBodyAnnotation(psiMethod.getAnnotations()) || controller.getText().contains("Rest")) {
             yApiInterface.setReq_headers(Collections.singletonList(YApiHeader.json()));
@@ -282,11 +281,11 @@ public class ApiGenerateAction extends AnAction {
     }
 
     private FieldInfo getRequestBodyParam(List<FieldInfo> params) {
-        if(params == null) {
+        if (params == null) {
             return null;
         }
-        for(FieldInfo fieldInfo : params) {
-            if(findAnnotationByName(fieldInfo.getAnnotations(), WebAnnotation.RequestBody) != null) {
+        for (FieldInfo fieldInfo : params) {
+            if (findAnnotationByName(fieldInfo.getAnnotations(), WebAnnotation.RequestBody) != null) {
                 return fieldInfo;
             }
         }
@@ -333,7 +332,7 @@ public class ApiGenerateAction extends AnAction {
                     yApiPathVariable.setName(fieldInfo.getName());
                 }
                 yApiPathVariable.setDesc(fieldInfo.getDesc());
-                yApiPathVariable.setExample(fieldInfo.getValue().toString());
+                yApiPathVariable.setExample(FieldUtil.getValue(fieldInfo.getPsiType()).toString());
                 yApiPathVariables.add(yApiPathVariable);
             }
         }
@@ -415,12 +414,12 @@ public class ApiGenerateAction extends AnAction {
     private List<YApiQuery> listYApiQueries(List<FieldInfo> requestFields) {
         List<YApiQuery> queries = new ArrayList<>();
         for (FieldInfo fieldInfo : requestFields) {
-            if(getPathVariableAnnotation(fieldInfo.getAnnotations()) != null) {
+            if (getPathVariableAnnotation(fieldInfo.getAnnotations()) != null) {
                 continue;
             }
-            if (ParamTypeEnum.LITERAL.equals(fieldInfo.getParamType())) {
+            if (TypeEnum.LITERAL.equals(fieldInfo.getParamType())) {
                 queries.add(buildYApiQuery(fieldInfo));
-            } else if (ParamTypeEnum.OBJECT.equals(fieldInfo.getParamType())) {
+            } else if (TypeEnum.OBJECT.equals(fieldInfo.getParamType())) {
                 List<FieldInfo> children = fieldInfo.getChildren();
                 for (FieldInfo info : children) {
                     queries.add(buildYApiQuery(info));
@@ -438,9 +437,7 @@ public class ApiGenerateAction extends AnAction {
         YApiQuery query = new YApiQuery();
         query.setName(fieldInfo.getName());
         query.setDesc(generateDesc(fieldInfo));
-        if (fieldInfo.getValue() != null) {
-            query.setExample(fieldInfo.getValue().toString());
-        }
+        query.setExample(FieldUtil.getValue(fieldInfo.getPsiType()).toString());
         query.setRequired(convertRequired(fieldInfo.isRequire()));
         return query;
     }
@@ -450,18 +447,21 @@ public class ApiGenerateAction extends AnAction {
     }
 
     private String generateDesc(FieldInfo fieldInfo) {
-        if ("N/A".equals(fieldInfo.getRange())) {
+        if (AssertUtils.isEmpty(fieldInfo.getRange())) {
             return fieldInfo.getDesc();
         }
-        return fieldInfo.getDesc() + "，值范围：" + fieldInfo.getRange();
+        if(AssertUtils.isEmpty(fieldInfo.getDesc())) {
+            return "值域：" + fieldInfo.getRange();
+        }
+        return fieldInfo.getDesc() + "，值域：" + fieldInfo.getRange();
     }
 
     private List<YApiForm> listYApiForms(List<FieldInfo> requestFields) {
         List<YApiForm> yApiForms = new ArrayList<>();
         for (FieldInfo fieldInfo : requestFields) {
-            if (ParamTypeEnum.LITERAL.equals(fieldInfo.getParamType())) {
+            if (TypeEnum.LITERAL.equals(fieldInfo.getParamType())) {
                 yApiForms.add(buildYApiForm(fieldInfo));
-            } else if (ParamTypeEnum.OBJECT.equals(fieldInfo.getParamType())) {
+            } else if (TypeEnum.OBJECT.equals(fieldInfo.getParamType())) {
                 List<FieldInfo> children = fieldInfo.getChildren();
                 for (FieldInfo info : children) {
                     yApiForms.add(buildYApiForm(info));
@@ -479,9 +479,7 @@ public class ApiGenerateAction extends AnAction {
         YApiForm param = new YApiForm();
         param.setName(fieldInfo.getName());
         param.setDesc(fieldInfo.getDesc());
-        if (fieldInfo.getValue() != null) {
-            param.setExample(fieldInfo.getValue().toString());
-        }
+        param.setExample(FieldUtil.getValue(fieldInfo.getPsiType()).toString());
         param.setRequired(convertRequired(fieldInfo.isRequire()));
         return param;
     }
@@ -579,13 +577,13 @@ public class ApiGenerateAction extends AnAction {
         Writer md = new FileWriter(apiDoc);
         List<FieldInfo> fieldInfos = listFieldInfos(psiClass);
         md.write("## 示例\n");
-        if (CollectionUtils.isNotEmpty(fieldInfos)) {
+        if (AssertUtils.isNotEmpty(fieldInfos)) {
             md.write("```json\n");
             md.write(JsonUtil.buildPrettyJson(fieldInfos) + "\n");
             md.write("```\n");
         }
         md.write("## 参数说明\n");
-        if (CollectionUtils.isNotEmpty(fieldInfos)) {
+        if (AssertUtils.isNotEmpty(fieldInfos)) {
             md.write("名称|类型|必填|值域范围|描述/示例\n");
             md.write("--|--|--|--|--\n");
             for (FieldInfo fieldInfo : fieldInfos) {
@@ -598,7 +596,7 @@ public class ApiGenerateAction extends AnAction {
     public List<FieldInfo> listFieldInfos(PsiClass psiClass) {
         List<FieldInfo> fieldInfos = new ArrayList<>();
         for (PsiField psiField : psiClass.getAllFields()) {
-            if(config.getState().excludeFieldNames.contains(psiField.getName())) {
+            if (config.getState().excludeFieldNames.contains(psiField.getName())) {
                 continue;
             }
             fieldInfos.add(new FieldInfo(psiField.getName(), psiField.getType(), DesUtil.getDescription(psiField.getDocComment()), psiField.getAnnotations()));
@@ -638,13 +636,13 @@ public class ApiGenerateAction extends AnAction {
         md.write("```\n");
         md.write("## 请求参数\n");
         md.write("### 请求参数示例\n");
-        if (CollectionUtils.isNotEmpty(methodInfo.getRequestFields())) {
+        if (AssertUtils.isNotEmpty(methodInfo.getRequestFields())) {
             md.write("```json\n");
             md.write(JsonUtil.buildPrettyJson(methodInfo.getRequestFields()) + "\n");
             md.write("```\n");
         }
         md.write("### 请求参数说明\n");
-        if (CollectionUtils.isNotEmpty(methodInfo.getRequestFields())) {
+        if (AssertUtils.isNotEmpty(methodInfo.getRequestFields())) {
             md.write("名称|类型|必填|值域范围|描述/示例\n");
             md.write("--|--|--|--|--\n");
             for (FieldInfo fieldInfo : methodInfo.getRequestFields()) {
@@ -653,13 +651,13 @@ public class ApiGenerateAction extends AnAction {
         }
         md.write("\n## 返回结果\n");
         md.write("### 返回结果示例\n");
-        if (CollectionUtils.isNotEmpty(methodInfo.getResponseFields())) {
+        if (AssertUtils.isNotEmpty(methodInfo.getResponseFields())) {
             md.write("```json\n");
             md.write(JsonUtil.buildPrettyJson(methodInfo.getResponseFields()) + "\n");
             md.write("```\n");
         }
         md.write("### 返回结果说明\n");
-        if (CollectionUtils.isNotEmpty(methodInfo.getResponseFields())) {
+        if (AssertUtils.isNotEmpty(methodInfo.getResponseFields())) {
             md.write("名称|类型|必填|值域范围|描述/示例\n");
             md.write("--|--|--|--|--\n");
             for (FieldInfo fieldInfo : methodInfo.getResponseFields()) {
@@ -698,17 +696,17 @@ public class ApiGenerateAction extends AnAction {
     }
 
     private void writeFieldInfo(Writer writer, FieldInfo info) throws IOException {
-        if (ParamTypeEnum.OBJECT.equals(info.getParamType())) {
-            String str = "**" + info.getName() + "**" + "|Object|" + getRequireStr(info.isRequire()) + "|" + info.getRange() + "|" + info.getDesc() + "\n";
+        if (TypeEnum.OBJECT.equals(info.getParamType())) {
+            String str = "**" + info.getName() + "**" + "|Object|" + getRequireStr(info.isRequire()) + "|" + getRange(info.getRange()) + "|" + info.getDesc() + "\n";
             writer.write(str);
             for (FieldInfo fieldInfo : info.getChildren()) {
                 writeFieldInfo(writer, fieldInfo, getPrefix());
             }
-        } else if (ParamTypeEnum.ARRAY.equals(info.getParamType())) {
-            String str = "**" + info.getName() + "**" + "|" + getTypeInArray(info.getPsiType()) + "|" + getRequireStr(info.isRequire()) + "|" + info.getRange() + "|" + info.getDesc() + "\n";
+        } else if (TypeEnum.ARRAY.equals(info.getParamType())) {
+            String str = "**" + info.getName() + "**" + "|" + getTypeInArray(info.getPsiType()) + "|" + getRequireStr(info.isRequire()) + "|" + getRange(info.getRange()) + "|" + info.getDesc() + "\n";
             String iterableTypePresentableText = getIterableTypePresentableText(info.getPsiType());
-            if (NormalTypes.isNormalType(iterableTypePresentableText)) {
-                str = info.getName() + "|" + iterableTypePresentableText + "[]|" + getRequireStr(info.isRequire()) + "|" + info.getRange() + "|" + info.getDesc() + "\n";
+            if (FieldUtil.isNormalType(iterableTypePresentableText)) {
+                str = info.getName() + "|" + iterableTypePresentableText + "[]|" + getRequireStr(info.isRequire()) + "|" + getRange(info.getRange()) + "|" + info.getDesc() + "\n";
                 writer.write(str);
             } else {
                 writer.write(str);
@@ -717,7 +715,7 @@ public class ApiGenerateAction extends AnAction {
                 }
             }
         } else {
-            String str = info.getName() + "|" + info.getPsiType().getPresentableText() + "|" + getRequireStr(info.isRequire()) + "|" + info.getRange() + "|" + info.getDesc() + "\n";
+            String str = info.getName() + "|" + info.getPsiType().getPresentableText() + "|" + getRequireStr(info.isRequire()) + "|" + getRange(info.getRange()) + "|" + info.getDesc() + "\n";
             writer.write(str);
         }
     }
@@ -729,21 +727,21 @@ public class ApiGenerateAction extends AnAction {
 
     private String getTypeInArray(PsiType psiType) {
         String iterableTypePresentableText = getIterableTypePresentableText(psiType);
-        if (NormalTypes.isNormalType(iterableTypePresentableText)) {
+        if (FieldUtil.isNormalType(iterableTypePresentableText)) {
             return iterableTypePresentableText + "[]";
         }
         return "Object[]";
     }
 
     private void writeFieldInfo(Writer writer, FieldInfo info, String prefix) throws IOException {
-        if (info.isHasChildren()) {
-            String str = "**" + info.getName() + "**" + "|" + getType(true, info.getPsiType()) + "|" + getRequireStr(info.isRequire()) + "|" + info.getRange() + "|" + info.getDesc() + "\n";
+        if (info.hasChildren()) {
+            String str = "**" + info.getName() + "**" + "|" + getType(true, info.getPsiType()) + "|" + getRequireStr(info.isRequire()) + "|" + getRange(info.getRange()) + "|" + info.getDesc() + "\n";
             writer.write(prefix + str);
             for (FieldInfo fieldInfo : info.getChildren()) {
                 writeFieldInfo(writer, fieldInfo, getPrefix() + prefix);
             }
         } else {
-            String str = info.getName() + "|" + getType(false, info.getPsiType()) + "|" + getRequireStr(info.isRequire()) + "|" + info.getRange() + "|" + info.getDesc() + "\n";
+            String str = info.getName() + "|" + getType(false, info.getPsiType()) + "|" + getRequireStr(info.isRequire()) + "|" + getRange(info.getRange()) + "|" + info.getDesc() + "\n";
             writer.write(prefix + str);
         }
     }
@@ -777,6 +775,10 @@ public class ApiGenerateAction extends AnAction {
 
     private String getRequireStr(boolean isRequire) {
         return isRequire ? "Y" : "N";
+    }
+
+    private String getRange(String range) {
+        return AssertUtils.isEmpty(range) ? "N/A" : range;
     }
 
     public Model readPom(String pom) {

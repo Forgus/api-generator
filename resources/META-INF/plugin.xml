@@ -112,7 +112,7 @@
 
     <actions>
         <!-- Add your actions here -->
-        <action id="api-generator.ID" class="site.forgus.plugins.apigenerator.normal.ApiGenerateAction"
+        <action id="api-generator.ID" class="site.forgus.plugins.apigenerator.ApiGenerateAction"
                 text="Generate Api"
                 description="Generate api for target code.">
             <add-to-group group-id="EditorLangPopupMenu" anchor="first"/>
