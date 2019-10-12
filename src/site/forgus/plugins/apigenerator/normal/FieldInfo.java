@@ -23,7 +23,7 @@ public class FieldInfo {
     private List<FieldInfo> children;
     private List<PsiAnnotation> annotations;
 
-    private static List<String> requiredTexts = Arrays.asList("@NotNull","@NotBlank","@NotEmpty","@PathVariable");
+    private static List<String> requiredTexts = Arrays.asList("@NotNull", "@NotBlank", "@NotEmpty", "@PathVariable");
 
     protected PersistentConfig config = PersistentConfig.getInstance();
 
@@ -63,7 +63,7 @@ public class FieldInfo {
             if (NormalTypes.isNormalType(presentableText)) {
                 paramType = ParamTypeEnum.LITERAL;
                 value = NormalTypes.normalTypes.get(presentableText);
-            } else if (presentableText.contains("<") && (presentableText.startsWith("List") || presentableText.startsWith("Set"))) {
+            } else if (isIterableType(presentableText)) {
                 paramType = ParamTypeEnum.ARRAY;
             } else {
                 paramType = ParamTypeEnum.OBJECT;
@@ -121,7 +121,7 @@ public class FieldInfo {
         List<FieldInfo> fieldInfos = new ArrayList<>();
         if (psiType instanceof PsiClassReferenceType) {
             String typeName = psiType.getPresentableText();
-            if (typeName.startsWith("List") || typeName.startsWith("Set")) {
+            if (isIterableType(typeName)) {
                 PsiType iterableType = PsiUtil.extractIterableTypeParameter(psiType, false);
                 if (iterableType == null || NormalTypes.isNormalType(iterableType.getPresentableText())) {
                     return new ArrayList<>();
@@ -160,6 +160,10 @@ public class FieldInfo {
         return new ArrayList<>();
     }
 
+    private boolean isIterableType(String typeName) {
+        return typeName.startsWith("List") || typeName.startsWith("Set") || typeName.startsWith("Collection");
+    }
+
     private static boolean containGeneric(String str) {
         for (String generic : NormalTypes.genericList) {
             if (str.contains(generic)) {
@@ -178,7 +182,7 @@ public class FieldInfo {
         String max = "";
         String range = "N/A";
         for (PsiAnnotation annotation : annotations) {
-            if(isParamRequired(annotation)) {
+            if (isParamRequired(annotation)) {
                 require = true;
                 break;
             }

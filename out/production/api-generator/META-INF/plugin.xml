@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>site.forgus.plugins.api-generator</id>
     <name>Api Generator</name>
-    <version>3.3.9</version>
+    <version>3.2.0</version>
     <vendor email="wenbin1876@gmail.com" url="http://forgus.vicp.io">孤峰</vendor>
 
     <description><![CDATA[
@@ -65,8 +65,9 @@
       javax.validation.constraints.Min<br>
       javax.validation.constraints.Max<br>
       javax.validation.constraints.NotNull<br>
-      org.hibernate.validator.constraints.NotBlank<br>
-      org.hibernate.validator.constraints.NotEmpty<br>
+      javax.validation.constraints.NotBlank<br>
+      javax.validation.constraints.NotEmpty<br>
+      javax.validation.constraints.Size<br>
       org.hibernate.validator.constraints.Length<br>
       org.hibernate.validator.constraints.Range<br>
       org.springframework.web.bind.annotation.Controller<br>
