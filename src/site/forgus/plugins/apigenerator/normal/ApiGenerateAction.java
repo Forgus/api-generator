@@ -349,7 +349,7 @@ public class ApiGenerateAction extends AnAction {
         if (psiNameValuePairs.length == 1 && psiNameValuePairs[0].getName() == null) {
             return psiNameValuePairs[0].getLiteralValue();
         }
-        if (psiNameValuePairs.length > 1) {
+        if (psiNameValuePairs.length >= 1) {
             for (PsiNameValuePair psiNameValuePair : psiNameValuePairs) {
                 if (psiNameValuePair.getName().equals("value") || psiNameValuePair.getName().equals("path")) {
                     return psiNameValuePair.getLiteralValue();
