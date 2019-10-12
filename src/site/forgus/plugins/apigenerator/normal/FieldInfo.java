@@ -72,7 +72,7 @@ public class FieldInfo {
             } else {
                 paramType = TypeEnum.OBJECT;
             }
-            if (!psiType.getPresentableText().contains(parentTypeStr)) {
+            if (!psiType.getPresentableText().contains(parentTypeStr) && !parentTypeStr.contains(psiType.getPresentableText())) {
                 this.children = listChildren(psiType);
             }
         } else {
@@ -127,7 +127,6 @@ public class FieldInfo {
                 if (iterableType == null || FieldUtil.isNormalType(iterableType.getPresentableText())) {
                     return new ArrayList<>();
                 }
-                //如果循环引用，则终止解析
                 return listChildren(psiType.getPresentableText(),iterableType);
             }
             String typeName = psiType.getPresentableText();
@@ -155,7 +154,7 @@ public class FieldInfo {
                 if (config.getState().excludeFields.contains(psiField.getName())) {
                     continue;
                 }
-                fieldInfos.add(new FieldInfo(psiType.getPresentableText(), psiField.getName(), psiField.getType(), DesUtil.getDescription(psiField.getDocComment()), psiField.getAnnotations()));
+                fieldInfos.add(new FieldInfo(psiType.getPresentableText(),psiField.getName(), psiField.getType(), DesUtil.getDescription(psiField.getDocComment()), psiField.getAnnotations()));
             }
             return fieldInfos;
         }

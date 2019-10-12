@@ -120,9 +120,11 @@ public class JsonUtil {
             }
             PsiClass psiClass = PsiUtil.resolveClassInType(fieldInfo.getPsiType());
             String innerType = PsiUtil.substituteTypeParameter(fieldInfo.getPsiType(), psiClass, 0, true).getPresentableText();
-            map.put(fieldInfo.getName(), Collections.singletonList(FieldUtil.normalTypes.get(innerType)));
+            map.put(fieldInfo.getName(), Collections.singletonList(FieldUtil.normalTypes.get(innerType) == null ? new HashMap<>() : FieldUtil.normalTypes.get(innerType)));
+            return;
         }
         if (fieldInfo.getChildren() == null) {
+            map.put(fieldInfo.getName(),new HashMap<>());
             return;
         }
         for (FieldInfo info : fieldInfo.getChildren()) {
