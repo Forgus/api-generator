@@ -11,12 +11,15 @@ import com.intellij.psi.*;
 import com.intellij.psi.javadoc.PsiDocComment;
 import com.intellij.psi.search.FilenameIndex;
 import com.intellij.psi.search.GlobalSearchScope;
+import com.intellij.psi.util.PsiClassUtil;
 import com.intellij.psi.util.PsiTreeUtil;
+import com.intellij.psi.util.PsiTypesUtil;
 import com.intellij.psi.util.PsiUtil;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import site.forgus.plugins.apigenerator.config.PersistentConfig;
+import site.forgus.plugins.apigenerator.constant.WebAnnotation;
 import site.forgus.plugins.apigenerator.util.CollectionUtils;
 import site.forgus.plugins.apigenerator.util.JsonUtil;
 import site.forgus.plugins.apigenerator.util.NotificationUtil;
@@ -232,9 +235,9 @@ public class ApiGenerateAction extends AnAction {
         PsiAnnotation classRequestMapping = null;
         for (PsiAnnotation annotation : containingClass.getAnnotations()) {
             String text = annotation.getText();
-            if (text.contains("Controller")) {
+            if (text.contains(WebAnnotation.Controller)) {
                 controller = annotation;
-            } else if (text.contains("RequestMapping")) {
+            } else if (text.contains(WebAnnotation.RequestMapping)) {
                 classRequestMapping = annotation;
             }
         }
@@ -249,9 +252,9 @@ public class ApiGenerateAction extends AnAction {
 
         RequestMethodEnum requestMethodEnum = getMethodFromAnnotation(methodMapping);
         yApiInterface.setMethod(requestMethodEnum.name());
-        if (methodInfo.getParamStr().contains("RequestBody")) {
+        if (methodInfo.getParamStr().contains(WebAnnotation.RequestBody)) {
             yApiInterface.setReq_body_type(RequestBodyTypeEnum.JSON.getValue());
-            yApiInterface.setReq_body_other(JsonUtil.buildJson5(methodInfo.getRequestFields().get(0)));
+            yApiInterface.setReq_body_other(JsonUtil.buildJson5(getRequestBodyParam(methodInfo.getRequestFields())));
         } else {
             if (yApiInterface.getMethod().equals("POST")) {
                 yApiInterface.setReq_body_type(RequestBodyTypeEnum.FORM.getValue());
@@ -278,9 +281,21 @@ public class ApiGenerateAction extends AnAction {
         return yApiInterface;
     }
 
+    private FieldInfo getRequestBodyParam(List<FieldInfo> params) {
+        if(params == null) {
+            return null;
+        }
+        for(FieldInfo fieldInfo : params) {
+            if(findAnnotationByName(fieldInfo.getAnnotations(), WebAnnotation.RequestBody) != null) {
+                return fieldInfo;
+            }
+        }
+        return null;
+    }
+
     private boolean containResponseBodyAnnotation(PsiAnnotation[] annotations) {
         for (PsiAnnotation annotation : annotations) {
-            if (annotation.getText().contains("ResponseBody")) {
+            if (annotation.getText().contains(WebAnnotation.ResponseBody)) {
                 return true;
             }
         }
@@ -326,7 +341,7 @@ public class ApiGenerateAction extends AnAction {
     }
 
     private PsiAnnotation getPathVariableAnnotation(List<PsiAnnotation> annotations) {
-        return findAnnotationByName(annotations, "PathVariable");
+        return findAnnotationByName(annotations, WebAnnotation.PathVariable);
     }
 
     private PsiAnnotation findAnnotationByName(List<PsiAnnotation> annotations, String text) {
@@ -473,23 +488,23 @@ public class ApiGenerateAction extends AnAction {
 
     private RequestMethodEnum getMethodFromAnnotation(PsiAnnotation methodMapping) {
         String text = methodMapping.getText();
-        if (text.contains("RequestMapping")) {
+        if (text.contains(WebAnnotation.RequestMapping)) {
             return extractMethodFromAttribute(methodMapping);
         }
         return extractMethodFromMappingText(text);
     }
 
     private RequestMethodEnum extractMethodFromMappingText(String text) {
-        if (text.contains("GetMapping")) {
+        if (text.contains(WebAnnotation.GetMapping)) {
             return RequestMethodEnum.GET;
         }
-        if (text.contains("PutMapping")) {
+        if (text.contains(WebAnnotation.PutMapping)) {
             return RequestMethodEnum.PUT;
         }
-        if (text.contains("DeleteMapping")) {
+        if (text.contains(WebAnnotation.DeleteMapping)) {
             return RequestMethodEnum.DELETE;
         }
-        if (text.contains("PatchMapping")) {
+        if (text.contains(WebAnnotation.PatchMapping)) {
             return RequestMethodEnum.PATCH;
         }
         return RequestMethodEnum.POST;
@@ -528,7 +543,7 @@ public class ApiGenerateAction extends AnAction {
     private boolean haveControllerAnnotation(PsiClass psiClass) {
         PsiAnnotation[] annotations = psiClass.getAnnotations();
         for (PsiAnnotation annotation : annotations) {
-            if (annotation.getText().contains("Controller")) {
+            if (annotation.getText().contains(WebAnnotation.Controller)) {
                 return true;
             }
         }
