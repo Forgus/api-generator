@@ -703,12 +703,10 @@ public class ApiGenerateAction extends AnAction {
         }
     }
 
-    @NotNull
     private String buildFieldStr(FieldInfo info) {
         return getFieldName(info) + "|" + info.getPsiType().getPresentableText() + "|" + getRequireStr(info.isRequire()) + "|" + getRange(info.getRange()) + "|" + info.getDesc() + "\n";
     }
 
-    @NotNull
     private String getFieldName(FieldInfo info) {
         if (info.hasChildren()) {
             return "**" + info.getName() + "**";

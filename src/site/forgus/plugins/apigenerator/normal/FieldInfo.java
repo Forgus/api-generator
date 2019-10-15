@@ -3,7 +3,6 @@ package site.forgus.plugins.apigenerator.normal;
 import com.intellij.psi.*;
 import com.intellij.psi.impl.source.PsiClassReferenceType;
 import com.intellij.psi.util.PsiUtil;
-import com.sun.xml.internal.ws.wsdl.writer.document.ParamType;
 import lombok.Data;
 import org.apache.commons.lang.StringUtils;
 import site.forgus.plugins.apigenerator.config.PersistentConfig;
@@ -67,7 +66,9 @@ public class FieldInfo {
             } else {
                 paramType = TypeEnum.OBJECT;
             }
-            this.children = listChildren(this);
+            if (!isMapType(psiType)) {
+                this.children = listChildren(this);
+            }
         } else {
             paramType = TypeEnum.OBJECT;
         }
@@ -144,14 +145,14 @@ public class FieldInfo {
             //如果是集合类型
             if (FieldUtil.isIterableType(psiType)) {
                 PsiType iterableType = PsiUtil.extractIterableTypeParameter(psiType, false);
-                if (iterableType == null || FieldUtil.isNormalType(iterableType.getPresentableText())) {
+                if (iterableType == null || FieldUtil.isNormalType(iterableType.getPresentableText()) || isMapType(iterableType)) {
                     return new ArrayList<>();
                 }
-                return listChildren(new FieldInfo(fieldInfo,iterableType.getPresentableText(), iterableType, "", new PsiAnnotation[0]));
+                return listChildren(new FieldInfo(fieldInfo, iterableType.getPresentableText(), iterableType, "", new PsiAnnotation[0]));
             }
             String typeName = psiType.getPresentableText();
             if (typeName.startsWith("Map")) {
-                fieldInfos.add(new FieldInfo(fieldInfo,typeName, null, "", new PsiAnnotation[0]));
+                fieldInfos.add(new FieldInfo(fieldInfo, typeName, null, "", new PsiAnnotation[0]));
                 return fieldInfos;
             }
             if (typeName.contains("<")) {
@@ -162,7 +163,7 @@ public class FieldInfo {
                     if (config.getState().excludeFields.contains(outField.getName())) {
                         continue;
                     }
-                    fieldInfos.add(new FieldInfo(fieldInfo,outField.getName(), type, DesUtil.getDescription(outField.getDocComment()), outField.getAnnotations()));
+                    fieldInfos.add(new FieldInfo(fieldInfo, outField.getName(), type, DesUtil.getDescription(outField.getDocComment()), outField.getAnnotations()));
                 }
                 return fieldInfos;
             }
@@ -174,7 +175,7 @@ public class FieldInfo {
                 if (config.getState().excludeFields.contains(psiField.getName())) {
                     continue;
                 }
-                fieldInfos.add(new FieldInfo(fieldInfo,psiField.getName(), psiField.getType(), DesUtil.getDescription(psiField.getDocComment()), psiField.getAnnotations()));
+                fieldInfos.add(new FieldInfo(fieldInfo, psiField.getName(), psiField.getType(), DesUtil.getDescription(psiField.getDocComment()), psiField.getAnnotations()));
             }
             return fieldInfos;
         }
@@ -185,13 +186,16 @@ public class FieldInfo {
         if (parent == null) {
             return true;
         }
+        if (isMapType(psiType)) {
+            return false;
+        }
         Set<PsiType> resolvedTypeSet = new HashSet<>();
         FieldInfo p = parent;
         while (p != null) {
             resolvedTypeSet.add(p.getPsiType());
             p = p.getParent();
         }
-        if(TypeEnum.ARRAY.equals(paramType)) {
+        if (TypeEnum.ARRAY.equals(paramType)) {
             psiType = PsiUtil.extractIterableTypeParameter(psiType, false);
         }
         for (PsiType resolvedType : resolvedTypeSet) {
@@ -200,6 +204,11 @@ public class FieldInfo {
             }
         }
         return true;
+    }
+
+    private boolean isMapType(PsiType psiType) {
+        String presentableText = psiType.getPresentableText();
+        return presentableText.startsWith("Map") || presentableText.startsWith("HashMap") || presentableText.startsWith("LinkedHashMap");
     }
 
     private boolean containGeneric(String str) {
@@ -276,7 +285,7 @@ public class FieldInfo {
             }
             return true;
         }
-        return requiredTexts.contains(annotationText);
+        return requiredTexts.contains(annotationText.split("\\(")[0]);
     }
 
     public boolean hasChildren() {

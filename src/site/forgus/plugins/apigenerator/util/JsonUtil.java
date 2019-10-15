@@ -23,16 +23,15 @@ public class JsonUtil {
             String temp = str;
             if (str.contains(":")) {
                 index++;
-                temp = str + "//" + fieldDesc.get(index - 1);
+                String desc = fieldDesc.get(index - 1);
+                if (!AssertUtils.isEmpty(desc)) {
+                    temp = str + "//" + desc;
+                }
             }
             json5.append(temp);
             json5.append("\n");
         }
         return json5.toString();
-    }
-
-    public static String buildJson5(List<FieldInfo> children) {
-        return buildJson5(buildPrettyJson(children), buildFieldDescList(children));
     }
 
     public static String buildJson5(FieldInfo fieldInfo) {
@@ -45,9 +44,6 @@ public class JsonUtil {
             return descList;
         }
         for (FieldInfo fieldInfo : children) {
-            if (StringUtils.isEmpty(fieldInfo.getDesc())) {
-                continue;
-            }
             descList.add(buildDesc(fieldInfo));
             if (!TypeEnum.LITERAL.equals(fieldInfo.getParamType())) {
                 descList.addAll(buildFieldDescList(fieldInfo.getChildren()));
@@ -76,6 +72,9 @@ public class JsonUtil {
         String desc = fieldInfo.getDesc();
         if (!fieldInfo.isRequire()) {
             return desc;
+        }
+        if (AssertUtils.isEmpty(desc)) {
+            return "必填";
         }
         return desc + ",必填";
     }
