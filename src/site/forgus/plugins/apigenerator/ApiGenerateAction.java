@@ -12,10 +12,10 @@ import com.intellij.psi.javadoc.PsiDocComment;
 import com.intellij.psi.search.FilenameIndex;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.util.PsiTreeUtil;
-import com.intellij.psi.util.PsiUtil;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
+import org.jetbrains.annotations.NotNull;
 import site.forgus.plugins.apigenerator.config.PersistentConfig;
 import site.forgus.plugins.apigenerator.constant.TypeEnum;
 import site.forgus.plugins.apigenerator.constant.WebAnnotation;
@@ -177,7 +177,6 @@ public class ApiGenerateAction extends AnAction {
         }
         NotificationUtil.infoNotify("generate api doc success.", project);
     }
-
 
     private void uploadSelectedMethodToYApi(Project project, PsiMethod method) throws IOException {
         if (!hasMappingAnnotation(method)) {
@@ -696,53 +695,33 @@ public class ApiGenerateAction extends AnAction {
     }
 
     private void writeFieldInfo(Writer writer, FieldInfo info) throws IOException {
-        if (TypeEnum.OBJECT.equals(info.getParamType())) {
-            String str = "**" + info.getName() + "**" + "|Object|" + getRequireStr(info.isRequire()) + "|" + getRange(info.getRange()) + "|" + info.getDesc() + "\n";
-            writer.write(str);
+        writer.write(buildFieldStr(info));
+        if (info.hasChildren()) {
             for (FieldInfo fieldInfo : info.getChildren()) {
                 writeFieldInfo(writer, fieldInfo, getPrefix());
             }
-        } else if (TypeEnum.ARRAY.equals(info.getParamType())) {
-            String str = "**" + info.getName() + "**" + "|" + getTypeInArray(info.getPsiType()) + "|" + getRequireStr(info.isRequire()) + "|" + getRange(info.getRange()) + "|" + info.getDesc() + "\n";
-            String iterableTypePresentableText = getIterableTypePresentableText(info.getPsiType());
-            if (FieldUtil.isNormalType(iterableTypePresentableText)) {
-                str = info.getName() + "|" + iterableTypePresentableText + "[]|" + getRequireStr(info.isRequire()) + "|" + getRange(info.getRange()) + "|" + info.getDesc() + "\n";
-                writer.write(str);
-            } else {
-                writer.write(str);
-                for (FieldInfo fieldInfo : info.getChildren()) {
-                    writeFieldInfo(writer, fieldInfo, getPrefix());
-                }
-            }
-        } else {
-            String str = info.getName() + "|" + info.getPsiType().getPresentableText() + "|" + getRequireStr(info.isRequire()) + "|" + getRange(info.getRange()) + "|" + info.getDesc() + "\n";
-            writer.write(str);
         }
     }
 
-    private String getIterableTypePresentableText(PsiType psiType) {
-        PsiType iterableType = PsiUtil.extractIterableTypeParameter(psiType, false);
-        return iterableType == null ? "" : iterableType.getPresentableText();
+    @NotNull
+    private String buildFieldStr(FieldInfo info) {
+        return getFieldName(info) + "|" + info.getPsiType().getPresentableText() + "|" + getRequireStr(info.isRequire()) + "|" + getRange(info.getRange()) + "|" + info.getDesc() + "\n";
     }
 
-    private String getTypeInArray(PsiType psiType) {
-        String iterableTypePresentableText = getIterableTypePresentableText(psiType);
-        if (FieldUtil.isNormalType(iterableTypePresentableText)) {
-            return iterableTypePresentableText + "[]";
+    @NotNull
+    private String getFieldName(FieldInfo info) {
+        if (info.hasChildren()) {
+            return "**" + info.getName() + "**";
         }
-        return "Object[]";
+        return info.getName();
     }
 
     private void writeFieldInfo(Writer writer, FieldInfo info, String prefix) throws IOException {
+        writer.write(prefix + buildFieldStr(info));
         if (info.hasChildren()) {
-            String str = "**" + info.getName() + "**" + "|" + getType(true, info.getPsiType()) + "|" + getRequireStr(info.isRequire()) + "|" + getRange(info.getRange()) + "|" + info.getDesc() + "\n";
-            writer.write(prefix + str);
             for (FieldInfo fieldInfo : info.getChildren()) {
                 writeFieldInfo(writer, fieldInfo, getPrefix() + prefix);
             }
-        } else {
-            String str = info.getName() + "|" + getType(false, info.getPsiType()) + "|" + getRequireStr(info.isRequire()) + "|" + getRange(info.getRange()) + "|" + info.getDesc() + "\n";
-            writer.write(prefix + str);
         }
     }
 
@@ -752,25 +731,6 @@ public class ApiGenerateAction extends AnAction {
             return "&emsp";
         }
         return prefix;
-    }
-
-    private String getType(boolean isParent, PsiType psiType) {
-        String presentableText = psiType.getPresentableText();
-        if (isParent) {
-            if (presentableText.contains("<")) {
-                return "Object[]";
-            }
-            return "Object";
-        }
-        if (presentableText.contains("List") || presentableText.contains("Set")) {
-            PsiType iterableType = PsiUtil.extractIterableTypeParameter(psiType, false);
-            String iterableTypePresentableText = iterableType == null ? "" : iterableType.getPresentableText();
-            return iterableTypePresentableText + "[]";
-        }
-        if (presentableText.contains("Map")) {
-            return "{}";
-        }
-        return presentableText;
     }
 
     private String getRequireStr(boolean isRequire) {

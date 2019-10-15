@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>site.forgus.plugins.api-generator</id>
     <name>Api Generator</name>
-    <version>3.5.0</version>
+    <version>3.5.1</version>
     <vendor email="wenbin1876@gmail.com" url="http://forgus.vicp.io">孤峰</vendor>
 
     <description><![CDATA[
@@ -12,7 +12,7 @@
       <li>支持字段过滤，自动忽略过滤字段的解析</li>
       <li>自动识别类，生成markdown文档或上传到YApi</li>
       <li>支持List、Set、Collection等数据结构，支持嵌套泛型解析</li>
-      <li>支持Validation和Spring等常用注解的解析，基于json5生成YApi文档</li>
+      <li>支持@NotNull、@ResponseBody等常用注解的解析，基于json5生成YApi文档</li>
       </ul><br>
       用法：<br>
       <ul><li>将光标定位到方法区域或者类名，鼠标右键单击"Generate Api".</li></ul><br>
@@ -56,7 +56,17 @@
           <td>是否自动分类</td>
         </tr>
       </table><br>
-      <em>支持注解：</em><br>
+      Features：<br>
+      <ul>
+      <li>Javadoc-based analysis,no additional annotations.</li>
+      <li>Supporting field filtering, automatically ignoring the analysis of filtering fields.</li>
+      <li>Automatically identify classes, generate markdown documents or upload to Yapi.</li>
+      <li>Support list, set, collection and other data structures, and support nested generic parsing.</li>
+      <li>Support the parsing of common annotations such as @NotNull and @ResponseBody, and generate Yapi documents based on json5.</li>
+      </ul><br>
+      Usage：<br>
+      <ul><li>Locate the cursor to the method area or class name, right-click Generate Api.</li></ul><br>
+      <em>Support annotations：</em><br>
       javax.validation.constraints.Min<br>
       javax.validation.constraints.Max<br>
       javax.validation.constraints.NotNull<br>
@@ -76,7 +86,7 @@
       org.springframework.web.bind.annotation.RequestBody<br>
       org.springframework.web.bind.annotation.RequestParam<br>
       org.springframework.web.bind.annotation.ResponseBody<br><br>
-      <em>兼容 IDE 版本:</em><br>
+      <em>Compatible IDE versions:</em><br>
       IU-193.4099.13<br>
       IU-192.6817.14 (2019.2.3)<br>
       IU-191.8026.42 (2019.1.4)<br>
@@ -87,11 +97,11 @@
 
     <change-notes><![CDATA[
       <em>3.xx</em>
-      支持上传REST接口到YApi<br>
+      Support upload to YApi for REST api<br>
       <em>2.xx</em>
-      支持为POJO类生成markdown文档<br>
+      Support generate markdown for class<br>
       <em>1.xx</em>
-      支持为接口方法生成markdown文档<br>
+      Support generate markdown for interface<br>
     ]]>
     </change-notes>
 
