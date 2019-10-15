@@ -269,7 +269,7 @@ public class ApiGenerateAction extends AnAction {
         yApiInterface.setPath(getPathFromAnnotation(classRequestMapping) + getPathFromAnnotation(methodMapping));
         if (containResponseBodyAnnotation(psiMethod.getAnnotations()) || controller.getText().contains("Rest")) {
             yApiInterface.setReq_headers(Collections.singletonList(YApiHeader.json()));
-            yApiInterface.setRes_body(JsonUtil.buildJson5(methodInfo.getResponseFields()));
+            yApiInterface.setRes_body(JsonUtil.buildJson5(methodInfo.getResponse()));
         } else {
             yApiInterface.setReq_headers(Collections.singletonList(YApiHeader.form()));
             yApiInterface.setRes_body_type(ResponseBodyTypeEnum.RAW.getValue());
@@ -450,7 +450,7 @@ public class ApiGenerateAction extends AnAction {
         if (AssertUtils.isEmpty(fieldInfo.getRange())) {
             return fieldInfo.getDesc();
         }
-        if(AssertUtils.isEmpty(fieldInfo.getDesc())) {
+        if (AssertUtils.isEmpty(fieldInfo.getDesc())) {
             return "值域：" + fieldInfo.getRange();
         }
         return fieldInfo.getDesc() + "，值域：" + fieldInfo.getRange();

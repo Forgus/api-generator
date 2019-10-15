@@ -1,25 +1,15 @@
 package site.forgus.plugins.apigenerator.config;
 
 import com.intellij.openapi.options.Configurable;
-import com.intellij.refactoring.changeSignature.JavaParameterTableModel;
-import com.intellij.structuralsearch.plugin.ui.filters.FilterPanel;
 import com.intellij.ui.components.*;
-import com.intellij.ui.table.JBTable;
-import com.intellij.util.ui.table.*;
-import com.jgoodies.common.collect.ArrayListModel;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nls;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import site.forgus.plugins.apigenerator.yapi.sdk.YApiSdk;
 
 import javax.swing.*;
-import javax.swing.event.ListDataListener;
-import javax.swing.table.TableModel;
 import java.awt.*;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 public class ApiGeneratorSetting implements Configurable {
 
@@ -57,69 +47,69 @@ public class ApiGeneratorSetting implements Configurable {
         //normal setting
         JBPanel normalPanel = new JBPanel(layout);
 
-        normalPanel.add(buildLabel(layout,"Exclude Fields:"));
+        normalPanel.add(buildLabel(layout, "Exclude Fields:"));
         excludeFields = new JBTextField(state.excludeFields);
-        layout.setConstraints(excludeFields,getValueConstraints());
+        layout.setConstraints(excludeFields, getValueConstraints());
         normalPanel.add(excludeFields);
 
-        normalPanel.add(buildLabel(layout,"Save Directory:"));
+        normalPanel.add(buildLabel(layout, "Save Directory:"));
         dirPathTextField = buildTextField(layout, state.dirPath);
         normalPanel.add(dirPathTextField);
 
-        normalPanel.add(buildLabel(layout,"Indent Style:"));
+        normalPanel.add(buildLabel(layout, "Indent Style:"));
         prefixTextField = buildTextField(layout, state.prefix);
         normalPanel.add(prefixTextField);
 
-        cnFileNameCheckBox = buildJBCheckBox(layout,"Extract filename from doc comments",state.cnFileName);
+        cnFileNameCheckBox = buildJBCheckBox(layout, "Extract filename from doc comments", state.cnFileName);
         normalPanel.add(cnFileNameCheckBox);
 
-        jbTabbedPane.addTab("Api Setting",normalPanel);
+        jbTabbedPane.addTab("Api Setting", normalPanel);
 
         //YApi setting
         JBPanel yApiPanel = new JBPanel(layout);
 
-        yApiPanel.add(buildLabel(layout,"YApi server url:"));
-        yApiUrlTextField = buildTextField(layout,state.yApiServerUrl);
+        yApiPanel.add(buildLabel(layout, "YApi server url:"));
+        yApiUrlTextField = buildTextField(layout, state.yApiServerUrl);
         yApiPanel.add(yApiUrlTextField);
 
-        yApiPanel.add(buildLabel(layout,"Project token:"));
-        tokenTextField = buildTextField(layout,state.projectToken);
+        yApiPanel.add(buildLabel(layout, "Project token:"));
+        tokenTextField = buildTextField(layout, state.projectToken);
         yApiPanel.add(tokenTextField);
 
-        yApiPanel.add(buildLabel(layout,"Project id:"));
+        yApiPanel.add(buildLabel(layout, "Project id:"));
         GridBagConstraints textConstraints = getValueConstraints();
         projectIdLabel = new JBLabel(state.projectId);
-        layout.setConstraints(projectIdLabel,textConstraints);
+        layout.setConstraints(projectIdLabel, textConstraints);
         yApiPanel.add(projectIdLabel);
 
-        yApiPanel.add(buildLabel(layout,"Default save category:"));
-        defaultCatTextField = buildTextField(layout,state.defaultCat);
+        yApiPanel.add(buildLabel(layout, "Default save category:"));
+        defaultCatTextField = buildTextField(layout, state.defaultCat);
         yApiPanel.add(defaultCatTextField);
 
-        autoCatCheckBox = buildJBCheckBox(layout,"Classify API automatically",state.autoCat);
+        autoCatCheckBox = buildJBCheckBox(layout, "Classify API automatically", state.autoCat);
         yApiPanel.add(autoCatCheckBox);
 
-        jbTabbedPane.addTab("YApi Setting",yApiPanel);
+        jbTabbedPane.addTab("YApi Setting", yApiPanel);
         return jbTabbedPane;
     }
 
-    private JBCheckBox buildJBCheckBox(GridBagLayout layout,String text,boolean selected) {
+    private JBCheckBox buildJBCheckBox(GridBagLayout layout, String text, boolean selected) {
         JBCheckBox checkBox = new JBCheckBox();
         checkBox.setText(text);
         checkBox.setSelected(selected);
-        layout.setConstraints(checkBox,getValueConstraints());
+        layout.setConstraints(checkBox, getValueConstraints());
         return checkBox;
     }
 
-    private JBLabel buildLabel(GridBagLayout layout,String name) {
+    private JBLabel buildLabel(GridBagLayout layout, String name) {
         JBLabel jbLabel = new JBLabel(name);
-        layout.setConstraints(jbLabel,getLabelConstraints());
+        layout.setConstraints(jbLabel, getLabelConstraints());
         return jbLabel;
     }
 
-    private JBTextField buildTextField(GridBagLayout layout,String text) {
+    private JBTextField buildTextField(GridBagLayout layout, String text) {
         JBTextField textField = new JBTextField(text);
-        layout.setConstraints(textField,getValueConstraints());
+        layout.setConstraints(textField, getValueConstraints());
         return textField;
     }
 
@@ -146,7 +136,7 @@ public class ApiGeneratorSetting implements Configurable {
                 !state.projectId.equals(projectIdLabel.getText()) ||
                 !state.defaultCat.equals(defaultCatTextField.getText()) ||
                 state.autoCat != autoCatCheckBox.isSelected() ||
-                !state.dirPath.equals(dirPathTextField.getText())||
+                !state.dirPath.equals(dirPathTextField.getText()) ||
                 !state.excludeFields.equals(excludeFields.getText());
     }
 
@@ -155,7 +145,7 @@ public class ApiGeneratorSetting implements Configurable {
         config.getState().excludeFields = excludeFields.getText();
         if (!StringUtils.isEmpty(excludeFields.getText())) {
             String[] split = excludeFields.getText().split(",");
-            for(String str : split) {
+            for (String str : split) {
                 config.getState().excludeFieldNames.add(str);
             }
         }
@@ -165,7 +155,7 @@ public class ApiGeneratorSetting implements Configurable {
         config.getState().yApiServerUrl = yApiUrlTextField.getText();
         config.getState().projectToken = tokenTextField.getText();
         try {
-            config.getState().projectId = YApiSdk.getProjectInfo(yApiUrlTextField.getText(),tokenTextField.getText()).get_id().toString();
+            config.getState().projectId = YApiSdk.getProjectInfo(yApiUrlTextField.getText(), tokenTextField.getText()).get_id().toString();
         } catch (IOException e) {
             e.printStackTrace();
         }

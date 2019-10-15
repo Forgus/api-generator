@@ -1,5 +1,8 @@
 package site.forgus.plugins.apigenerator.normal;
 
+import lombok.Data;
+
+@Data
 public class RequireAndRange {
 
     private boolean require;
@@ -11,22 +14,6 @@ public class RequireAndRange {
     }
 
     public static RequireAndRange instance() {
-        return new RequireAndRange(false,"N/A");
-    }
-
-    public boolean isRequire() {
-        return require;
-    }
-
-    public void setRequire(boolean require) {
-        this.require = require;
-    }
-
-    public String getRange() {
-        return range;
-    }
-
-    public void setRange(String range) {
-        this.range = range;
+        return new RequireAndRange(false, "N/A");
     }
 }

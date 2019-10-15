@@ -1,6 +1,9 @@
 package site.forgus.plugins.apigenerator.normal;
 
-import com.intellij.psi.*;
+import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiMethod;
+import com.intellij.psi.PsiParameter;
+import com.intellij.psi.PsiType;
 import com.intellij.psi.javadoc.PsiDocComment;
 import com.intellij.psi.javadoc.PsiDocTag;
 import com.intellij.psi.util.PsiUtil;
@@ -23,32 +26,28 @@ public class MethodInfo implements Serializable {
     private String methodName;
     private List<FieldInfo> requestFields;
     private List<FieldInfo> responseFields;
+    private FieldInfo response;
 
     private static final List<String> excludeParamTypes = Arrays.asList("RedirectAttributes", "HttpServletRequest", "HttpServletResponse");
-
-    public MethodInfo() {
-    }
 
     public MethodInfo(PsiMethod psiMethod) {
         this.setDesc(DesUtil.getDescription(psiMethod));
         PsiClass psiClass = psiMethod.getContainingClass();
-        if(psiClass == null) {
+        if (psiClass == null) {
             return;
         }
         this.setPackageName(PsiUtil.getPackageName(psiClass));
         this.setClassName(psiClass.getName());
         PsiType returnType = psiMethod.getReturnType();
-        if(returnType != null) {
+        if (returnType != null) {
             this.setReturnStr(returnType.getPresentableText());
         }
         this.setParamStr(psiMethod.getParameterList().getText());
         this.setMethodName(psiMethod.getName());
         this.setRequestFields(listParamFieldInfos(psiMethod));
-        this.setResponseFields(getResponseFieldInfo(psiMethod).getChildren());
-    }
-
-    public FieldInfo getResponseFieldInfo(PsiMethod psiMethod) {
-        return new FieldInfo(psiMethod.getReturnType(), "", new PsiAnnotation[0]);
+        FieldInfo fieldInfo = new FieldInfo(psiMethod.getReturnType());
+        this.response = fieldInfo;
+        this.setResponseFields(fieldInfo.getChildren());
     }
 
     private List<FieldInfo> listParamFieldInfos(PsiMethod psiMethod) {

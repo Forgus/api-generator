@@ -85,7 +85,7 @@ public class YApiSdk {
      * @throws IOException
      */
     public static YApiResponse saveInterface(String serverUrl, YApiInterface yApiInterface) throws IOException {
-        String string = HttpUtil.doPost(serverUrl + SAVE_INTERFACE_URI,gson.toJson(yApiInterface));
+        String string = HttpUtil.doPost(serverUrl + SAVE_INTERFACE_URI, gson.toJson(yApiInterface));
         return gson.fromJson(string, YApiResponse.class);
     }
 

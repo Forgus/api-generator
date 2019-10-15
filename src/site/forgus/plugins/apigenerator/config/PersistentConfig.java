@@ -6,9 +6,7 @@ import com.intellij.openapi.components.State;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 
@@ -28,6 +26,7 @@ public class PersistentConfig implements PersistentStateComponent<PersistentConf
         public Boolean autoCat = false;
         public String defaultCat = "api_generator";
     }
+
     private State myState = new State();
 
     /**
@@ -49,7 +48,6 @@ public class PersistentConfig implements PersistentStateComponent<PersistentConf
     public void loadState(@NotNull State state) {
         myState = state;
     }
-
 
 
 }

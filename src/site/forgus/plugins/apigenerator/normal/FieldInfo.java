@@ -3,6 +3,7 @@ package site.forgus.plugins.apigenerator.normal;
 import com.intellij.psi.*;
 import com.intellij.psi.impl.source.PsiClassReferenceType;
 import com.intellij.psi.util.PsiUtil;
+import com.sun.xml.internal.ws.wsdl.writer.document.ParamType;
 import lombok.Data;
 import org.apache.commons.lang.StringUtils;
 import site.forgus.plugins.apigenerator.config.PersistentConfig;
@@ -12,9 +13,7 @@ import site.forgus.plugins.apigenerator.util.AssertUtils;
 import site.forgus.plugins.apigenerator.util.DesUtil;
 import site.forgus.plugins.apigenerator.util.FieldUtil;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 @Data
 public class FieldInfo {
@@ -26,11 +25,30 @@ public class FieldInfo {
     private String desc;
     private TypeEnum paramType;
     private List<FieldInfo> children;
+    private FieldInfo parent;
     private List<PsiAnnotation> annotations;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        FieldInfo fieldInfo = (FieldInfo) o;
+        return name.equals(fieldInfo.name) &&
+                Objects.equals(parent, fieldInfo.parent);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, parent);
+    }
 
     private static List<String> requiredTexts = Arrays.asList("@NotNull", "@NotBlank", "@NotEmpty", "@PathVariable");
 
     protected PersistentConfig config = PersistentConfig.getInstance();
+
+    public FieldInfo(PsiType psiType) {
+        this(psiType, "", new PsiAnnotation[0]);
+    }
 
     public FieldInfo(String name, PsiType psiType, String desc, PsiAnnotation[] annotations) {
         RequireAndRange requireAndRange = getRequireAndRange(annotations);
@@ -49,13 +67,13 @@ public class FieldInfo {
             } else {
                 paramType = TypeEnum.OBJECT;
             }
-            this.children = listChildren(psiType);
+            this.children = listChildren(this);
         } else {
             paramType = TypeEnum.OBJECT;
         }
     }
 
-    public FieldInfo(String parentTypeStr, String name, PsiType psiType, String desc, PsiAnnotation[] annotations) {
+    public FieldInfo(FieldInfo parent, String name, PsiType psiType, String desc, PsiAnnotation[] annotations) {
         RequireAndRange requireAndRange = getRequireAndRange(annotations);
         String fieldName = getParamName(name, annotations);
         this.name = fieldName == null ? "N/A" : fieldName;
@@ -64,6 +82,7 @@ public class FieldInfo {
         this.range = requireAndRange.getRange();
         this.desc = desc == null ? "" : desc;
         this.annotations = Arrays.asList(annotations);
+        this.parent = parent;
         if (psiType != null) {
             if (FieldUtil.isNormalType(psiType)) {
                 paramType = TypeEnum.LITERAL;
@@ -72,8 +91,8 @@ public class FieldInfo {
             } else {
                 paramType = TypeEnum.OBJECT;
             }
-            if (!psiType.getPresentableText().contains(parentTypeStr) && !parentTypeStr.contains(psiType.getPresentableText())) {
-                this.children = listChildren(psiType);
+            if (needResolveChildren(parent, psiType)) {
+                this.children = listChildren(this);
             }
         } else {
             paramType = TypeEnum.OBJECT;
@@ -111,7 +130,8 @@ public class FieldInfo {
         return null;
     }
 
-    private List<FieldInfo> listChildren(PsiType psiType) {
+    private List<FieldInfo> listChildren(FieldInfo fieldInfo) {
+        PsiType psiType = fieldInfo.getPsiType();
         if (psiType == null) {
             return new ArrayList<>();
         }
@@ -127,11 +147,11 @@ public class FieldInfo {
                 if (iterableType == null || FieldUtil.isNormalType(iterableType.getPresentableText())) {
                     return new ArrayList<>();
                 }
-                return listChildren(psiType.getPresentableText(),iterableType);
+                return listChildren(new FieldInfo(fieldInfo,iterableType.getPresentableText(), iterableType, "", new PsiAnnotation[0]));
             }
             String typeName = psiType.getPresentableText();
             if (typeName.startsWith("Map")) {
-                fieldInfos.add(new FieldInfo(typeName, null, "", new PsiAnnotation[0]));
+                fieldInfos.add(new FieldInfo(fieldInfo,typeName, null, "", new PsiAnnotation[0]));
                 return fieldInfos;
             }
             if (typeName.contains("<")) {
@@ -142,7 +162,7 @@ public class FieldInfo {
                     if (config.getState().excludeFields.contains(outField.getName())) {
                         continue;
                     }
-                    fieldInfos.add(new FieldInfo(outField.getName(), type, DesUtil.getDescription(outField.getDocComment()), outField.getAnnotations()));
+                    fieldInfos.add(new FieldInfo(fieldInfo,outField.getName(), type, DesUtil.getDescription(outField.getDocComment()), outField.getAnnotations()));
                 }
                 return fieldInfos;
             }
@@ -154,63 +174,32 @@ public class FieldInfo {
                 if (config.getState().excludeFields.contains(psiField.getName())) {
                     continue;
                 }
-                fieldInfos.add(new FieldInfo(psiType.getPresentableText(),psiField.getName(), psiField.getType(), DesUtil.getDescription(psiField.getDocComment()), psiField.getAnnotations()));
+                fieldInfos.add(new FieldInfo(fieldInfo,psiField.getName(), psiField.getType(), DesUtil.getDescription(psiField.getDocComment()), psiField.getAnnotations()));
             }
             return fieldInfos;
         }
         return new ArrayList<>();
     }
 
-    private List<FieldInfo> listChildren(String parentTypeStr, PsiType psiType) {
-        if (psiType == null) {
-            return new ArrayList<>();
+    private boolean needResolveChildren(FieldInfo parent, PsiType psiType) {
+        if (parent == null) {
+            return true;
         }
-        if (FieldUtil.isNormalType(psiType.getPresentableText())) {
-            //基础类或基础包装类没有子域
-            return new ArrayList<>();
+        Set<PsiType> resolvedTypeSet = new HashSet<>();
+        FieldInfo p = parent;
+        while (p != null) {
+            resolvedTypeSet.add(p.getPsiType());
+            p = p.getParent();
         }
-        List<FieldInfo> fieldInfos = new ArrayList<>();
-        if (psiType instanceof PsiClassReferenceType) {
-            if (FieldUtil.isIterableType(psiType)) {
-                PsiType iterableType = PsiUtil.extractIterableTypeParameter(psiType, false);
-                if (iterableType == null || FieldUtil.isNormalType(iterableType.getPresentableText())) {
-                    return new ArrayList<>();
-                }
-                if(parentTypeStr.contains(iterableType.getPresentableText())) {
-                    return new ArrayList<>();
-                }
-                return listChildren(psiType.getPresentableText(),iterableType);
-            }
-            String typeName = psiType.getPresentableText();
-            if (typeName.startsWith("Map")) {
-                fieldInfos.add(new FieldInfo(typeName, null, "", new PsiAnnotation[0]));
-                return fieldInfos;
-            }
-            if (typeName.contains("<")) {
-                PsiClass outerClass = PsiUtil.resolveClassInType(psiType);
-                PsiType innerType = PsiUtil.substituteTypeParameter(psiType, outerClass, 0, false);
-                for (PsiField outField : outerClass.getAllFields()) {
-                    PsiType type = containGeneric(outField.getType().getPresentableText()) ? innerType : outField.getType();
-                    if (config.getState().excludeFields.contains(outField.getName())) {
-                        continue;
-                    }
-                    fieldInfos.add(new FieldInfo(outField.getName(), type, DesUtil.getDescription(outField.getDocComment()), outField.getAnnotations()));
-                }
-                return fieldInfos;
-            }
-            PsiClass psiClass = PsiUtil.resolveClassInType(psiType);
-            if (psiClass == null) {
-                return new ArrayList<>();
-            }
-            for (PsiField psiField : psiClass.getAllFields()) {
-                if (config.getState().excludeFields.contains(psiField.getName())) {
-                    continue;
-                }
-                fieldInfos.add(new FieldInfo(parentTypeStr, psiField.getName(), psiField.getType(), DesUtil.getDescription(psiField.getDocComment()), psiField.getAnnotations()));
-            }
-            return fieldInfos;
+        if(TypeEnum.ARRAY.equals(paramType)) {
+            psiType = PsiUtil.extractIterableTypeParameter(psiType, false);
         }
-        return new ArrayList<>();
+        for (PsiType resolvedType : resolvedTypeSet) {
+            if (resolvedType.equals(psiType)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private boolean containGeneric(String str) {

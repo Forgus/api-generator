@@ -1,7 +1,10 @@
 package site.forgus.plugins.apigenerator.yapi.model;
 
+import lombok.Data;
+
 import java.io.Serializable;
 
+@Data
 public class YApiPathVariable implements Serializable {
     private static final long serialVersionUID = 1643857942192295230L;
 
@@ -9,27 +12,4 @@ public class YApiPathVariable implements Serializable {
     private String example;
     private String name;
 
-    public String getDesc() {
-        return desc;
-    }
-
-    public void setDesc(String desc) {
-        this.desc = desc;
-    }
-
-    public String getExample() {
-        return example;
-    }
-
-    public void setExample(String example) {
-        this.example = example;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
 }
