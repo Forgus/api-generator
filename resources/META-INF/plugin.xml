@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>site.forgus.plugins.api-generator</id>
     <name>Api Generator</name>
-    <version>3.5.2</version>
+    <version>2019.10.16</version>
     <vendor email="wenbin1876@gmail.com" url="http://forgus.vicp.io">孤峰</vendor>
 
     <description><![CDATA[
@@ -87,12 +87,7 @@
       org.springframework.web.bind.annotation.RequestParam<br>
       org.springframework.web.bind.annotation.ResponseBody<br><br>
       <em>Compatible IDE versions:</em><br>
-      IU-193.4099.13<br>
-      IU-192.6817.14 (2019.2.3)<br>
-      IU-191.8026.42 (2019.1.4)<br>
-      IU-183.6156.11 (2018.3.6)<br>
-      IU-182.5262.2 (2018.2.8)<br>
-      IU-181.5684.4 (2018.1.8)<br>
+      2018.1.8+
     ]]></description>
 
     <change-notes><![CDATA[
@@ -106,7 +101,7 @@
     </change-notes>
 
     <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->
-    <idea-version since-build="173.0"/>
+    <idea-version since-build="181"/>
 
     <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
          on how to target different products -->
