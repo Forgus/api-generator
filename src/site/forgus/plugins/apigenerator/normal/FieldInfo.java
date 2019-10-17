@@ -208,7 +208,11 @@ public class FieldInfo {
 
     private boolean isMapType(PsiType psiType) {
         String presentableText = psiType.getPresentableText();
-        return presentableText.startsWith("Map") || presentableText.startsWith("HashMap") || presentableText.startsWith("LinkedHashMap");
+        List<String> mapList = Arrays.asList("Map","HashMap","LinkedHashMap");
+        if(mapList.contains(presentableText)) {
+            return true;
+        }
+        return presentableText.startsWith("Map<") || presentableText.startsWith("HashMap<") || presentableText.startsWith("LinkedHashMap<");
     }
 
     private boolean containGeneric(String str) {

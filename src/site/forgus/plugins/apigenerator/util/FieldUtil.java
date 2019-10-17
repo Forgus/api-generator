@@ -8,6 +8,8 @@ import java.util.*;
 public class FieldUtil {
 
     public static final Map<String, Object> normalTypes = new HashMap<>();
+
+    public static final List<String> iterableTypes = Arrays.asList("List","Set","Collection");
     /**
      * 泛型列表
      */
@@ -35,8 +37,6 @@ public class FieldUtil {
         normalTypes.put("BigDecimal", 0.111111);
         genericList.add("T");
         genericList.add("E");
-        genericList.add("A");
-        genericList.add("B");
         genericList.add("K");
         genericList.add("V");
     }
@@ -51,7 +51,10 @@ public class FieldUtil {
     }
 
     private static boolean isIterableType(String typeName) {
-        return typeName.startsWith("List") || typeName.startsWith("Set") || typeName.startsWith("Collection");
+        if(iterableTypes.contains(typeName)) {
+            return true;
+        }
+        return typeName.startsWith("List<") || typeName.startsWith("Set<") || typeName.startsWith("Collection<");
     }
 
     public static boolean isIterableType(PsiType psiType) {
