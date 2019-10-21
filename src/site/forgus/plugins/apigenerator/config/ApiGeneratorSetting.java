@@ -1,10 +1,12 @@
 package site.forgus.plugins.apigenerator.config;
 
+import com.intellij.ide.util.PropertiesComponent;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.ui.components.*;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
+import site.forgus.plugins.apigenerator.util.AssertUtils;
 import site.forgus.plugins.apigenerator.yapi.sdk.YApiSdk;
 
 import javax.swing.*;
@@ -154,10 +156,12 @@ public class ApiGeneratorSetting implements Configurable {
         config.getState().cnFileName = cnFileNameCheckBox.isSelected();
         config.getState().yApiServerUrl = yApiUrlTextField.getText();
         config.getState().projectToken = tokenTextField.getText();
-        try {
-            config.getState().projectId = YApiSdk.getProjectInfo(yApiUrlTextField.getText(), tokenTextField.getText()).get_id().toString();
-        } catch (IOException e) {
-            e.printStackTrace();
+        if(AssertUtils.isNotEmpty(yApiUrlTextField.getText()) && AssertUtils.isNotEmpty(tokenTextField.getText())) {
+            try {
+                config.getState().projectId = YApiSdk.getProjectInfo(yApiUrlTextField.getText(), tokenTextField.getText()).get_id().toString();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
         config.getState().defaultCat = defaultCatTextField.getText();
         config.getState().autoCat = autoCatCheckBox.isSelected();
