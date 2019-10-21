@@ -321,7 +321,7 @@ public class ApiGenerateAction extends AnAction {
                         String name = psiNameValuePair.getName();
                         String literalValue = psiNameValuePair.getLiteralValue();
                         if (StringUtils.isNotEmpty(literalValue)) {
-                            if ("value".equals(name) || "name".equals(name)) {
+                            if (name == null || "value".equals(name) || "name".equals(name)) {
                                 yApiPathVariable.setName(literalValue);
                                 break;
                             }
