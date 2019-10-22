@@ -50,7 +50,7 @@ public class ApiGenerateAction extends AnAction {
         if (project == null) {
             return;
         }
-        config = ApiGeneratorConfig.getInstance(project);
+        config = ServiceManager.getService(project,ApiGeneratorConfig.class);
         PsiElement referenceAt = psiFile.findElementAt(editor.getCaretModel().getOffset());
         PsiClass selectedClass = PsiTreeUtil.getContextOfType(referenceAt, PsiClass.class);
         if (selectedClass == null) {

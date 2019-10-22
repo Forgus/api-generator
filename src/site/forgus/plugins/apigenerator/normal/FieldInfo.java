@@ -1,5 +1,6 @@
 package site.forgus.plugins.apigenerator.normal;
 
+import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
 import com.intellij.psi.impl.source.PsiClassReferenceType;
@@ -53,7 +54,7 @@ public class FieldInfo {
 
     public FieldInfo(Project project,String name, PsiType psiType, String desc, PsiAnnotation[] annotations) {
         this.project = project;
-        config = ApiGeneratorConfig.getInstance(project);
+        config = ServiceManager.getService(project,ApiGeneratorConfig.class);
         RequireAndRange requireAndRange = getRequireAndRange(annotations);
         String fieldName = getParamName(name, annotations);
         this.name = fieldName == null ? "N/A" : fieldName;
@@ -80,7 +81,7 @@ public class FieldInfo {
 
     public FieldInfo(Project project,FieldInfo parent, String name, PsiType psiType, String desc, PsiAnnotation[] annotations) {
         this.project = project;
-        config = ApiGeneratorConfig.getInstance(project);
+        config = ServiceManager.getService(project,ApiGeneratorConfig.class);
         RequireAndRange requireAndRange = getRequireAndRange(annotations);
         String fieldName = getParamName(name, annotations);
         this.name = fieldName == null ? "N/A" : fieldName;

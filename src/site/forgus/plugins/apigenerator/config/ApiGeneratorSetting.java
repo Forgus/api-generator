@@ -1,5 +1,6 @@
 package site.forgus.plugins.apigenerator.config;
 
+import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.components.*;
@@ -15,7 +16,7 @@ import java.io.IOException;
 
 public class ApiGeneratorSetting implements Configurable {
 
-    private ApiGeneratorConfig.State oldState;
+    private ApiGeneratorConfig oldState;
 
 
     JBTextField dirPathTextField;
@@ -30,7 +31,7 @@ public class ApiGeneratorSetting implements Configurable {
     JBTextField excludeFields;
 
     public ApiGeneratorSetting(Project project) {
-        oldState = ApiGeneratorConfig.getInstance(project).getState();
+        oldState = ServiceManager.getService(project,ApiGeneratorConfig.class);
     }
 
     @Nls(capitalization = Nls.Capitalization.Title)
