@@ -1,11 +1,12 @@
 package site.forgus.plugins.apigenerator.normal;
 
+import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
 import com.intellij.psi.impl.source.PsiClassReferenceType;
 import com.intellij.psi.util.PsiUtil;
 import lombok.Data;
 import org.apache.commons.lang.StringUtils;
-import site.forgus.plugins.apigenerator.config.PersistentConfig;
+import site.forgus.plugins.apigenerator.config.ApiGeneratorConfig;
 import site.forgus.plugins.apigenerator.constant.TypeEnum;
 import site.forgus.plugins.apigenerator.constant.WebAnnotation;
 import site.forgus.plugins.apigenerator.util.AssertUtils;
@@ -26,6 +27,7 @@ public class FieldInfo {
     private List<FieldInfo> children;
     private FieldInfo parent;
     private List<PsiAnnotation> annotations;
+    private Project project;
 
     @Override
     public boolean equals(Object o) {
@@ -43,13 +45,15 @@ public class FieldInfo {
 
     private static List<String> requiredTexts = Arrays.asList("@NotNull", "@NotBlank", "@NotEmpty", "@PathVariable");
 
-    protected PersistentConfig config = PersistentConfig.getInstance();
+    protected ApiGeneratorConfig config;
 
-    public FieldInfo(PsiType psiType) {
-        this(psiType, "", new PsiAnnotation[0]);
+    public FieldInfo(Project project,PsiType psiType) {
+        this(project,psiType, "", new PsiAnnotation[0]);
     }
 
-    public FieldInfo(String name, PsiType psiType, String desc, PsiAnnotation[] annotations) {
+    public FieldInfo(Project project,String name, PsiType psiType, String desc, PsiAnnotation[] annotations) {
+        this.project = project;
+        config = ApiGeneratorConfig.getInstance(project);
         RequireAndRange requireAndRange = getRequireAndRange(annotations);
         String fieldName = getParamName(name, annotations);
         this.name = fieldName == null ? "N/A" : fieldName;
@@ -74,7 +78,9 @@ public class FieldInfo {
         }
     }
 
-    public FieldInfo(FieldInfo parent, String name, PsiType psiType, String desc, PsiAnnotation[] annotations) {
+    public FieldInfo(Project project,FieldInfo parent, String name, PsiType psiType, String desc, PsiAnnotation[] annotations) {
+        this.project = project;
+        config = ApiGeneratorConfig.getInstance(project);
         RequireAndRange requireAndRange = getRequireAndRange(annotations);
         String fieldName = getParamName(name, annotations);
         this.name = fieldName == null ? "N/A" : fieldName;
@@ -100,8 +106,8 @@ public class FieldInfo {
         }
     }
 
-    public FieldInfo(PsiType psiType, String desc, PsiAnnotation[] annotations) {
-        this(psiType.getPresentableText(), psiType, desc, annotations);
+    public FieldInfo(Project project,PsiType psiType, String desc, PsiAnnotation[] annotations) {
+        this(project,psiType.getPresentableText(), psiType, desc, annotations);
     }
 
     private String getParamName(String name, PsiAnnotation[] annotations) {
@@ -148,11 +154,11 @@ public class FieldInfo {
                 if (iterableType == null || FieldUtil.isNormalType(iterableType.getPresentableText()) || isMapType(iterableType)) {
                     return new ArrayList<>();
                 }
-                return listChildren(new FieldInfo(fieldInfo, iterableType.getPresentableText(), iterableType, "", new PsiAnnotation[0]));
+                return listChildren(new FieldInfo(fieldInfo.getProject(),fieldInfo, iterableType.getPresentableText(), iterableType, "", new PsiAnnotation[0]));
             }
             String typeName = psiType.getPresentableText();
             if (typeName.startsWith("Map")) {
-                fieldInfos.add(new FieldInfo(fieldInfo, typeName, null, "", new PsiAnnotation[0]));
+                fieldInfos.add(new FieldInfo(project,fieldInfo, typeName, null, "", new PsiAnnotation[0]));
                 return fieldInfos;
             }
             if (typeName.contains("<")) {
@@ -163,7 +169,7 @@ public class FieldInfo {
                     if (config.getState().excludeFields.contains(outField.getName())) {
                         continue;
                     }
-                    fieldInfos.add(new FieldInfo(fieldInfo, outField.getName(), type, DesUtil.getDescription(outField.getDocComment()), outField.getAnnotations()));
+                    fieldInfos.add(new FieldInfo(project,fieldInfo, outField.getName(), type, DesUtil.getDescription(outField.getDocComment()), outField.getAnnotations()));
                 }
                 return fieldInfos;
             }
@@ -175,7 +181,7 @@ public class FieldInfo {
                 if (config.getState().excludeFields.contains(psiField.getName())) {
                     continue;
                 }
-                fieldInfos.add(new FieldInfo(fieldInfo, psiField.getName(), psiField.getType(), DesUtil.getDescription(psiField.getDocComment()), psiField.getAnnotations()));
+                fieldInfos.add(new FieldInfo(project,fieldInfo, psiField.getName(), psiField.getType(), DesUtil.getDescription(psiField.getDocComment()), psiField.getAnnotations()));
             }
             return fieldInfos;
         }

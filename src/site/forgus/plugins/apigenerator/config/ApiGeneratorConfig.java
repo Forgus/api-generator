@@ -1,8 +1,7 @@
 package site.forgus.plugins.apigenerator.config;
 
-import com.intellij.openapi.components.PersistentStateComponent;
-import com.intellij.openapi.components.ServiceManager;
-import com.intellij.openapi.components.State;
+import com.intellij.openapi.components.*;
+import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -10,8 +9,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 
-@State(name = "ApiGeneratorConfig", storages = {@com.intellij.openapi.components.Storage(value = "$APP_CONFIG$/ApiGeneratorConfig.xml")})
-public class PersistentConfig implements PersistentStateComponent<PersistentConfig.State> {
+@State(name = "ApiGeneratorConfig")
+public class ApiGeneratorConfig implements PersistentStateComponent<ApiGeneratorConfig.State> {
 
     public static class State {
         public Set<String> excludeFieldNames = new HashSet<>();
@@ -27,15 +26,10 @@ public class PersistentConfig implements PersistentStateComponent<PersistentConf
         public String defaultCat = "api_generator";
     }
 
-    private State myState = new State();
+    private static State myState = new State();
 
-    /**
-     * 服务管理器获取实例
-     *
-     * @return PersistentState instance
-     */
-    public static PersistentConfig getInstance() {
-        return ServiceManager.getService(PersistentConfig.class);
+    public static ApiGeneratorConfig getInstance(Project project) {
+        return ServiceManager.getService(project,ApiGeneratorConfig.class);
     }
 
     @Nullable

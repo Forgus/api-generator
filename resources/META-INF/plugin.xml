@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>site.forgus.plugins.api-generator</id>
     <name>Api Generator</name>
-    <version>2019.10.21</version>
+    <version>2019.10.22</version>
     <vendor email="wenbin1876@gmail.com" url="http://forgus.vicp.io">孤峰</vendor>
 
     <description><![CDATA[
@@ -111,8 +111,8 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <!-- Add your extensions here -->
-        <applicationConfigurable instance="site.forgus.plugins.apigenerator.config.ApiGeneratorSetting"/>
-        <applicationService serviceImplementation="site.forgus.plugins.apigenerator.config.PersistentConfig"/>
+        <projectConfigurable instance="site.forgus.plugins.apigenerator.config.ApiGeneratorSetting"/>
+        <projectService serviceImplementation="site.forgus.plugins.apigenerator.config.ApiGeneratorConfig"/>
     </extensions>
 
     <actions>

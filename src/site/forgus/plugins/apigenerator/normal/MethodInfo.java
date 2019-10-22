@@ -45,7 +45,7 @@ public class MethodInfo implements Serializable {
         this.setParamStr(psiMethod.getParameterList().getText());
         this.setMethodName(psiMethod.getName());
         this.setRequestFields(listParamFieldInfos(psiMethod));
-        FieldInfo fieldInfo = new FieldInfo(psiMethod.getReturnType());
+        FieldInfo fieldInfo = new FieldInfo(psiMethod.getProject(),psiMethod.getReturnType());
         this.response = fieldInfo;
         this.setResponseFields(fieldInfo.getChildren());
     }
@@ -60,6 +60,7 @@ public class MethodInfo implements Serializable {
                 continue;
             }
             FieldInfo fieldInfo = new FieldInfo(
+                    psiMethod.getProject(),
                     psiParameter.getName(),
                     psiType,
                     paramNameDescMap.get(psiParameter.getName()),

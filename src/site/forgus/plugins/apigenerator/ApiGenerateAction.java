@@ -4,6 +4,8 @@ import com.google.common.base.Strings;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
+import com.intellij.openapi.components.ComponentManager;
+import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
@@ -15,8 +17,7 @@ import com.intellij.psi.util.PsiTreeUtil;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
-import org.jetbrains.annotations.NotNull;
-import site.forgus.plugins.apigenerator.config.PersistentConfig;
+import site.forgus.plugins.apigenerator.config.ApiGeneratorConfig;
 import site.forgus.plugins.apigenerator.constant.TypeEnum;
 import site.forgus.plugins.apigenerator.constant.WebAnnotation;
 import site.forgus.plugins.apigenerator.normal.FieldInfo;
@@ -33,7 +34,7 @@ import java.util.*;
 
 public class ApiGenerateAction extends AnAction {
 
-    protected PersistentConfig config = PersistentConfig.getInstance();
+    protected ApiGeneratorConfig config;
 
     @Override
     public void actionPerformed(AnActionEvent actionEvent) {
@@ -49,6 +50,7 @@ public class ApiGenerateAction extends AnAction {
         if (project == null) {
             return;
         }
+        config = ApiGeneratorConfig.getInstance(project);
         PsiElement referenceAt = psiFile.findElementAt(editor.getCaretModel().getOffset());
         PsiClass selectedClass = PsiTreeUtil.getContextOfType(referenceAt, PsiClass.class);
         if (selectedClass == null) {
@@ -598,7 +600,7 @@ public class ApiGenerateAction extends AnAction {
             if (config.getState().excludeFieldNames.contains(psiField.getName())) {
                 continue;
             }
-            fieldInfos.add(new FieldInfo(psiField.getName(), psiField.getType(), DesUtil.getDescription(psiField.getDocComment()), psiField.getAnnotations()));
+            fieldInfos.add(new FieldInfo(psiClass.getProject(),psiField.getName(), psiField.getType(), DesUtil.getDescription(psiField.getDocComment()), psiField.getAnnotations()));
         }
         return fieldInfos;
     }
