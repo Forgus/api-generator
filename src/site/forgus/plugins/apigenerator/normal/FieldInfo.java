@@ -231,7 +231,7 @@ public class FieldInfo {
 
     private boolean isMapType(PsiType psiType) {
         String presentableText = psiType.getPresentableText();
-        List<String> mapList = Arrays.asList("Map","HashMap","LinkedHashMap");
+        List<String> mapList = Arrays.asList("Map","HashMap","LinkedHashMap","JSONObject");
         if(mapList.contains(presentableText)) {
             return true;
         }

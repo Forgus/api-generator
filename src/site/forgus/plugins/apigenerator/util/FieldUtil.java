@@ -35,7 +35,7 @@ public class FieldUtil {
         normalTypes.put("Float", 0.0F);
         normalTypes.put("Double", 0.0D);
         normalTypes.put("String", "@string");
-        normalTypes.put("Date", new SimpleDateFormat("YYYY-MM-dd HH:mm:ss").format(new Date()));
+        normalTypes.put("Date", new Date().getTime());
         normalTypes.put("BigDecimal", 0.111111);
         genericList.add("T");
         genericList.add("E");
