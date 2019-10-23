@@ -71,7 +71,7 @@ public class FieldInfo {
             } else {
                 paramType = TypeEnum.OBJECT;
             }
-            if (!isMapType(psiType)) {
+            if (needResolveChildren(psiType)) {
                 this.children = listChildren(this);
             }
         } else {
@@ -189,9 +189,25 @@ public class FieldInfo {
         return new ArrayList<>();
     }
 
+    private boolean needResolveChildren(PsiType psiType) {
+        PsiClass psiClass = PsiUtil.resolveClassInType(psiType);
+        if(psiClass != null) {
+            if(psiClass.isEnum()) {
+                return false;
+            }
+        }
+        return !isMapType(psiType);
+    }
+
     private boolean needResolveChildren(FieldInfo parent, PsiType psiType) {
         if (parent == null) {
             return true;
+        }
+        PsiClass psiClass = PsiUtil.resolveClassInType(psiType);
+        if(psiClass != null) {
+            if(psiClass.isEnum()) {
+                return false;
+            }
         }
         if (isMapType(psiType)) {
             return false;
