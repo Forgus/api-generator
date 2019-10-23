@@ -1,5 +1,6 @@
 package site.forgus.plugins.apigenerator.util;
 
+import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiType;
 import com.intellij.psi.util.PsiUtil;
 
@@ -76,6 +77,12 @@ public class FieldUtil {
     }
 
     public static boolean isNormalType(PsiType psiType) {
+        PsiClass psiClass = PsiUtil.resolveClassInType(psiType);
+        if(psiClass != null) {
+            if (psiClass.isEnum()) {
+                return true;
+            }
+        }
         return isNormalType(psiType.getPresentableText());
     }
 }
