@@ -438,7 +438,10 @@ public class ApiGenerateAction extends AnAction {
         YApiQuery query = new YApiQuery();
         query.setName(fieldInfo.getName());
         query.setDesc(generateDesc(fieldInfo));
-        query.setExample(FieldUtil.getValue(fieldInfo.getPsiType()).toString());
+        Object value = FieldUtil.getValue(fieldInfo.getPsiType());
+        if(value != null) {
+            query.setExample(value.toString());
+        }
         query.setRequired(convertRequired(fieldInfo.isRequire()));
         return query;
     }
@@ -448,7 +451,7 @@ public class ApiGenerateAction extends AnAction {
     }
 
     private String generateDesc(FieldInfo fieldInfo) {
-        if (AssertUtils.isEmpty(fieldInfo.getRange())) {
+        if (AssertUtils.isEmpty(fieldInfo.getRange()) || "N/A".equals(fieldInfo.getRange())) {
             return fieldInfo.getDesc();
         }
         if (AssertUtils.isEmpty(fieldInfo.getDesc())) {

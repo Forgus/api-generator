@@ -1,6 +1,7 @@
 package site.forgus.plugins.apigenerator.util;
 
 import com.intellij.psi.PsiType;
+import com.intellij.psi.util.PsiUtil;
 
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -32,7 +33,7 @@ public class FieldUtil {
         normalTypes.put("Long", 0L);
         normalTypes.put("Float", 0.0F);
         normalTypes.put("Double", 0.0D);
-        normalTypes.put("String", "String");
+        normalTypes.put("String", "@string");
         normalTypes.put("Date", new SimpleDateFormat("YYYY-MM-dd HH:mm:ss").format(new Date()));
         normalTypes.put("BigDecimal", 0.111111);
         genericList.add("T");
@@ -42,6 +43,19 @@ public class FieldUtil {
     }
 
     public static Object getValue(PsiType psiType) {
+        if(isIterableType(psiType)) {
+            PsiType type = PsiUtil.extractIterableTypeParameter(psiType, false);
+            if(type == null) {
+                return "[]";
+            }
+            if (isNormalType(type)) {
+                Object obj = normalTypes.get(type.getPresentableText());
+                if(obj == null) {
+                    return null;
+                }
+                return obj.toString() + "," + obj.toString();
+            }
+        }
         return normalTypes.get(psiType.getPresentableText());
     }
 

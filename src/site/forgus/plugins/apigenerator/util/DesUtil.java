@@ -73,7 +73,8 @@ public class DesUtil {
                             .replace("<p>", "\n")
                             .replace("</p>", "\n")
                             .replace("<li>", "\n")
-                            .replace("</li>", "\n"), ' '
+                            .replace("</li>", "\n")
+                            .replace("{", ""), ' '
             );
         }
         return null;
