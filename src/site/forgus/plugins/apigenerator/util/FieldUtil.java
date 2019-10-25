@@ -1,17 +1,17 @@
 package site.forgus.plugins.apigenerator.util;
 
+import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiType;
 import com.intellij.psi.util.PsiUtil;
 
-import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class FieldUtil {
 
     public static final Map<String, Object> normalTypes = new HashMap<>();
 
-    public static final List<String> iterableTypes = Arrays.asList("List","Set","Collection");
+    public static final List<String> iterableTypes = Arrays.asList("List", "Set", "Collection");
     /**
      * 泛型列表
      */
@@ -44,14 +44,14 @@ public class FieldUtil {
     }
 
     public static Object getValue(PsiType psiType) {
-        if(isIterableType(psiType)) {
+        if (isIterableType(psiType)) {
             PsiType type = PsiUtil.extractIterableTypeParameter(psiType, false);
-            if(type == null) {
+            if (type == null) {
                 return "[]";
             }
             if (isNormalType(type)) {
                 Object obj = normalTypes.get(type.getPresentableText());
-                if(obj == null) {
+                if (obj == null) {
                     return null;
                 }
                 return obj.toString() + "," + obj.toString();
@@ -66,7 +66,7 @@ public class FieldUtil {
     }
 
     private static boolean isIterableType(String typeName) {
-        if(iterableTypes.contains(typeName)) {
+        if (iterableTypes.contains(typeName)) {
             return true;
         }
         return typeName.startsWith("List<") || typeName.startsWith("Set<") || typeName.startsWith("Collection<");
@@ -78,12 +78,24 @@ public class FieldUtil {
 
     public static boolean isNormalType(PsiType psiType) {
         PsiClass psiClass = PsiUtil.resolveClassInType(psiType);
-        if(psiClass != null) {
+        if (psiClass != null) {
             if (psiClass.isEnum()) {
                 return true;
             }
         }
         return isNormalType(psiType.getPresentableText());
+    }
+
+    public static PsiAnnotation findAnnotationByName(List<PsiAnnotation> annotations, String text) {
+        if (annotations == null) {
+            return null;
+        }
+        for (PsiAnnotation annotation : annotations) {
+            if (annotation.getText().contains(text)) {
+                return annotation;
+            }
+        }
+        return null;
     }
 }
 

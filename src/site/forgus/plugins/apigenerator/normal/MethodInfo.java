@@ -6,8 +6,6 @@ import com.intellij.psi.PsiParameter;
 import com.intellij.psi.PsiType;
 import com.intellij.psi.javadoc.PsiDocComment;
 import com.intellij.psi.javadoc.PsiDocTag;
-import com.intellij.psi.util.PsiClassUtil;
-import com.intellij.psi.util.PsiTypesUtil;
 import com.intellij.psi.util.PsiUtil;
 import lombok.Data;
 import org.apache.commons.lang.StringUtils;
@@ -30,7 +28,7 @@ public class MethodInfo implements Serializable {
     private List<FieldInfo> responseFields;
     private FieldInfo response;
 
-    private static final List<String> excludeParamTypes = Arrays.asList("RedirectAttributes", "HttpServletRequest", "HttpServletResponse");
+    private List<String> excludeParamTypes = Arrays.asList("RedirectAttributes", "HttpServletRequest", "HttpServletResponse");
 
     public MethodInfo(PsiMethod psiMethod) {
         this.setDesc(DesUtil.getDescription(psiMethod));
@@ -47,7 +45,7 @@ public class MethodInfo implements Serializable {
         this.setParamStr(psiMethod.getParameterList().getText());
         this.setMethodName(psiMethod.getName());
         this.setRequestFields(listParamFieldInfos(psiMethod));
-        FieldInfo fieldInfo = new FieldInfo(psiMethod.getProject(),psiMethod.getReturnType());
+        FieldInfo fieldInfo = new FieldInfo(psiMethod.getProject(), psiMethod.getReturnType());
         this.response = fieldInfo;
         this.setResponseFields(fieldInfo.getChildren());
     }
