@@ -463,6 +463,9 @@ public class ApiGenerateAction extends AnAction {
     private List<YApiForm> listYApiForms(List<FieldInfo> requestFields) {
         List<YApiForm> yApiForms = new ArrayList<>();
         for (FieldInfo fieldInfo : requestFields) {
+            if(getPathVariableAnnotation(fieldInfo.getAnnotations()) != null) {
+                continue;
+            }
             if (TypeEnum.LITERAL.equals(fieldInfo.getParamType())) {
                 yApiForms.add(buildYApiForm(fieldInfo));
             } else if (TypeEnum.OBJECT.equals(fieldInfo.getParamType())) {
