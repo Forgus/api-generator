@@ -653,7 +653,7 @@ public class ApiGenerateAction extends AnAction {
         md.write("### 返回结果示例\n");
         if (AssertUtils.isNotEmpty(methodInfo.getResponseFields())) {
             md.write("```json\n");
-            md.write(JsonUtil.buildPrettyJson(methodInfo.getResponseFields()) + "\n");
+            md.write(JsonUtil.buildPrettyJson(methodInfo.getResponse()) + "\n");
             md.write("```\n");
         }
         md.write("### 返回结果说明\n");
