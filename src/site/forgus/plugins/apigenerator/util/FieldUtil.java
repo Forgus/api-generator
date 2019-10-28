@@ -57,7 +57,8 @@ public class FieldUtil {
                 return obj.toString() + "," + obj.toString();
             }
         }
-        return normalTypes.get(psiType.getPresentableText());
+        Object value = normalTypes.get(psiType.getPresentableText());
+        return value == null ? "" : value;
     }
 
 
