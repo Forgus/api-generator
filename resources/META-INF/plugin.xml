@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>site.forgus.plugins.api-generator</id>
     <name>Api Generator</name>
-    <version>2019.11.06</version>
+    <version>2019.11.06.02</version>
     <vendor email="wenbin1876@gmail.com" url="http://forgus.vicp.io">孤峰</vendor>
 
     <description><![CDATA[
@@ -87,7 +87,9 @@
       org.springframework.web.bind.annotation.RequestParam<br>
       org.springframework.web.bind.annotation.ResponseBody<br><br>
       <em>Compatible IDE versions:</em><br>
-      2018.1.8+
+      2018.1.8+ <br><br>
+      <p><a href="https://github.com/Forgus/api-generator/wiki">Wiki</a>
+      |&nbsp<a href="https://github.com/Forgus/api-generator/issues">Issues</a></p>
     ]]></description>
 
     <change-notes><![CDATA[
