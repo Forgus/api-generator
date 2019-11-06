@@ -259,7 +259,7 @@ public class ApiGenerateAction extends AnAction {
                 yApiInterface.setReq_body_form(listYApiForms(methodInfo.getRequestFields()));
             }
         }
-        yApiInterface.setReq_query(listYApiQueries(methodInfo.getRequestFields()));
+        yApiInterface.setReq_query(listYApiQueries(methodInfo));
         Map<String, YApiCat> catNameMap = getCatNameMap();
         PsiDocComment classDesc = containingClass.getDocComment();
         yApiInterface.setCatid(getCatId(catNameMap, classDesc));
@@ -398,10 +398,11 @@ public class ApiGenerateAction extends AnAction {
         return catNameMap;
     }
 
-    private List<YApiQuery> listYApiQueries(List<FieldInfo> requestFields) {
+    private List<YApiQuery> listYApiQueries(MethodInfo methodInfo) {
+        List<FieldInfo> requestFields = methodInfo.getRequestFields();
         List<YApiQuery> queries = new ArrayList<>();
         for (FieldInfo fieldInfo : requestFields) {
-            if (notQuery(fieldInfo.getAnnotations())) {
+            if (notQuery(fieldInfo.getAnnotations(),methodInfo.getMethodName())) {
                 continue;
             }
             if (TypeEnum.LITERAL.equals(fieldInfo.getParamType())) {
@@ -420,11 +421,11 @@ public class ApiGenerateAction extends AnAction {
         return queries;
     }
 
-    private boolean notQuery(List<PsiAnnotation> annotations) {
+    private boolean notQuery(List<PsiAnnotation> annotations,String methodName) {
         if (getPathVariableAnnotation(annotations) != null) {
             return true;
         }
-        return FieldUtil.findAnnotationByName(annotations, WebAnnotation.RequestBody) != null;
+        return FieldUtil.findAnnotationByName(annotations, WebAnnotation.RequestBody) != null || !RequestMethodEnum.GET.name().equals(methodName);
     }
 
     private YApiQuery buildYApiQuery(FieldInfo fieldInfo) {
