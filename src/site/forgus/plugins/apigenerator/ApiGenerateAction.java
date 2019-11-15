@@ -259,7 +259,7 @@ public class ApiGenerateAction extends AnAction {
                 yApiInterface.setReq_body_form(listYApiForms(methodInfo.getRequestFields()));
             }
         }
-        yApiInterface.setReq_query(listYApiQueries(methodInfo));
+        yApiInterface.setReq_query(listYApiQueries(methodInfo.getRequestFields(),requestMethodEnum));
         Map<String, YApiCat> catNameMap = getCatNameMap();
         PsiDocComment classDesc = containingClass.getDocComment();
         yApiInterface.setCatid(getCatId(catNameMap, classDesc));
@@ -398,11 +398,10 @@ public class ApiGenerateAction extends AnAction {
         return catNameMap;
     }
 
-    private List<YApiQuery> listYApiQueries(MethodInfo methodInfo) {
-        List<FieldInfo> requestFields = methodInfo.getRequestFields();
+    private List<YApiQuery> listYApiQueries(List<FieldInfo> requestFields,RequestMethodEnum requestMethodEnum) {
         List<YApiQuery> queries = new ArrayList<>();
         for (FieldInfo fieldInfo : requestFields) {
-            if (notQuery(fieldInfo.getAnnotations(),methodInfo.getMethodName())) {
+            if (notQuery(fieldInfo.getAnnotations(),requestMethodEnum)) {
                 continue;
             }
             if (TypeEnum.LITERAL.equals(fieldInfo.getParamType())) {
@@ -421,11 +420,11 @@ public class ApiGenerateAction extends AnAction {
         return queries;
     }
 
-    private boolean notQuery(List<PsiAnnotation> annotations,String methodName) {
+    private boolean notQuery(List<PsiAnnotation> annotations,RequestMethodEnum requestMethodEnum) {
         if (getPathVariableAnnotation(annotations) != null) {
             return true;
         }
-        return FieldUtil.findAnnotationByName(annotations, WebAnnotation.RequestBody) != null || !RequestMethodEnum.GET.name().equals(methodName);
+        return FieldUtil.findAnnotationByName(annotations, WebAnnotation.RequestBody) != null || !RequestMethodEnum.GET.equals(requestMethodEnum);
     }
 
     private YApiQuery buildYApiQuery(FieldInfo fieldInfo) {

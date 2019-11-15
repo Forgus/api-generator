@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>site.forgus.plugins.api-generator</id>
     <name>Api Generator</name>
-    <version>2019.11.06.02</version>
+    <version>2019.11.08</version>
     <vendor email="wenbin1876@gmail.com" url="http://forgus.vicp.io">孤峰</vendor>
 
     <description><![CDATA[
@@ -91,16 +91,6 @@
       <p><a href="https://github.com/Forgus/api-generator/wiki">Wiki</a>
       |&nbsp<a href="https://github.com/Forgus/api-generator/issues">Issues</a></p>
     ]]></description>
-
-    <change-notes><![CDATA[
-      <em>3.xx</em>
-      Support upload to YApi for REST api<br>
-      <em>2.xx</em>
-      Support generate markdown for class<br>
-      <em>1.xx</em>
-      Support generate markdown for interface<br>
-    ]]>
-    </change-notes>
 
     <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->
     <idea-version since-build="181"/>
