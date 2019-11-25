@@ -35,6 +35,8 @@ public class ApiGenerateAction extends AnAction {
 
     protected ApiGeneratorConfig config;
 
+    private static final String SLASH = "/";
+
     @Override
     public void actionPerformed(AnActionEvent actionEvent) {
         Editor editor = actionEvent.getDataContext().getData(CommonDataKeys.EDITOR);
@@ -348,16 +350,26 @@ public class ApiGenerateAction extends AnAction {
         }
         PsiNameValuePair[] psiNameValuePairs = annotation.getParameterList().getAttributes();
         if (psiNameValuePairs.length == 1 && psiNameValuePairs[0].getName() == null) {
-            return psiNameValuePairs[0].getLiteralValue();
+            return appendSlash(psiNameValuePairs[0].getLiteralValue());
         }
         if (psiNameValuePairs.length >= 1) {
             for (PsiNameValuePair psiNameValuePair : psiNameValuePairs) {
                 if (psiNameValuePair.getName().equals("value") || psiNameValuePair.getName().equals("path")) {
-                    return psiNameValuePair.getLiteralValue();
+                    return appendSlash(psiNameValuePair.getLiteralValue());
                 }
             }
         }
         return "";
+    }
+
+    private String appendSlash(String path) {
+        if(StringUtils.isEmpty(path)) {
+            return "";
+        }
+        if(!path.startsWith(SLASH)) {
+            return SLASH + path;
+        }
+        return path;
     }
 
     private String getDefaultCatName() {

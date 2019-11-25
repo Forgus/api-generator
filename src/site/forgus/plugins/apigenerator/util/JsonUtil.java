@@ -87,10 +87,11 @@ public class JsonUtil {
         if (TypeEnum.LITERAL.equals(fieldInfo.getParamType())) {
             return FieldUtil.getValue(fieldInfo.getPsiType()).toString();
         }
+        Map<String, Object> stringObjectMap = getStringObjectMap(fieldInfo.getChildren());
         if (TypeEnum.ARRAY.equals(fieldInfo.getParamType())) {
-            return gson.toJson(Collections.singletonList(getStringObjectMap(fieldInfo.getChildren())));
+            return gson.toJson(Collections.singletonList(stringObjectMap));
         }
-        return gson.toJson(getStringObjectMap(fieldInfo.getChildren()));
+        return gson.toJson(stringObjectMap);
     }
 
     private static Map<String, Object> getStringObjectMap(List<FieldInfo> fieldInfos) {
