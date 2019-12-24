@@ -25,7 +25,7 @@ public class DesUtil {
      * @param element 需要去除的字符.
      * @return String.
      */
-    public static String trimFirstAndLastChar(String source, char element) {
+    private static String trimFirstAndLastChar(String source, char element) {
         boolean beginIndexFlag;
         boolean endIndexFlag;
         do {
@@ -105,7 +105,7 @@ public class DesUtil {
      * @param psiDocComment the psi doc comment
      * @return the filed desc
      */
-    public static String getFiledDesc(PsiDocComment psiDocComment) {
+    private static String getFiledDesc(PsiDocComment psiDocComment) {
         if (Objects.nonNull(psiDocComment)) {
             String fileText = psiDocComment.getText();
             if (!Strings.isNullOrEmpty(fileText)) {
@@ -113,40 +113,6 @@ public class DesUtil {
             }
         }
         return "";
-    }
-
-    /**
-     * 获得引用url
-     *
-     * @param text the text
-     * @return the url re ference r desc
-     */
-    public static String getUrlReFerenceRDesc(String text) {
-        if (Strings.isNullOrEmpty(text)) {
-            return text;
-        }
-        if (!text.contains("*/")) {
-            return null;
-        }
-        return DesUtil.trimFirstAndLastChar(text.split("\\*/")[0].replace("@description", "").replace("@Description", "").split("@")[0].replace(":", "").replace("*", "").replace("/", "").replace("\n", " "), ' ');
-    }
-
-    /**
-     * 获得菜单
-     *
-     * @param text the text
-     * @return the menu
-     */
-    public static String getMenu(String text) {
-        if (Strings.isNullOrEmpty(text) || !text.contains("*/")) {
-            return null;
-        }
-        String[] menuList = text.split("\\*/")[0].split("@menu");
-        if (menuList.length > 1) {
-            return DesUtil.trimFirstAndLastChar(menuList[1].split("\\*")[0].replace("*", "").replace("/", "").replace("\n", " "), ' ');
-        } else {
-            return null;
-        }
     }
 
     /**

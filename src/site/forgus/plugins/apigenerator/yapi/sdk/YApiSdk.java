@@ -89,7 +89,7 @@ public class YApiSdk {
         return gson.fromJson(string, YApiResponse.class);
     }
 
-    public static YApiResponse<YApiCat> addCategory(String serverUrl, String token, String projectId, String name, String desc) throws IOException {
+    private static YApiResponse<YApiCat> addCategory(String serverUrl, String token, String projectId, String name, String desc) throws IOException {
         Map<String, String> params = new HashMap<>();
         params.put("desc", desc);
         params.put("name", name);

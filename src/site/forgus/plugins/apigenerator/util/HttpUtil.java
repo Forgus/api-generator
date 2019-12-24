@@ -17,6 +17,14 @@ public class HttpUtil {
 
     private static final String CHARSET = "UTF-8";
 
+    public static String doGet(String url, Map<String, String> params) {
+        return doHttpRequst(buildGetRequest(url, params));
+    }
+
+    public static String doPost(String url, String body) {
+        return doHttpRequst(buildPostRequestWithJsonType(url, body));
+    }
+
     private static HttpGet buildGetRequest(String url, Map<String, String> params) {
         StringBuilder sb = new StringBuilder();
         for (Map.Entry<String, String> entry : params.entrySet()) {
@@ -34,7 +42,7 @@ public class HttpUtil {
         return new HttpGet(url + "?" + sb.toString());
     }
 
-    public static HttpPost buildPostRequestWithJsonType(String url, String body) {
+    private static HttpPost buildPostRequestWithJsonType(String url, String body) {
         HttpPost httpPost = null;
         try {
             httpPost = new HttpPost(url);
@@ -44,14 +52,6 @@ public class HttpUtil {
         } catch (Exception e) {
         }
         return httpPost;
-    }
-
-    public static String doGet(String url, Map<String, String> params) {
-        return doHttpRequst(buildGetRequest(url, params));
-    }
-
-    public static String doPost(String url, String body) {
-        return doHttpRequst(buildPostRequestWithJsonType(url, body));
     }
 
     private static String doHttpRequst(HttpUriRequest httpUriRequest) {
