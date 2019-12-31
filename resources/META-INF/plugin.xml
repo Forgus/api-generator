@@ -36,6 +36,10 @@
           <td>二级字段缩进前缀</td>
         </tr>
         <tr>
+          <td>Overwrite exists docs</td>
+          <td>是否覆盖同名markdown文档</td>
+        </tr>
+        <tr>
           <td>Extract filename from doc comments</td>
           <td>是否从javadoc抽取文件名</td>
         </tr>
@@ -87,15 +91,17 @@
       org.springframework.web.bind.annotation.RequestParam<br>
       org.springframework.web.bind.annotation.ResponseBody<br><br>
       <em>Compatible IDE versions:</em><br>
-      2018.1.8+ <br><br>
+      2017.3+ <br><br>
       <p><a href="https://github.com/Forgus/api-generator/wiki">Wiki</a>
       |&nbsp<a href="https://github.com/Forgus/api-generator/issues">Issues</a></p>
     ]]></description>
 
     <change-notes><![CDATA[
-      <em>2019.12.31</em>
-      修复生成的markdown文档在部分markdown解析器下无法正确渲染表格的问题。<br>
-      添加生成的markdown文档在文件已存在的情况下提醒是否覆盖的功能，并添加是否直接覆盖的全局开关设置。<br>
+      <em>2019.12.31</em><br>
+      <ul>
+      <li>修复生成的markdown文档在部分markdown解析器下无法正确渲染表格的问题。</li>
+      <li>添加生成的markdown文档在文件已存在的情况下提醒是否覆盖的功能，并添加是否直接覆盖的全局开关设置。</li>
+      </ul>
     ]]>
     </change-notes>
 
