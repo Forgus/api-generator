@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>site.forgus.plugins.api-generator</id>
     <name>Api Generator</name>
-    <version>2019.11.25</version>
+    <version>2019.12.31</version>
     <vendor email="wenbin1876@gmail.com" url="http://forgus.vicp.io">孤峰</vendor>
 
     <description><![CDATA[
@@ -91,6 +91,13 @@
       <p><a href="https://github.com/Forgus/api-generator/wiki">Wiki</a>
       |&nbsp<a href="https://github.com/Forgus/api-generator/issues">Issues</a></p>
     ]]></description>
+
+    <change-notes><![CDATA[
+      <em>2019.12.31</em>
+      修复生成的markdown文档在部分markdown解析器下无法正确渲染表格的问题。<br>
+      添加生成的markdown文档在文件已存在的情况下提醒是否覆盖的功能，并添加是否直接覆盖的全局开关设置。<br>
+    ]]>
+    </change-notes>
 
     <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->
     <idea-version since-build="173.0"/>

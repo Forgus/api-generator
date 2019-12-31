@@ -22,6 +22,7 @@ public class ApiGeneratorSetting implements Configurable {
     JBTextField dirPathTextField;
     JBTextField prefixTextField;
     JBCheckBox cnFileNameCheckBox;
+    JBCheckBox overwriteCheckBox;
 
     JBTextField yApiUrlTextField;
     JBTextField tokenTextField;
@@ -61,8 +62,12 @@ public class ApiGeneratorSetting implements Configurable {
         prefixTextField = buildTextField(layout, oldState.prefix);
         normalPanel.add(prefixTextField);
 
+        overwriteCheckBox = buildJBCheckBox(layout, "Overwrite exists docs", oldState.overwrite);
+        normalPanel.add(overwriteCheckBox);
+
         cnFileNameCheckBox = buildJBCheckBox(layout, "Extract filename from doc comments", oldState.cnFileName);
         normalPanel.add(cnFileNameCheckBox);
+
 
         jbTabbedPane.addTab("Api Setting", normalPanel);
 
@@ -132,6 +137,7 @@ public class ApiGeneratorSetting implements Configurable {
     public boolean isModified() {
         return !oldState.prefix.equals(prefixTextField.getText()) ||
                 oldState.cnFileName != cnFileNameCheckBox.isSelected() ||
+                oldState.overwrite != overwriteCheckBox.isSelected() ||
                 !oldState.yApiServerUrl.equals(yApiUrlTextField.getText()) ||
                 !oldState.projectToken.equals(tokenTextField.getText()) ||
                 !oldState.projectId.equals(projectIdLabel.getText()) ||
@@ -153,6 +159,7 @@ public class ApiGeneratorSetting implements Configurable {
         oldState.dirPath = dirPathTextField.getText();
         oldState.prefix = prefixTextField.getText();
         oldState.cnFileName = cnFileNameCheckBox.isSelected();
+        oldState.overwrite = overwriteCheckBox.isSelected();
         oldState.yApiServerUrl = yApiUrlTextField.getText();
         oldState.projectToken = tokenTextField.getText();
         if(AssertUtils.isNotEmpty(yApiUrlTextField.getText()) && AssertUtils.isNotEmpty(tokenTextField.getText())) {

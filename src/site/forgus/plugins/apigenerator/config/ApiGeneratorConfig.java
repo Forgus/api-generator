@@ -19,6 +19,7 @@ public class ApiGeneratorConfig implements PersistentStateComponent<ApiGenerator
     public String dirPath = "";
     public String prefix = "└";
     public Boolean cnFileName = false;
+    public Boolean overwrite = true;
 
     public String yApiServerUrl = "";
     public String projectToken = "";

@@ -153,12 +153,15 @@ public class ApiGenerateAction extends AnAction {
         if (!mkDirectory(project, dirPath)) {
             return;
         }
+        boolean generateSuccess = false;
         try {
-            generateDocForClass(project, psiClass, dirPath);
+            generateSuccess = generateDocForClass(project, psiClass, dirPath);
         } catch (IOException e) {
             NotificationUtil.errorNotify(e.getMessage(), project);
         }
-        NotificationUtil.infoNotify("generate api doc success.", project);
+        if(generateSuccess) {
+            NotificationUtil.infoNotify("generate api doc success.", project);
+        }
     }
 
     protected void generateMarkdownForSelectedMethod(Project project, PsiMethod selectedMethod) throws IOException {
@@ -166,8 +169,10 @@ public class ApiGenerateAction extends AnAction {
         if (!mkDirectory(project, dirPath)) {
             return;
         }
-        generateDocForMethod(project, selectedMethod, dirPath);
-        NotificationUtil.infoNotify("generate api doc success.", project);
+        boolean generateSuccess = generateDocForMethod(project, selectedMethod, dirPath);
+        if(generateSuccess) {
+            NotificationUtil.infoNotify("generate api doc success.", project);
+        }
     }
 
     protected void generateMarkdownsForAllMethods(Project project, PsiClass selectedClass) throws IOException {
@@ -175,10 +180,15 @@ public class ApiGenerateAction extends AnAction {
         if (!mkDirectory(project, dirPath)) {
             return;
         }
+        boolean generateSuccess = false;
         for (PsiMethod psiMethod : selectedClass.getMethods()) {
-            generateDocForMethod(project, psiMethod, dirPath);
+            if(generateDocForMethod(project, psiMethod, dirPath)) {
+                generateSuccess = true;
+            }
         }
-        NotificationUtil.infoNotify("generate api doc success.", project);
+        if(generateSuccess) {
+            NotificationUtil.infoNotify("generate api doc success.", project);
+        }
     }
 
     private void uploadSelectedMethodToYApi(Project project, PsiMethod method) throws IOException {
@@ -256,12 +266,12 @@ public class ApiGenerateAction extends AnAction {
             yApiInterface.setReq_body_type(RequestBodyTypeEnum.JSON.getValue());
             yApiInterface.setReq_body_other(JsonUtil.buildJson5(getRequestBodyParam(methodInfo.getRequestFields())));
         } else {
-            if (yApiInterface.getMethod().equals("POST")) {
+            if (yApiInterface.getMethod().equals(RequestMethodEnum.POST.name())) {
                 yApiInterface.setReq_body_type(RequestBodyTypeEnum.FORM.getValue());
                 yApiInterface.setReq_body_form(listYApiForms(methodInfo.getRequestFields()));
             }
         }
-        yApiInterface.setReq_query(listYApiQueries(methodInfo.getRequestFields(),requestMethodEnum));
+        yApiInterface.setReq_query(listYApiQueries(methodInfo.getRequestFields(), requestMethodEnum));
         Map<String, YApiCat> catNameMap = getCatNameMap();
         PsiDocComment classDesc = containingClass.getDocComment();
         yApiInterface.setCatid(getCatId(catNameMap, classDesc));
@@ -363,10 +373,10 @@ public class ApiGenerateAction extends AnAction {
     }
 
     private String appendSlash(String path) {
-        if(StringUtils.isEmpty(path)) {
+        if (StringUtils.isEmpty(path)) {
             return "";
         }
-        if(!path.startsWith(SLASH)) {
+        if (!path.startsWith(SLASH)) {
             return SLASH + path;
         }
         return path;
@@ -410,10 +420,10 @@ public class ApiGenerateAction extends AnAction {
         return catNameMap;
     }
 
-    private List<YApiQuery> listYApiQueries(List<FieldInfo> requestFields,RequestMethodEnum requestMethodEnum) {
+    private List<YApiQuery> listYApiQueries(List<FieldInfo> requestFields, RequestMethodEnum requestMethodEnum) {
         List<YApiQuery> queries = new ArrayList<>();
         for (FieldInfo fieldInfo : requestFields) {
-            if (notQuery(fieldInfo.getAnnotations(),requestMethodEnum)) {
+            if (notQuery(fieldInfo.getAnnotations(), requestMethodEnum)) {
                 continue;
             }
             if (TypeEnum.LITERAL.equals(fieldInfo.getParamType())) {
@@ -432,7 +442,7 @@ public class ApiGenerateAction extends AnAction {
         return queries;
     }
 
-    private boolean notQuery(List<PsiAnnotation> annotations,RequestMethodEnum requestMethodEnum) {
+    private boolean notQuery(List<PsiAnnotation> annotations, RequestMethodEnum requestMethodEnum) {
         if (getPathVariableAnnotation(annotations) != null) {
             return true;
         }
@@ -572,37 +582,50 @@ public class ApiGenerateAction extends AnAction {
         if (StringUtils.isEmpty(dirPath)) {
             return project.getBasePath() + "/target/api_docs";
         }
-        if (dirPath.endsWith("/")) {
-            return dirPath.substring(0, dirPath.lastIndexOf("/"));
+
+        if (dirPath.endsWith(SLASH)) {
+            return dirPath.substring(0, dirPath.lastIndexOf(SLASH));
         }
         return dirPath;
     }
 
-    private void generateDocForClass(Project project, PsiClass psiClass, String dirPath) throws IOException {
+    private boolean generateDocForClass(Project project, PsiClass psiClass, String dirPath) throws IOException {
         if (!mkDirectory(project, dirPath)) {
-            return;
+            return false;
         }
-        File apiDoc = new File(dirPath + "/" + psiClass.getName() + ".md");
-        if (!apiDoc.exists()) {
-            apiDoc.createNewFile();
-        }
-        Writer md = new FileWriter(apiDoc);
-        List<FieldInfo> fieldInfos = listFieldInfos(psiClass);
-        md.write("## 示例\n");
-        if (AssertUtils.isNotEmpty(fieldInfos)) {
-            md.write("```json\n");
-            md.write(JsonUtil.buildPrettyJson(fieldInfos) + "\n");
-            md.write("```\n");
-        }
-        md.write("## 参数说明\n");
-        if (AssertUtils.isNotEmpty(fieldInfos)) {
-            md.write("名称|类型|必填|值域范围|描述/示例\n");
-            md.write("--|--|--|--|--\n");
-            for (FieldInfo fieldInfo : fieldInfos) {
-                writeFieldInfo(md, fieldInfo);
+        String fileName = psiClass.getName();
+        File apiDoc = new File(dirPath + SLASH + fileName + ".md");
+        boolean notExist = apiDoc.createNewFile();
+        if(!notExist) {
+            if(!config.getState().overwrite) {
+                int choose = Messages.showOkCancelDialog(fileName + ".md already exists,do you want to overwrite it?", "Overwrite Warning!", "Yes", "No", Messages.getWarningIcon());
+                if(Messages.CANCEL == choose) {
+                    return false;
+                }
             }
         }
-        md.close();
+        try (Writer md = new FileWriter(apiDoc)) {
+            List<FieldInfo> fieldInfos = listFieldInfos(psiClass);
+            md.write("## 示例\n");
+            if (AssertUtils.isNotEmpty(fieldInfos)) {
+                md.write("```json\n");
+                md.write(JsonUtil.buildPrettyJson(fieldInfos) + "\n");
+                md.write("```\n");
+            }
+            md.write("## 参数说明\n");
+            if (AssertUtils.isNotEmpty(fieldInfos)) {
+                writeParamTableHeader(md);
+                for (FieldInfo fieldInfo : fieldInfos) {
+                    writeFieldInfo(md, fieldInfo);
+                }
+            }
+        }
+        return true;
+    }
+
+    private void writeParamTableHeader(Writer md) throws IOException {
+        md.write("名称|类型|必填|值域范围|描述/示例\n");
+        md.write("---|---|---|---|---\n");
     }
 
     public List<FieldInfo> listFieldInfos(PsiClass psiClass) {
@@ -616,67 +639,72 @@ public class ApiGenerateAction extends AnAction {
         return fieldInfos;
     }
 
-    protected void generateDocForMethod(Project project, PsiMethod selectedMethod, String dirPath) throws IOException {
+    private boolean generateDocForMethod(Project project, PsiMethod selectedMethod, String dirPath) throws IOException {
         if (!mkDirectory(project, dirPath)) {
-            return;
+            return false;
         }
         MethodInfo methodInfo = new MethodInfo(selectedMethod);
         String fileName = getFileName(methodInfo);
-        File apiDoc = new File(dirPath + "/" + fileName + ".md");
-        if (!apiDoc.exists()) {
-            apiDoc.createNewFile();
+        File apiDoc = new File(dirPath + SLASH + fileName + ".md");
+        boolean notExist = apiDoc.createNewFile();
+        if(!notExist) {
+            if(!config.getState().overwrite) {
+                int choose = Messages.showOkCancelDialog(fileName + ".md already exists,do you want to overwrite it?", "Overwrite Warning!", "Yes", "No", Messages.getWarningIcon());
+                if (Messages.CANCEL == choose) {
+                    return false;
+                }
+            }
         }
         Model pomModel = getPomModel(project);
-        Writer md = new FileWriter(apiDoc);
-        md.write("# " + fileName + "\n");
-        md.write("## 功能介绍\n");
-        md.write(methodInfo.getDesc() + "\n");
-        md.write("## Maven依赖\n");
-        md.write("```xml\n");
-        md.write("<dependency>\n");
-        md.write("\t<groupId>" + pomModel.getGroupId() + "</groupId>\n");
-        md.write("\t<artifactId>" + pomModel.getGroupId() + "</artifactId>\n");
-        md.write("\t<version>" + pomModel.getVersion() + "</version>\n");
-        md.write("</dependency>\n");
-        md.write("```\n");
-        md.write("## 接口声明\n");
-        md.write("```java\n");
-        md.write("package " + methodInfo.getPackageName() + ";\n\n");
-        md.write("public interface " + methodInfo.getClassName() + " {\n\n");
-        md.write("\t" + methodInfo.getReturnStr() + " " + methodInfo.getMethodName() + methodInfo.getParamStr() + ";\n\n");
-        md.write("}\n");
-        md.write("```\n");
-        md.write("## 请求参数\n");
-        md.write("### 请求参数示例\n");
-        if (AssertUtils.isNotEmpty(methodInfo.getRequestFields())) {
-            md.write("```json\n");
-            md.write(JsonUtil.buildPrettyJson(methodInfo.getRequestFields()) + "\n");
+        try (Writer md = new FileWriter(apiDoc)) {
+            md.write("## " + fileName + "\n");
+            md.write("## 功能介绍\n");
+            md.write(methodInfo.getDesc() + "\n");
+            md.write("## Maven依赖\n");
+            md.write("```xml\n");
+            md.write("<dependency>\n");
+            md.write("\t<groupId>" + pomModel.getGroupId() + "</groupId>\n");
+            md.write("\t<artifactId>" + pomModel.getGroupId() + "</artifactId>\n");
+            md.write("\t<version>" + pomModel.getVersion() + "</version>\n");
+            md.write("</dependency>\n");
             md.write("```\n");
-        }
-        md.write("### 请求参数说明\n");
-        if (AssertUtils.isNotEmpty(methodInfo.getRequestFields())) {
-            md.write("名称|类型|必填|值域范围|描述/示例\n");
-            md.write("--|--|--|--|--\n");
-            for (FieldInfo fieldInfo : methodInfo.getRequestFields()) {
-                writeFieldInfo(md, fieldInfo);
+            md.write("## 接口声明\n");
+            md.write("```java\n");
+            md.write("package " + methodInfo.getPackageName() + ";\n\n");
+            md.write("public interface " + methodInfo.getClassName() + " {\n\n");
+            md.write("\t" + methodInfo.getReturnStr() + " " + methodInfo.getMethodName() + methodInfo.getParamStr() + ";\n\n");
+            md.write("}\n");
+            md.write("```\n");
+            md.write("## 请求参数\n");
+            md.write("### 请求参数示例\n");
+            if (AssertUtils.isNotEmpty(methodInfo.getRequestFields())) {
+                md.write("```json\n");
+                md.write(JsonUtil.buildPrettyJson(methodInfo.getRequestFields()) + "\n");
+                md.write("```\n");
+            }
+            md.write("### 请求参数说明\n");
+            if (AssertUtils.isNotEmpty(methodInfo.getRequestFields())) {
+                writeParamTableHeader(md);
+                for (FieldInfo fieldInfo : methodInfo.getRequestFields()) {
+                    writeFieldInfo(md, fieldInfo);
+                }
+            }
+            md.write("\n## 返回结果\n");
+            md.write("### 返回结果示例\n");
+            if (AssertUtils.isNotEmpty(methodInfo.getResponseFields())) {
+                md.write("```json\n");
+                md.write(JsonUtil.buildPrettyJson(methodInfo.getResponse()) + "\n");
+                md.write("```\n");
+            }
+            md.write("### 返回结果说明\n");
+            if (AssertUtils.isNotEmpty(methodInfo.getResponseFields())) {
+                writeParamTableHeader(md);
+                for (FieldInfo fieldInfo : methodInfo.getResponseFields()) {
+                    writeFieldInfo(md, fieldInfo, "");
+                }
             }
         }
-        md.write("\n## 返回结果\n");
-        md.write("### 返回结果示例\n");
-        if (AssertUtils.isNotEmpty(methodInfo.getResponseFields())) {
-            md.write("```json\n");
-            md.write(JsonUtil.buildPrettyJson(methodInfo.getResponse()) + "\n");
-            md.write("```\n");
-        }
-        md.write("### 返回结果说明\n");
-        if (AssertUtils.isNotEmpty(methodInfo.getResponseFields())) {
-            md.write("名称|类型|必填|值域范围|描述/示例\n");
-            md.write("--|--|--|--|--\n");
-            for (FieldInfo fieldInfo : methodInfo.getResponseFields()) {
-                writeFieldInfo(md, fieldInfo, "");
-            }
-        }
-        md.close();
+        return true;
     }
 
     private boolean mkDirectory(Project project, String dirPath) {
