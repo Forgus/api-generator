@@ -16,6 +16,7 @@ import com.intellij.psi.util.PsiTreeUtil;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
+import org.jetbrains.annotations.NotNull;
 import site.forgus.plugins.apigenerator.config.ApiGeneratorConfig;
 import site.forgus.plugins.apigenerator.constant.TypeEnum;
 import site.forgus.plugins.apigenerator.constant.WebAnnotation;
@@ -276,7 +277,7 @@ public class ApiGenerateAction extends AnAction {
         PsiDocComment classDesc = containingClass.getDocComment();
         yApiInterface.setCatid(getCatId(catNameMap, classDesc));
         yApiInterface.setTitle(requestMethodEnum.name() + " " + methodInfo.getDesc());
-        yApiInterface.setPath(getPathFromAnnotation(classRequestMapping) + getPathFromAnnotation(methodMapping));
+        yApiInterface.setPath(buildPath(classRequestMapping, methodMapping));
         if (containResponseBodyAnnotation(psiMethod.getAnnotations()) || controller.getText().contains("Rest")) {
             yApiInterface.setReq_headers(Collections.singletonList(YApiHeader.json()));
             yApiInterface.setRes_body(JsonUtil.buildJson5(methodInfo.getResponse()));
@@ -288,6 +289,12 @@ public class ApiGenerateAction extends AnAction {
         yApiInterface.setReq_params(listYApiPathVariables(methodInfo.getRequestFields()));
         yApiInterface.setDesc(Objects.nonNull(yApiInterface.getDesc()) ? yApiInterface.getDesc() : "<pre><code data-language=\"java\" class=\"java\">" + getMethodDesc(psiMethod) + "</code> </pre>");
         return yApiInterface;
+    }
+
+    private String buildPath(PsiAnnotation classRequestMapping, PsiAnnotation methodMapping) {
+        String classPath = getPathFromAnnotation(classRequestMapping);
+        String methodPath = getPathFromAnnotation(methodMapping);
+        return classPath + methodPath;
     }
 
     private FieldInfo getRequestBodyParam(List<FieldInfo> params) {
@@ -376,10 +383,14 @@ public class ApiGenerateAction extends AnAction {
         if (StringUtils.isEmpty(path)) {
             return "";
         }
+        String p = path;
         if (!path.startsWith(SLASH)) {
-            return SLASH + path;
+            p = SLASH + path;
         }
-        return path;
+        if(path.endsWith(SLASH)) {
+            p = p.substring(0,p.length()-1);
+        }
+        return p;
     }
 
     private String getDefaultCatName() {

@@ -6,6 +6,36 @@
 
     <description><![CDATA[
       <em>Api开发利器，接口文档自动生成</em><br><br>
+      Features：<br>
+      <ul>
+      <li>Javadoc-based analysis,no additional annotations.</li>
+      <li>Supporting field filtering, automatically ignoring the analysis of filtering fields.</li>
+      <li>Automatically identify classes, generate markdown documents or upload to Yapi.</li>
+      <li>Support list, set, collection and other data structures, and support nested generic parsing.</li>
+      <li>Support the parsing of common annotations such as @NotNull and @ResponseBody, and generate Yapi documents based on json5.</li>
+      </ul><br>
+      Usage：<br>
+      <ul><li>Locate the cursor to the method area or class name, right-click Generate Api.</li></ul><br>
+      <em>Support annotations：</em><br>
+      javax.validation.constraints.Min<br>
+      javax.validation.constraints.Max<br>
+      javax.validation.constraints.NotNull<br>
+      javax.validation.constraints.NotBlank<br>
+      javax.validation.constraints.NotEmpty<br>
+      javax.validation.constraints.Size<br>
+      org.hibernate.validator.constraints.Length<br>
+      org.hibernate.validator.constraints.Range<br>
+      org.springframework.web.bind.annotation.Controller<br>
+      org.springframework.web.bind.annotation.RestController<br>
+      org.springframework.web.bind.annotation.RequestMapping<br>
+      org.springframework.web.bind.annotation.GetMapping<br>
+      org.springframework.web.bind.annotation.PutMapping<br>
+      org.springframework.web.bind.annotation.DeleteMapping<br>
+      org.springframework.web.bind.annotation.PatchMapping<br>
+      org.springframework.web.bind.annotation.PathVariable<br>
+      org.springframework.web.bind.annotation.RequestBody<br>
+      org.springframework.web.bind.annotation.RequestParam<br>
+      org.springframework.web.bind.annotation.ResponseBody<br><br>
       特性：<br>
       <ul>
       <li>基于javadoc解析，无代码入侵</li>
@@ -16,7 +46,7 @@
       </ul><br>
       用法：<br>
       <ul><li>将光标定位到方法区域或者类名，鼠标右键单击"Generate Api".</li></ul><br>
-      配置：<br>
+      自定义配置项：<br>
       Preferences —> Other Settings —> Api Generator Setting<br><br>
       <table border="1">
         <tr>
@@ -60,36 +90,6 @@
           <td>是否自动分类</td>
         </tr>
       </table><br>
-      Features：<br>
-      <ul>
-      <li>Javadoc-based analysis,no additional annotations.</li>
-      <li>Supporting field filtering, automatically ignoring the analysis of filtering fields.</li>
-      <li>Automatically identify classes, generate markdown documents or upload to Yapi.</li>
-      <li>Support list, set, collection and other data structures, and support nested generic parsing.</li>
-      <li>Support the parsing of common annotations such as @NotNull and @ResponseBody, and generate Yapi documents based on json5.</li>
-      </ul><br>
-      Usage：<br>
-      <ul><li>Locate the cursor to the method area or class name, right-click Generate Api.</li></ul><br>
-      <em>Support annotations：</em><br>
-      javax.validation.constraints.Min<br>
-      javax.validation.constraints.Max<br>
-      javax.validation.constraints.NotNull<br>
-      javax.validation.constraints.NotBlank<br>
-      javax.validation.constraints.NotEmpty<br>
-      javax.validation.constraints.Size<br>
-      org.hibernate.validator.constraints.Length<br>
-      org.hibernate.validator.constraints.Range<br>
-      org.springframework.web.bind.annotation.Controller<br>
-      org.springframework.web.bind.annotation.RestController<br>
-      org.springframework.web.bind.annotation.RequestMapping<br>
-      org.springframework.web.bind.annotation.GetMapping<br>
-      org.springframework.web.bind.annotation.PutMapping<br>
-      org.springframework.web.bind.annotation.DeleteMapping<br>
-      org.springframework.web.bind.annotation.PatchMapping<br>
-      org.springframework.web.bind.annotation.PathVariable<br>
-      org.springframework.web.bind.annotation.RequestBody<br>
-      org.springframework.web.bind.annotation.RequestParam<br>
-      org.springframework.web.bind.annotation.ResponseBody<br><br>
       <em>Compatible IDE versions:</em><br>
       2017.3+ <br><br>
       <p><a href="https://github.com/Forgus/api-generator/wiki">Wiki</a>
