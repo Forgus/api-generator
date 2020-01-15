@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>site.forgus.plugins.api-generator</id>
     <name>Api Generator</name>
-    <version>2019.12.31</version>
+    <version>2020.01.15</version>
     <vendor email="wenbin1876@gmail.com" url="http://forgus.vicp.io">孤峰</vendor>
 
     <description><![CDATA[
@@ -97,10 +97,14 @@
     ]]></description>
 
     <change-notes><![CDATA[
+      <em>2020.01.15</em><br>
+      <ul>
+          <li>Fix incorrect resolution of RequestMapping path in some cases.</li>
+      </ul>
       <em>2019.12.31</em><br>
       <ul>
-      <li>修复生成的markdown文档在部分markdown解析器下无法正确渲染表格的问题。</li>
-      <li>添加生成的markdown文档在文件已存在的情况下提醒是否覆盖的功能，并添加是否直接覆盖的全局开关设置。</li>
+          <li>Fix the problem that the generated markdown document cannot render the table correctly under some markdown parsers.</li>
+          <li>Add the function of reminding whether to overwrite the generated markdown document when the file already exists, and add the global switch setting of whether to directly overwrite.</li>
       </ul>
     ]]>
     </change-notes>
