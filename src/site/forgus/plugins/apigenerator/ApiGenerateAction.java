@@ -331,29 +331,33 @@ public class ApiGenerateAction extends AnAction {
         for (FieldInfo fieldInfo : requestFields) {
             List<PsiAnnotation> annotations = fieldInfo.getAnnotations();
             PsiAnnotation pathVariable = getPathVariableAnnotation(annotations);
-            if (pathVariable != null) {
-                YApiPathVariable yApiPathVariable = new YApiPathVariable();
-                PsiNameValuePair[] psiNameValuePairs = pathVariable.getParameterList().getAttributes();
-                if (psiNameValuePairs.length > 0) {
-                    for (PsiNameValuePair psiNameValuePair : psiNameValuePairs) {
-                        String name = psiNameValuePair.getName();
-                        String literalValue = psiNameValuePair.getLiteralValue();
-                        if (StringUtils.isNotEmpty(literalValue)) {
-                            if (name == null || "value".equals(name) || "name".equals(name)) {
-                                yApiPathVariable.setName(literalValue);
-                                break;
-                            }
-                        }
-                    }
-                } else {
-                    yApiPathVariable.setName(fieldInfo.getName());
-                }
-                yApiPathVariable.setDesc(fieldInfo.getDesc());
-                yApiPathVariable.setExample(FieldUtil.getValue(fieldInfo.getPsiType()).toString());
-                yApiPathVariables.add(yApiPathVariable);
+            if(pathVariable == null) {
+                continue;
             }
+            YApiPathVariable yApiPathVariable = new YApiPathVariable();
+            yApiPathVariable.setName(getPathVariableName(pathVariable,fieldInfo.getName()));
+            yApiPathVariable.setDesc(fieldInfo.getDesc());
+            yApiPathVariable.setExample(FieldUtil.getValue(fieldInfo.getPsiType()).toString());
+            yApiPathVariables.add(yApiPathVariable);
         }
         return yApiPathVariables;
+    }
+
+    private String getPathVariableName(PsiAnnotation pathVariable,String fieldName) {
+        PsiNameValuePair[] psiNameValuePairs = pathVariable.getParameterList().getAttributes();
+        if (psiNameValuePairs.length > 0) {
+            for (PsiNameValuePair psiNameValuePair : psiNameValuePairs) {
+                String literalValue = psiNameValuePair.getLiteralValue();
+                if (StringUtils.isEmpty(literalValue)) {
+                    continue;
+                }
+                String name = psiNameValuePair.getName();
+                if (name == null || "value".equals(name) || "name".equals(name)) {
+                    return literalValue;
+                }
+            }
+        }
+        return fieldName;
     }
 
     private PsiAnnotation getPathVariableAnnotation(List<PsiAnnotation> annotations) {
