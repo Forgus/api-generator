@@ -1,4 +1,4 @@
 .idea/
 out/
-api-generator.iml
-api-generator.zip
+*.iml
+*.zip
