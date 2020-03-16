@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>site.forgus.plugins.api-generator</id>
     <name>Api Generator</name>
-    <version>2020.01.15</version>
+    <version>2020.01.15.01</version>
     <vendor email="wenbin1876@gmail.com" url="http://forgus.vicp.io">孤峰</vendor>
 
     <description><![CDATA[
@@ -83,7 +83,7 @@
         </tr>
         <tr>
           <td>Default save category</td>
-          <td>默认保存目录</td>
+          <td>默认保存分类</td>
         </tr>
         <tr>
           <td>Classify API automatically</td>
@@ -92,7 +92,7 @@
       </table><br>
       <em>Compatible IDE versions:</em><br>
       2017.3+ <br><br>
-      <p><a href="https://github.com/Forgus/api-generator/wiki">Wiki</a>
+      <p><a href="https://github.com/Forgus/api-generator">GitHub</a>
       |&nbsp<a href="https://github.com/Forgus/api-generator/issues">Issues</a></p>
     ]]></description>
 
