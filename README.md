@@ -24,7 +24,7 @@ Preferences → Plugins → Marketplace → 搜索“Api Generator” → 安装
 ---|---|---
 Exclude Fields|过滤字段（多个字段以","分隔）|该配置项功能类似JSONField，用于过滤不想被解析的字段，多用于排除二方包里的干扰字段
 Save Directory|markdown文档保存目录（绝对路径）|用于配置生成的markdown形式的接口文档的保存路径，默认保存在当前项目的target目录
-Indent Style|二级字段缩进前缀|生成的markdown文档是类似于json schema的字段表格，涉及类型是对象的字段，展示上做缩进处理，默认缩进前缀是折线形式
+Indent Style|二级字段缩进前缀|生成的markdown文档是类似于json schema的字段表格，涉及类型是对象的字段，展示上做缩进处理，默认缩进前缀是“└”
 Overwrite exists docs|是否覆盖同名markdown文档|如果生成的markdown文件已存在，会弹框提示是否覆盖，勾选该选项，则直接覆盖不提示
 Extract filename from doc comments|是否从javadoc抽取文件名|生成的markdown文件默认是方法名，勾选该选项，将从注释里抽取文件名
 YApi server url|YApi部署服务器地址|内网部署的yapi平台的域名，如：http://yapi.xxx.com
