@@ -3,6 +3,12 @@
 《Api Generator》是一款可以自动生成接口文档的IDEA插件。包括基于Spring注解的RESTful接口和用于定义dubbo api的普通接口。其中，RESTful接口将自动上传并托管在内网部署的YApi服务器上，而普通接口则以markdown文件的形式保存在指定目录。
 所以，如果你想利用该插件的能力帮你生成REST接口文档，请先确保你已部署好自己的YApi服务端。   
 传送门：[如何部署YApi平台](https://hellosean1025.github.io/yapi/devops/index.html)
+## 特性
+- 基于javadoc解析，无代码入侵
+- 支持字段过滤，自动忽略过滤字段的解析
+- 自动识别类，生成markdown文档或上传到YApi
+- 支持List、Set、Collection等数据结构，支持嵌套泛型解析
+- 支持@NotNull、@ResponseBody等常用注解的解析，基于json5生成YApi文档
 ## 快速开始
 ### 安装插件
 Preferences → Plugins → Marketplace → 搜索“Api Generator” → 安装该插件 → 重启IDE
@@ -21,7 +27,7 @@ Save Directory|markdown文档保存目录（绝对路径）|用于配置生成�
 Indent Style|二级字段缩进前缀|生成的markdown文档是类似于json schema的字段表格，涉及类型是对象的字段，展示上做缩进处理，默认缩进前缀是折线形式
 Overwrite exists docs|是否覆盖同名markdown文档|如果生成的markdown文件已存在，会弹框提示是否覆盖，勾选该选项，则直接覆盖不提示
 Extract filename from doc comments|是否从javadoc抽取文件名|生成的markdown文件默认是方法名，勾选该选项，将从注释里抽取文件名
-YApi server url|YApi部署服务器地址|内网部署的yapi平台的域名，如http://yapi.xxx.com
+YApi server url|YApi部署服务器地址|内网部署的yapi平台的域名，如：http://yapi.xxx.com
 Project token|项目token|接口对应的yapi项目的token
 Default save category|默认保存分类|插件生成的yapi文档保存位置，默认api_generator
 Classify API automatically|是否自动分类|勾选该选项后，生成文档时插件将从controller类注释里抽取模块名，并在yapi上自动创建对应分类保存接口
