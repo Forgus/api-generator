@@ -679,7 +679,7 @@ public class ApiGenerateAction extends AnAction {
             md.write("```xml\n");
             md.write("<dependency>\n");
             md.write("\t<groupId>" + pomModel.getGroupId() + "</groupId>\n");
-            md.write("\t<artifactId>" + pomModel.getGroupId() + "</artifactId>\n");
+            md.write("\t<artifactId>" + pomModel.getArtifactId() + "</artifactId>\n");
             md.write("\t<version>" + pomModel.getVersion() + "</version>\n");
             md.write("</dependency>\n");
             md.write("```\n");
