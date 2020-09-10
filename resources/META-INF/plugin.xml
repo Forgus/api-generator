@@ -1,8 +1,8 @@
 <idea-plugin>
     <id>site.forgus.plugins.api-generator</id>
     <name>Api Generator</name>
-    <version>2020.01.15.01</version>
-    <vendor email="wenbin1876@gmail.com" url="http://forgus.vicp.io">孤峰</vendor>
+    <version>2020.09.10</version>
+    <vendor email="wenbin1876@gmail.com">孤峰</vendor>
 
     <description><![CDATA[
       <em>Api开发利器，接口文档自动生成</em><br><br>
@@ -91,12 +91,16 @@
         </tr>
       </table><br>
       <em>Compatible IDE versions:</em><br>
-      2017.3+ <br><br>
+      2019.1.4+ <br><br>
       <p><a href="https://github.com/Forgus/api-generator">GitHub</a>
       |&nbsp<a href="https://github.com/Forgus/api-generator/issues">Issues</a></p>
     ]]></description>
 
     <change-notes><![CDATA[
+      <em>2020.09.10</em><br>
+      <ul>
+          <li>Fix the problem that the generated markdown's artifactId is not correct.</li>
+      </ul>
       <em>2020.01.15</em><br>
       <ul>
           <li>Fix incorrect resolution of RequestMapping path in some cases.</li>
@@ -110,7 +114,7 @@
     </change-notes>
 
     <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->
-    <idea-version since-build="173.0"/>
+    <idea-version since-build="191.0"/>
 
     <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
          on how to target different products -->
