@@ -37,6 +37,8 @@ public class FieldUtil {
         normalTypes.put("String", "@string");
         normalTypes.put("Date", new Date().getTime());
         normalTypes.put("BigDecimal", 0.111111);
+        normalTypes.put("LocalDateTime", "yyyy-MM-dd HH:mm:ss");
+        normalTypes.put("BigInteger", 0);
         genericList.add("T");
         genericList.add("E");
         genericList.add("K");
