@@ -247,7 +247,7 @@ public class ApiGenerateAction extends AnAction {
         PsiAnnotation classRequestMapping = null;
         for (PsiAnnotation annotation : containingClass.getAnnotations()) {
             String text = annotation.getText();
-            if (text.endsWith(WebAnnotation.Controller)) {
+            if (text.contains(WebAnnotation.Controller)) {
                 controller = annotation;
             } else if (text.contains(WebAnnotation.RequestMapping)) {
                 classRequestMapping = annotation;
