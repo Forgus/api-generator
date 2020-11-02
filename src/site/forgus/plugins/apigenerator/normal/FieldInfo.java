@@ -29,6 +29,7 @@ public class FieldInfo {
     private FieldInfo parent;
     private List<PsiAnnotation> annotations;
     private Project project;
+    private Map<PsiTypeParameter, PsiType> genericsMap;
 
     @Override
     public boolean equals(Object o) {
@@ -63,6 +64,7 @@ public class FieldInfo {
         this.range = requireAndRange.getRange();
         this.desc = desc == null ? "" : desc;
         this.annotations = Arrays.asList(annotations);
+        this.genericsMap = resolveGenerics(psiType);
         if (psiType != null) {
             if (FieldUtil.isNormalType(psiType)) {
                 paramType = TypeEnum.LITERAL;
@@ -152,6 +154,7 @@ public class FieldInfo {
             //如果是集合类型
             if (FieldUtil.isIterableType(psiType)) {
                 PsiType iterableType = PsiUtil.extractIterableTypeParameter(psiType, false);
+                iterableType = getTypeByGenerics(iterableType);
                 if (iterableType == null || FieldUtil.isNormalType(iterableType.getPresentableText()) || isMapType(iterableType)) {
                     return new ArrayList<>();
                 }
@@ -166,7 +169,8 @@ public class FieldInfo {
                 PsiClass outerClass = PsiUtil.resolveClassInType(psiType);
                 PsiType innerType = PsiUtil.substituteTypeParameter(psiType, outerClass, 0, false);
                 for (PsiField outField : outerClass.getAllFields()) {
-                    PsiType type = containGeneric(outField.getType().getPresentableText()) ? innerType : outField.getType();
+//                    PsiType type = containGeneric(outField.getType().getPresentableText()) ? innerType : outField.getType();
+                    PsiType type = outField.getType();
                     if (config.getState().excludeFields.contains(outField.getName())) {
                         continue;
                     }
@@ -317,6 +321,35 @@ public class FieldInfo {
 
     public boolean hasChildren() {
         return AssertUtils.isNotEmpty(children);
+    }
+
+    private Map<PsiTypeParameter, PsiType> resolveGenerics(PsiType psiType){
+        PsiClassType psiClassType = (PsiClassType) psiType;
+        PsiType[] parameters = psiClassType.getParameters();
+
+        PsiClass resolve = ((PsiClassType) psiType).resolve();
+        PsiTypeParameter[] typeParameters = resolve.getTypeParameters();
+        int i = 0;
+        Map<PsiTypeParameter, PsiType> map = new HashMap<>();
+        for (PsiTypeParameter typeParameter : typeParameters) {
+            map.put(typeParameter, parameters[i]);
+            i ++;
+        }
+        return map;
+    }
+
+    private PsiType getTypeByGenerics(PsiType psiType){
+        if(this.parent != null){
+            return this.parent.getTypeByGenerics(psiType);
+        }
+        if(null != genericsMap){
+            for (PsiTypeParameter psiTypeParameter : genericsMap.keySet()) {
+                if(psiTypeParameter.getName().equals(psiType.getPresentableText())){
+                    return genericsMap.get(psiTypeParameter);
+                }
+            }
+        }
+        return psiType;
     }
 
 }
