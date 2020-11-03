@@ -167,9 +167,7 @@ public class FieldInfo {
             }
             if (typeName.contains("<")) {
                 PsiClass outerClass = PsiUtil.resolveClassInType(psiType);
-                PsiType innerType = PsiUtil.substituteTypeParameter(psiType, outerClass, 0, false);
                 for (PsiField outField : outerClass.getAllFields()) {
-//                    PsiType type = containGeneric(outField.getType().getPresentableText()) ? innerType : outField.getType();
                     PsiType type = outField.getType();
                     if (config.getState().excludeFields.contains(outField.getName())) {
                         continue;
@@ -323,6 +321,11 @@ public class FieldInfo {
         return AssertUtils.isNotEmpty(children);
     }
 
+    /**
+     * 提取泛型对应的PsiType
+     * @param psiType
+     * @return
+     */
     private Map<PsiTypeParameter, PsiType> resolveGenerics(PsiType psiType){
         PsiClassType psiClassType = (PsiClassType) psiType;
         PsiType[] parameters = psiClassType.getParameters();
@@ -338,6 +341,11 @@ public class FieldInfo {
         return map;
     }
 
+    /**
+     * 根据泛型获取对应的PsiType
+     * @param psiType
+     * @return
+     */
     private PsiType getTypeByGenerics(PsiType psiType){
         if(this.parent != null){
             return this.parent.getTypeByGenerics(psiType);
