@@ -347,6 +347,9 @@ public class FieldInfo {
      * @return
      */
     private PsiType getTypeByGenerics(PsiType psiType){
+        if(null == psiType){
+            return null;
+        }
         if(this.parent != null){
             return this.parent.getTypeByGenerics(psiType);
         }
