@@ -1,6 +1,7 @@
 package site.forgus.plugins.apigenerator;
 
 import com.google.common.base.Strings;
+import com.google.gson.Gson;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
@@ -226,69 +227,89 @@ public class ApiGenerateAction extends AnAction {
     }
 
     private void uploadToYApi(Project project, PsiMethod psiMethod) throws IOException {
-        YApiInterface yApiInterface = buildYApiInterface(project, psiMethod);
-        if (yApiInterface == null) {
+        YApiInterfaceWrapper yApiInterfaceWrapper = buildYApiInterface(psiMethod);
+        if (YApiInterfaceWrapper.RespCodeEnum.FAILED.equals(yApiInterfaceWrapper.getRespCode())) {
+            NotificationUtil.errorNotify("Resolve api failed, reason:" + yApiInterfaceWrapper.getRespMsg(), project);
             return;
         }
-        YApiResponse yApiResponse = YApiSdk.saveInterface(config.getState().yApiServerUrl, yApiInterface);
-        if (yApiResponse.getErrcode() != 0) {
-            NotificationUtil.errorNotify("Upload api failed, cause:" + yApiResponse.getErrmsg(), project);
+        if(YApiInterfaceWrapper.RespCodeEnum.ERROR.equals(yApiInterfaceWrapper.getRespCode())) {
+            //TODO 上报错误信息
+            Map<String,Object> map = new HashMap<>();
+            map.put("envInfo",yApiInterfaceWrapper.getEnvInfo());
+            map.put("errorMsg",yApiInterfaceWrapper.getRespMsg());
+            HttpUtil.doPost("http://forgus.vicp.io/log",new Gson().toJson(map));
+            NotificationUtil.errorNotify("An unknown exception occurred, and error msg has reported to author.", project);
             return;
         }
-        NotificationUtil.infoNotify("Upload api success.", project);
+        if(YApiInterfaceWrapper.RespCodeEnum.SUCCESS.equals(yApiInterfaceWrapper.getRespCode())) {
+            YApiResponse yApiResponse = YApiSdk.saveInterface(config.getState().yApiServerUrl, yApiInterfaceWrapper.getYApiInterface());
+            if (yApiResponse.getErrcode() != 0) {
+                NotificationUtil.errorNotify("Upload api failed, cause:" + yApiResponse.getErrmsg(), project);
+                return;
+            }
+            NotificationUtil.infoNotify("Upload api success.", project);
+        }
     }
 
-    private YApiInterface buildYApiInterface(Project project, PsiMethod psiMethod) throws IOException {
-        PsiClass containingClass = psiMethod.getContainingClass();
-        if (containingClass == null) {
-            return null;
-        }
-        PsiAnnotation controller = null;
-        PsiAnnotation classRequestMapping = null;
-        for (PsiAnnotation annotation : containingClass.getAnnotations()) {
-            String text = annotation.getText();
-            if (text.endsWith(WebAnnotation.Controller)) {
-                controller = annotation;
-            } else if (text.contains(WebAnnotation.RequestMapping)) {
-                classRequestMapping = annotation;
+    private YApiInterfaceWrapper buildYApiInterface(PsiMethod psiMethod) {
+        try {
+            PsiClass containingClass = psiMethod.getContainingClass();
+            PsiAnnotation controller = null;
+            PsiAnnotation classRequestMapping = null;
+            for (PsiAnnotation annotation : containingClass.getAnnotations()) {
+                String text = annotation.getText();
+                if (text.endsWith(WebAnnotation.Controller)) {
+                    controller = annotation;
+                } else if (text.contains(WebAnnotation.RequestMapping)) {
+                    classRequestMapping = annotation;
+                }
             }
-        }
-        if (controller == null) {
-            NotificationUtil.warnNotify("Invalid Class File!", project);
-            return null;
-        }
-        MethodInfo methodInfo = new MethodInfo(psiMethod);
-        PsiAnnotation methodMapping = getMethodMapping(psiMethod);
-        YApiInterface yApiInterface = new YApiInterface();
-        yApiInterface.setToken(config.getState().projectToken);
-        RequestMethodEnum requestMethodEnum = getMethodFromAnnotation(methodMapping);
-        yApiInterface.setMethod(requestMethodEnum.name());
-        if (methodInfo.getParamStr().contains(WebAnnotation.RequestBody)) {
-            yApiInterface.setReq_body_type(RequestBodyTypeEnum.JSON.getValue());
-            yApiInterface.setReq_body_other(JsonUtil.buildJson5(getRequestBodyParam(methodInfo.getRequestFields())));
-        } else {
-            if (yApiInterface.getMethod().equals(RequestMethodEnum.POST.name())) {
-                yApiInterface.setReq_body_type(RequestBodyTypeEnum.FORM.getValue());
-                yApiInterface.setReq_body_form(listYApiForms(methodInfo.getRequestFields()));
+            if (controller == null) {
+                return YApiInterfaceWrapper.failed("Invalid Class File!");
             }
+            MethodInfo methodInfo = new MethodInfo(psiMethod);
+            PsiAnnotation methodMapping = getMethodMapping(psiMethod);
+            YApiInterface yApiInterface = new YApiInterface();
+            yApiInterface.setToken(config.getState().projectToken);
+            RequestMethodEnum requestMethodEnum = getMethodFromAnnotation(methodMapping);
+            yApiInterface.setMethod(requestMethodEnum.name());
+            if (methodInfo.getParamStr().contains(WebAnnotation.RequestBody)) {
+                yApiInterface.setReq_body_type(RequestBodyTypeEnum.JSON.getValue());
+                yApiInterface.setReq_body_other(JsonUtil.buildJson5(getRequestBodyParam(methodInfo.getRequestFields())));
+            } else {
+                if (yApiInterface.getMethod().equals(RequestMethodEnum.POST.name())) {
+                    yApiInterface.setReq_body_type(RequestBodyTypeEnum.FORM.getValue());
+                    yApiInterface.setReq_body_form(listYApiForms(methodInfo.getRequestFields()));
+                }
+            }
+            yApiInterface.setReq_query(listYApiQueries(methodInfo.getRequestFields(), requestMethodEnum));
+            Map<String, YApiCat> catNameMap = getCatNameMap();
+            PsiDocComment classDesc = containingClass.getDocComment();
+            yApiInterface.setCatid(getCatId(catNameMap, classDesc));
+            yApiInterface.setTitle(requestMethodEnum.name() + " " + methodInfo.getDesc());
+            yApiInterface.setPath(buildPath(classRequestMapping, methodMapping));
+            if (containResponseBodyAnnotation(psiMethod.getAnnotations()) || controller.getText().contains("Rest")) {
+                yApiInterface.setReq_headers(Collections.singletonList(YApiHeader.json()));
+                yApiInterface.setRes_body(JsonUtil.buildJson5(methodInfo.getResponse()));
+            } else {
+                yApiInterface.setReq_headers(Collections.singletonList(YApiHeader.form()));
+                yApiInterface.setRes_body_type(ResponseBodyTypeEnum.RAW.getValue());
+                yApiInterface.setRes_body("");
+            }
+            yApiInterface.setReq_params(listYApiPathVariables(methodInfo.getRequestFields()));
+            yApiInterface.setDesc(Objects.nonNull(yApiInterface.getDesc()) ? yApiInterface.getDesc() : "<pre><code data-language=\"java\" class=\"java\">" + getMethodDesc(psiMethod) + "</code> </pre>");
+            return YApiInterfaceWrapper.success(yApiInterface);
+        }catch (Exception e) {
+            Map<String,String> envInfo = new HashMap<>();
+            //TODO envinfo
+            envInfo.put("idea version","18.10");
+            StringBuilder sb = new StringBuilder();
+            sb.append("_cause:").append(e.getMessage()).append("\n_trace:");
+            for (StackTraceElement traceElement : e.getStackTrace()) {
+                sb.append("\n").append(traceElement.toString());
+            }
+            return YApiInterfaceWrapper.error(envInfo, sb.toString());
         }
-        yApiInterface.setReq_query(listYApiQueries(methodInfo.getRequestFields(), requestMethodEnum));
-        Map<String, YApiCat> catNameMap = getCatNameMap();
-        PsiDocComment classDesc = containingClass.getDocComment();
-        yApiInterface.setCatid(getCatId(catNameMap, classDesc));
-        yApiInterface.setTitle(requestMethodEnum.name() + " " + methodInfo.getDesc());
-        yApiInterface.setPath(buildPath(classRequestMapping, methodMapping));
-        if (containResponseBodyAnnotation(psiMethod.getAnnotations()) || controller.getText().contains("Rest")) {
-            yApiInterface.setReq_headers(Collections.singletonList(YApiHeader.json()));
-            yApiInterface.setRes_body(JsonUtil.buildJson5(methodInfo.getResponse()));
-        } else {
-            yApiInterface.setReq_headers(Collections.singletonList(YApiHeader.form()));
-            yApiInterface.setRes_body_type(ResponseBodyTypeEnum.RAW.getValue());
-            yApiInterface.setRes_body("");
-        }
-        yApiInterface.setReq_params(listYApiPathVariables(methodInfo.getRequestFields()));
-        yApiInterface.setDesc(Objects.nonNull(yApiInterface.getDesc()) ? yApiInterface.getDesc() : "<pre><code data-language=\"java\" class=\"java\">" + getMethodDesc(psiMethod) + "</code> </pre>");
-        return yApiInterface;
     }
 
     private String buildPath(PsiAnnotation classRequestMapping, PsiAnnotation methodMapping) {
