@@ -45,9 +45,8 @@ public class MethodInfo implements Serializable {
         this.setParamStr(psiMethod.getParameterList().getText());
         this.setMethodName(psiMethod.getName());
         this.setRequestFields(listParamFieldInfos(psiMethod));
-        FieldInfo fieldInfo = new FieldInfo(psiMethod.getProject(), psiMethod.getReturnType());
-        this.response = fieldInfo;
-        this.setResponseFields(fieldInfo.getChildren());
+        this.response = new FieldInfo(psiMethod.getProject(), psiMethod.getReturnType());
+        this.setResponseFields(response.getChildren());
     }
 
     private List<FieldInfo> listParamFieldInfos(PsiMethod psiMethod) {

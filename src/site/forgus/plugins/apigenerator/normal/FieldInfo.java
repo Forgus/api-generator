@@ -29,6 +29,7 @@ public class FieldInfo {
     private FieldInfo parent;
     private List<PsiAnnotation> annotations;
     private Project project;
+    private Map<PsiTypeParameter, PsiType> genericTypeMap;
 
     @Override
     public boolean equals(Object o) {
@@ -52,6 +53,22 @@ public class FieldInfo {
         this(project,psiType, "", new PsiAnnotation[0]);
     }
 
+    private Map<PsiTypeParameter, PsiType> resolveGenerics(PsiType psiType){
+        if(psiType instanceof PsiArrayType) {
+            return new HashMap<>();
+        }
+        PsiClassType psiClassType = (PsiClassType) psiType;
+        PsiType[] realParameters = psiClassType.getParameters();
+        PsiTypeParameter[] formParameters = psiClassType.resolve().getTypeParameters();
+        int i = 0;
+        Map<PsiTypeParameter, PsiType> map = new HashMap<>();
+        for (PsiType realParameter : realParameters) {
+            map.put(formParameters[i], realParameter);
+            i ++;
+        }
+        return map;
+    }
+
     public FieldInfo(Project project,String name, PsiType psiType, String desc, PsiAnnotation[] annotations) {
         this.project = project;
         config = ServiceManager.getService(project,ApiGeneratorConfig.class);
@@ -63,6 +80,7 @@ public class FieldInfo {
         this.range = requireAndRange.getRange();
         this.desc = desc == null ? "" : desc;
         this.annotations = Arrays.asList(annotations);
+        this.genericTypeMap = resolveGenerics(psiType);
         if (psiType != null) {
             if (FieldUtil.isNormalType(psiType)) {
                 paramType = TypeEnum.LITERAL;
@@ -147,7 +165,7 @@ public class FieldInfo {
             //基础类或基础包装类没有子域
             return new ArrayList<>();
         }
-        List<FieldInfo> fieldInfos = new ArrayList<>();
+
         if (psiType instanceof PsiClassReferenceType) {
             //如果是集合类型
             if (FieldUtil.isIterableType(psiType)) {
@@ -159,18 +177,35 @@ public class FieldInfo {
             }
             String typeName = psiType.getPresentableText();
             if (typeName.startsWith("Map")) {
-                fieldInfos.add(new FieldInfo(project,fieldInfo, typeName, null, "", new PsiAnnotation[0]));
-                return fieldInfos;
+                return Collections.singletonList(new FieldInfo(project,fieldInfo, typeName, null, "", new PsiAnnotation[0]));
             }
             if (typeName.contains("<")) {
                 PsiClass outerClass = PsiUtil.resolveClassInType(psiType);
                 PsiType innerType = PsiUtil.substituteTypeParameter(psiType, outerClass, 0, false);
-                for (PsiField outField : outerClass.getAllFields()) {
-                    PsiType type = containGeneric(outField.getType().getPresentableText()) ? innerType : outField.getType();
-                    if (config.getState().excludeFields.contains(outField.getName())) {
+                List<FieldInfo> fieldInfos = new ArrayList<>();
+                for (PsiField field : outerClass.getAllFields()) {
+                    if (config.getState().excludeFields.contains(field.getName())) {
                         continue;
                     }
-                    fieldInfos.add(new FieldInfo(project,fieldInfo, outField.getName(), type, DesUtil.getDescription(outField.getDocComment()), outField.getAnnotations()));
+                    PsiType type;
+                    String fieldTypeStr = field.getType().getPresentableText();
+                    if(containGeneric(fieldTypeStr)) {
+                        if (FieldUtil.isIterableType(fieldTypeStr)) {
+                            //List<T> TODO
+                            String typeStr = fieldTypeStr.replace(
+                                    PsiUtil.extractIterableTypeParameter(field.getType(),false).getPresentableText(),
+                                    innerType.getPresentableText()
+                            )
+                                    + " " + field.getName();
+                            type = JavaPsiFacade.getElementFactory(project).createFieldFromText(typeStr,field).getType();
+                        }else {
+                            //T
+                            type = innerType;
+                        }
+                    }else {
+                        type =  field.getType();
+                    }
+                    fieldInfos.add(new FieldInfo(project,fieldInfo, field.getName(), type, DesUtil.getDescription(field.getDocComment()), field.getAnnotations()));
                 }
                 return fieldInfos;
             }
@@ -178,6 +213,7 @@ public class FieldInfo {
             if (psiClass == null) {
                 return new ArrayList<>();
             }
+            List<FieldInfo> fieldInfos = new ArrayList<>();
             for (PsiField psiField : psiClass.getAllFields()) {
                 if (config.getState().excludeFields.contains(psiField.getName())) {
                     continue;

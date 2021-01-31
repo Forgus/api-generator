@@ -68,7 +68,7 @@ public class FieldUtil {
         return normalTypes.containsKey(typeName);
     }
 
-    private static boolean isIterableType(String typeName) {
+    public static boolean isIterableType(String typeName) {
         if (iterableTypes.contains(typeName)) {
             return true;
         }
