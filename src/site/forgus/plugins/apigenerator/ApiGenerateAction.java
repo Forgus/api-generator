@@ -376,7 +376,15 @@ public class ApiGenerateAction extends AnAction {
         if (psiNameValuePairs.length >= 1) {
             for (PsiNameValuePair psiNameValuePair : psiNameValuePairs) {
                 if (psiNameValuePair.getName().equals("value") || psiNameValuePair.getName().equals("path")) {
-                    return appendSlash(psiNameValuePair.getLiteralValue());
+                    String text = psiNameValuePair.getValue().getText();
+                    if(StringUtils.isEmpty(text)) {
+                        return "";
+                    }
+                    text = text.replace("\"","").replace("{","").replace("}","");
+                    if(text.contains(",")) {
+                        return appendSlash(text.split(",")[0]);
+                    }
+                    return appendSlash(text);
                 }
             }
         }
