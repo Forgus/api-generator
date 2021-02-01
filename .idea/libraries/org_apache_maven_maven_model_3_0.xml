@@ -2,7 +2,7 @@
   <library name="org.apache.maven:maven-model:3.0" type="repository">
     <properties maven-id="org.apache.maven:maven-model:3.0" />
     <CLASSES>
-      <root url="jar://$MAVEN_REPOSITORY$/org/apache/maven/maven-model/3.0/maven-model-3.0.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/codehaus/plexus/plexus-utils/2.0.4/maven-model-3.0.jar!/" />
       <root url="jar://$MAVEN_REPOSITORY$/org/codehaus/plexus/plexus-utils/2.0.4/plexus-utils-2.0.4.jar!/" />
     </CLASSES>
     <JAVADOC />

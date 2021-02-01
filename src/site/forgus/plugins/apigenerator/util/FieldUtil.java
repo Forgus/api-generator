@@ -68,6 +68,13 @@ public class FieldUtil {
         return normalTypes.containsKey(typeName);
     }
 
+    public static boolean isGenericType(PsiType psiType) {
+        return psiType != null && isGenericType(psiType.getPresentableText());
+    }
+    public static boolean isGenericType(String typeName) {
+        return genericList.contains(typeName);
+    }
+
     public static boolean isIterableType(String typeName) {
         if (iterableTypes.contains(typeName)) {
             return true;

@@ -328,15 +328,18 @@ public class ApiGenerateAction extends AnAction {
     }
 
     private void resolveClass(PsiType psiType,List<PsiClass> psiClassList) {
+        if(FieldUtil.isNormalType(psiType) || FieldUtil.isGenericType(psiType)) {
+            return;
+        }
         Set<PsiType> typeSet = new HashSet<>();
         typeSet.add(psiType);
-        PsiClass psiClass = PsiUtil.resolveClassInType(psiType);
+        PsiClass psiClass = PsiUtil.resolveClassInClassTypeOnly(psiType);
         if(psiClass == null) {
             return ;
         }
         psiClassList.add(psiClass);
         return;
-        //TODO errorInfo
+        //TODO 递归解析
 //        PsiField[] fields = psiClass.getFields();
 //        for (PsiField field : fields) {
 //            PsiType type = field.getType();

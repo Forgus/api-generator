@@ -7,7 +7,6 @@ import com.intellij.psi.PsiType;
 import com.intellij.psi.javadoc.PsiDocComment;
 import com.intellij.psi.javadoc.PsiDocTag;
 import com.intellij.psi.util.PsiUtil;
-import lombok.Data;
 import org.apache.commons.lang.StringUtils;
 import site.forgus.plugins.apigenerator.util.DesUtil;
 
