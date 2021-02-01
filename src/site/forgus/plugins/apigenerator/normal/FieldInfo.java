@@ -16,7 +16,6 @@ import site.forgus.plugins.apigenerator.util.FieldUtil;
 
 import java.util.*;
 
-@Data
 public class FieldInfo {
 
     private String name;
@@ -355,4 +354,107 @@ public class FieldInfo {
         return AssertUtils.isNotEmpty(children);
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public PsiType getPsiType() {
+        return psiType;
+    }
+
+    public void setPsiType(PsiType psiType) {
+        this.psiType = psiType;
+    }
+
+    public boolean isRequire() {
+        return require;
+    }
+
+    public void setRequire(boolean require) {
+        this.require = require;
+    }
+
+    public String getRange() {
+        return range;
+    }
+
+    public void setRange(String range) {
+        this.range = range;
+    }
+
+    public String getDesc() {
+        return desc;
+    }
+
+    public void setDesc(String desc) {
+        this.desc = desc;
+    }
+
+    public TypeEnum getParamType() {
+        return paramType;
+    }
+
+    public void setParamType(TypeEnum paramType) {
+        this.paramType = paramType;
+    }
+
+    public List<FieldInfo> getChildren() {
+        return children;
+    }
+
+    public void setChildren(List<FieldInfo> children) {
+        this.children = children;
+    }
+
+    public FieldInfo getParent() {
+        return parent;
+    }
+
+    public void setParent(FieldInfo parent) {
+        this.parent = parent;
+    }
+
+    public List<PsiAnnotation> getAnnotations() {
+        return annotations;
+    }
+
+    public void setAnnotations(List<PsiAnnotation> annotations) {
+        this.annotations = annotations;
+    }
+
+    public Project getProject() {
+        return project;
+    }
+
+    public void setProject(Project project) {
+        this.project = project;
+    }
+
+    public Map<PsiTypeParameter, PsiType> getGenericTypeMap() {
+        return genericTypeMap;
+    }
+
+    public void setGenericTypeMap(Map<PsiTypeParameter, PsiType> genericTypeMap) {
+        this.genericTypeMap = genericTypeMap;
+    }
+
+    public static List<String> getRequiredTexts() {
+        return requiredTexts;
+    }
+
+    public static void setRequiredTexts(List<String> requiredTexts) {
+        FieldInfo.requiredTexts = requiredTexts;
+    }
+
+    public ApiGeneratorConfig getConfig() {
+        return config;
+    }
+
+    public void setConfig(ApiGeneratorConfig config) {
+        this.config = config;
+    }
 }

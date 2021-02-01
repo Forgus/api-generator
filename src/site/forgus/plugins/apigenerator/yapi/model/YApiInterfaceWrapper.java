@@ -1,10 +1,7 @@
 package site.forgus.plugins.apigenerator.yapi.model;
 
-import lombok.Data;
-
 import java.util.Map;
 
-@Data
 public class YApiInterfaceWrapper {
     private static final long serialVersionUID = 1587901232801702983L;
 
@@ -43,4 +40,35 @@ public class YApiInterfaceWrapper {
         return wrapper;
     }
 
+    public RespCodeEnum getRespCode() {
+        return respCode;
+    }
+
+    public void setRespCode(RespCodeEnum respCode) {
+        this.respCode = respCode;
+    }
+
+    public YApiInterface getYApiInterface() {
+        return yApiInterface;
+    }
+
+    public void setYApiInterface(YApiInterface yApiInterface) {
+        this.yApiInterface = yApiInterface;
+    }
+
+    public Map<String, String> getEnvInfo() {
+        return envInfo;
+    }
+
+    public void setEnvInfo(Map<String, String> envInfo) {
+        this.envInfo = envInfo;
+    }
+
+    public String getRespMsg() {
+        return respMsg;
+    }
+
+    public void setRespMsg(String respMsg) {
+        this.respMsg = respMsg;
+    }
 }
