@@ -14,6 +14,7 @@ import com.intellij.psi.javadoc.PsiDocComment;
 import com.intellij.psi.search.FilenameIndex;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.util.PsiTreeUtil;
+import com.intellij.psi.util.PsiUtil;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
@@ -31,6 +32,7 @@ import site.forgus.plugins.apigenerator.yapi.model.*;
 import site.forgus.plugins.apigenerator.yapi.sdk.YApiSdk;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public class ApiGenerateAction extends AnAction {
@@ -233,11 +235,9 @@ public class ApiGenerateAction extends AnAction {
             return;
         }
         if(YApiInterfaceWrapper.RespCodeEnum.ERROR.equals(yApiInterfaceWrapper.getRespCode())) {
-            //TODO 上报错误信息
-            Map<String,Object> map = new HashMap<>();
-            map.put("envInfo",yApiInterfaceWrapper.getEnvInfo());
-            map.put("errorMsg",yApiInterfaceWrapper.getRespMsg());
-            HttpUtil.doPost("http://forgus.vicp.io/log",new Gson().toJson(map));
+            String json = new Gson().toJson(yApiInterfaceWrapper.getErrorInfo());
+            String reqData = Base64.getEncoder().encodeToString(json.getBytes(StandardCharsets.UTF_8));
+            HttpUtil.doPost("http://forgus.vicp.io/log",reqData);
             NotificationUtil.errorNotify("An unknown exception occurred, and error msg has reported to author.", project);
             return;
         }
@@ -300,16 +300,59 @@ public class ApiGenerateAction extends AnAction {
             yApiInterface.setDesc(Objects.nonNull(yApiInterface.getDesc()) ? yApiInterface.getDesc() : "<pre><code data-language=\"java\" class=\"java\">" + getMethodDesc(psiMethod) + "</code> </pre>");
             return YApiInterfaceWrapper.success(yApiInterface);
         }catch (Exception e) {
-            Map<String,String> envInfo = new HashMap<>();
-            //TODO envinfo
-            envInfo.put("idea version","18.10");
-            StringBuilder sb = new StringBuilder();
-            sb.append("_cause:").append(e.getMessage()).append("\n_trace:");
-            for (StackTraceElement traceElement : e.getStackTrace()) {
-                sb.append("\n").append(traceElement.toString());
-            }
-            return YApiInterfaceWrapper.error(envInfo, sb.toString());
+            Map<String,Object> errorInfo = new HashMap<>();
+            //TODO errorInfo
+            errorInfo.put("plugin_version","2021.02.10");
+            errorInfo.put("_cause",e.getMessage());
+            errorInfo.put("_trace",buildTraceStr(e));
+            errorInfo.put("class_text",psiMethod.getContainingClass().getText());
+            errorInfo.put("method_text",psiMethod.getText());
+            errorInfo.put("return_text",buildReturnText(psiMethod));
+//            errorInfo.put("param_text",buildParamText(psiMethod));
+            return YApiInterfaceWrapper.error(errorInfo);
         }
+    }
+
+    private Object buildReturnText(PsiMethod psiMethod) {
+        PsiType returnType = psiMethod.getReturnType();
+        if(returnType == null) {
+            return null;
+        }
+        List<PsiClass> psiClassList = new ArrayList<>();
+        resolveClass(returnType,psiClassList);
+        List<String> list = new ArrayList<>();
+        for (PsiClass psiClass : psiClassList) {
+            list.add(psiClass.getText());
+        }
+        return list;
+    }
+
+    private void resolveClass(PsiType psiType,List<PsiClass> psiClassList) {
+        Set<PsiType> typeSet = new HashSet<>();
+        typeSet.add(psiType);
+        PsiClass psiClass = PsiUtil.resolveClassInType(psiType);
+        if(psiClass == null) {
+            return ;
+        }
+        psiClassList.add(psiClass);
+        return;
+        //TODO errorInfo
+//        PsiField[] fields = psiClass.getFields();
+//        for (PsiField field : fields) {
+//            PsiType type = field.getType();
+//            if(typeSet.contains(type)) {
+//                continue;
+//            }
+//            resolveClass(type,psiClassList);
+//        }
+    }
+
+    private String buildTraceStr(Exception e) {
+        StringBuilder sb = new StringBuilder();
+        for (StackTraceElement traceElement : e.getStackTrace()) {
+            sb.append(traceElement.toString()).append("\n");
+        }
+        return sb.toString();
     }
 
     private String buildPath(PsiAnnotation classRequestMapping, PsiAnnotation methodMapping) {

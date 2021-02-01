@@ -6,9 +6,9 @@ public class YApiInterfaceWrapper {
     private static final long serialVersionUID = 1587901232801702983L;
 
     private RespCodeEnum respCode;
-    private YApiInterface yApiInterface;
-    private Map<String,String> envInfo;
     private String respMsg;
+    private YApiInterface yApiInterface;
+    private Map<String,Object> errorInfo;
 
     public enum RespCodeEnum {
         SUCCESS,FAILED,ERROR
@@ -32,11 +32,10 @@ public class YApiInterfaceWrapper {
         return wrapper;
     }
 
-    public static YApiInterfaceWrapper error(Map<String,String> envInfo,String respMsg) {
+    public static YApiInterfaceWrapper error(Map<String,Object> errorInfo) {
         YApiInterfaceWrapper wrapper = new YApiInterfaceWrapper();
         wrapper.respCode = RespCodeEnum.ERROR;
-        wrapper.envInfo = envInfo;
-        wrapper.respMsg = respMsg;
+        wrapper.errorInfo = errorInfo;
         return wrapper;
     }
 
@@ -56,12 +55,12 @@ public class YApiInterfaceWrapper {
         this.yApiInterface = yApiInterface;
     }
 
-    public Map<String, String> getEnvInfo() {
-        return envInfo;
+    public Map<String, Object> getErrorInfo() {
+        return errorInfo;
     }
 
-    public void setEnvInfo(Map<String, String> envInfo) {
-        this.envInfo = envInfo;
+    public void setErrorInfo(Map<String, Object> errorInfo) {
+        this.errorInfo = errorInfo;
     }
 
     public String getRespMsg() {

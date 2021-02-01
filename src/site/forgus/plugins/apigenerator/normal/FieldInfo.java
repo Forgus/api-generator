@@ -190,7 +190,6 @@ public class FieldInfo {
                     String fieldTypeStr = field.getType().getPresentableText();
                     if(containGeneric(fieldTypeStr)) {
                         if (FieldUtil.isIterableType(fieldTypeStr)) {
-                            //List<T> TODO
                             String typeStr = fieldTypeStr.replace(
                                     PsiUtil.extractIterableTypeParameter(field.getType(),false).getPresentableText(),
                                     innerType.getPresentableText()
