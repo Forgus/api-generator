@@ -31,6 +31,7 @@ import site.forgus.plugins.apigenerator.yapi.enums.ResponseBodyTypeEnum;
 import site.forgus.plugins.apigenerator.yapi.model.*;
 import site.forgus.plugins.apigenerator.yapi.sdk.YApiSdk;
 
+import javax.swing.*;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -305,13 +306,34 @@ public class ApiGenerateAction extends AnAction {
             errorInfo.put("plugin_version","2021.02.10");
             errorInfo.put("_cause",e.getMessage());
             errorInfo.put("_trace",buildTraceStr(e));
-            errorInfo.put("class_text",psiMethod.getContainingClass().getText());
-            errorInfo.put("method_text",psiMethod.getText());
-            errorInfo.put("return_text",buildReturnText(psiMethod));
+            errorInfo.put("method_text",buildMethodSnapshot(psiMethod));
+//            errorInfo.put("return_text",buildReturnText(psiMethod));
 //            errorInfo.put("param_text",buildParamText(psiMethod));
             return YApiInterfaceWrapper.error(errorInfo);
         }
     }
+
+    private String buildMethodSnapshot(PsiMethod psiMethod) {
+        PsiClass psiClass = psiMethod.getContainingClass();
+        String classDocText = psiClass.getDocComment().getText();
+        String classModifierText = psiClass.getModifierList().getText();
+        String className = psiClass.getName();
+        String methodDocText = psiMethod.getDocComment().getText();
+        String methodModifierText = psiMethod.getModifierList().getText();
+        String returnText = psiMethod.getReturnType().getPresentableText();
+        String methodName = psiMethod.getName();
+        String paramText = psiMethod.getParameterList().getText();
+        StringBuilder sb = new StringBuilder();
+        sb.append(classDocText).append("\n")
+                .append(classModifierText).append(" class ").append(className).append(" {\n")
+                .append("    ").append(methodDocText).append("\n")
+                .append("    ").append(methodModifierText).append(" ").append(returnText).append(" ").append(methodName).append(paramText).append(" {\n")
+                .append("        return null;\n")
+                .append("    }\n").append("}")
+        ;
+        return sb.toString();
+    }
+
 
     private Object buildReturnText(PsiMethod psiMethod) {
         PsiType returnType = psiMethod.getReturnType();
@@ -352,8 +374,13 @@ public class ApiGenerateAction extends AnAction {
 
     private String buildTraceStr(Exception e) {
         StringBuilder sb = new StringBuilder();
+        int i = 1;
         for (StackTraceElement traceElement : e.getStackTrace()) {
+            if(i == 10) {
+                break;
+            }
             sb.append(traceElement.toString()).append("\n");
+            i++;
         }
         return sb.toString();
     }

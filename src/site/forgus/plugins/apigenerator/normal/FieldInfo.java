@@ -67,6 +67,29 @@ public class FieldInfo {
         return map;
     }
 
+    public FieldInfo() {
+
+    }
+
+    public static FieldInfo genericField(TypeEnum outType,PsiType innerType,FieldInfo parent,Project project,String name, String desc, PsiAnnotation[] annotations) {
+        FieldInfo fieldInfo = new FieldInfo();
+        fieldInfo.setProject(project);
+        fieldInfo.setConfig(ServiceManager.getService(project,ApiGeneratorConfig.class));
+        RequireAndRange requireAndRange = FieldUtil.getRequireAndRange(annotations);
+        String fieldName = getParamName(name, annotations);
+        fieldInfo.setName(fieldName == null ? "N/A" : fieldName);
+        fieldInfo.setRequire(requireAndRange.isRequire());
+        fieldInfo.setRange(requireAndRange.getRange());
+        fieldInfo.setDesc(desc == null ? "" : desc);
+        fieldInfo.setAnnotations(Arrays.asList(annotations));
+        fieldInfo.setParent(parent);
+        fieldInfo.setParamType(outType);
+        if (needResolveChildren(parent, innerType)) {
+            fieldInfo.setChildren(listChildren(fieldInfo));
+        }
+        return fieldInfo;
+    }
+
     public FieldInfo(Project project,String name, PsiType psiType, String desc, PsiAnnotation[] annotations) {
         this.project = project;
         config = ServiceManager.getService(project,ApiGeneratorConfig.class);
@@ -115,7 +138,7 @@ public class FieldInfo {
             } else {
                 paramType = TypeEnum.OBJECT;
             }
-            if (needResolveChildren(parent, psiType)) {
+            if (needResolveChildren(parent, psiType,paramType)) {
                 this.children = listChildren(this);
             }
         } else {
@@ -127,7 +150,7 @@ public class FieldInfo {
         this(project,psiType.getPresentableText(), psiType, desc, annotations);
     }
 
-    private String getParamName(String name, PsiAnnotation[] annotations) {
+    private static String getParamName(String name, PsiAnnotation[] annotations) {
         PsiAnnotation requestParamAnnotation = getRequestParamAnnotation(annotations);
         if (requestParamAnnotation == null) {
             return name;
@@ -145,7 +168,7 @@ public class FieldInfo {
         return name;
     }
 
-    private PsiAnnotation getRequestParamAnnotation(PsiAnnotation[] annotations) {
+    private static PsiAnnotation getRequestParamAnnotation(PsiAnnotation[] annotations) {
         for (PsiAnnotation annotation : annotations) {
             if (annotation.getText().contains(WebAnnotation.RequestParam)) {
                 return annotation;
@@ -154,7 +177,7 @@ public class FieldInfo {
         return null;
     }
 
-    private List<FieldInfo> listChildren(FieldInfo fieldInfo) {
+    private static List<FieldInfo> listChildren(FieldInfo fieldInfo) {
         PsiType psiType = fieldInfo.getPsiType();
         if (psiType == null) {
             return new ArrayList<>();
@@ -171,7 +194,7 @@ public class FieldInfo {
             }
             return listChildren(new FieldInfo(fieldInfo.getProject(),fieldInfo, componentType.getPresentableText(), componentType, "", new PsiAnnotation[0]));
         }
-        if (psiType instanceof PsiClassReferenceType) {
+        if (psiType instanceof PsiClassType) {
             //如果是集合类型
             if (FieldUtil.isCollectionType(psiType)) {
                 PsiType iterableType = PsiUtil.extractIterableTypeParameter(psiType, false);
@@ -182,7 +205,7 @@ public class FieldInfo {
             }
             String typeName = psiType.getPresentableText();
             if (typeName.startsWith("Map")) {
-                return Collections.singletonList(new FieldInfo(project,fieldInfo, typeName, null, "", new PsiAnnotation[0]));
+                return Collections.singletonList(new FieldInfo(fieldInfo.getProject(),fieldInfo, typeName, null, "", new PsiAnnotation[0]));
             }
             if (typeName.contains("<")) {
                 PsiClass outerClass = PsiUtil.resolveClassInType(psiType);
@@ -193,21 +216,21 @@ public class FieldInfo {
                     typeParamStr = typeParameter.getText();
                 }
                 List<FieldInfo> fieldInfos = new ArrayList<>();
-                PsiElementFactory elementFactory = JavaPsiFacade.getElementFactory(project);
+                PsiElementFactory elementFactory = JavaPsiFacade.getElementFactory(fieldInfo.getProject());
                 for (PsiField field : outerClass.getAllFields()) {
                     if (config.getState().excludeFields.contains(field.getName())) {
                         continue;
                     }
-                    PsiType type;
-                    String fieldTypeStr = field.getType().getPresentableText();
-                    //解析泛型符号，重建类型
+                    PsiType fieldType = field.getType();
+                    String fieldTypeStr = fieldType.getPresentableText();
+                    //解析泛型
                     if(fieldTypeStr.contains(typeParamStr)) {
                         String typeStr = fieldTypeStr.replace(typeParamStr, innerType.getPresentableText()) + " " + field.getName();
-                        type = elementFactory.createFieldFromText(typeStr,field).getType();
+                        fieldType = elementFactory.createFieldFromText(typeStr,field).getType();
                     }else {
-                        type =  field.getType();
+                        fieldType =  field.getType();
                     }
-                    fieldInfos.add(new FieldInfo(project,fieldInfo, field.getName(), type, DesUtil.getDescription(field.getDocComment()), field.getAnnotations()));
+                    fieldInfos.add(new FieldInfo(fieldInfo.getProject(),fieldInfo, field.getName(), fieldType, DesUtil.getDescription(field.getDocComment()), field.getAnnotations()));
                 }
                 return fieldInfos;
             }
@@ -220,7 +243,7 @@ public class FieldInfo {
                 if (config.getState().excludeFields.contains(psiField.getName())) {
                     continue;
                 }
-                fieldInfos.add(new FieldInfo(project,fieldInfo, psiField.getName(), psiField.getType(), DesUtil.getDescription(psiField.getDocComment()), psiField.getAnnotations()));
+                fieldInfos.add(new FieldInfo(fieldInfo.getProject(),fieldInfo, psiField.getName(), psiField.getType(), DesUtil.getDescription(psiField.getDocComment()), psiField.getAnnotations()));
             }
             return fieldInfos;
         }
@@ -237,7 +260,7 @@ public class FieldInfo {
         return !isMapType(psiType);
     }
 
-    private boolean needResolveChildren(FieldInfo parent, PsiType psiType) {
+    private static boolean needResolveChildren(FieldInfo parent, PsiType psiType) {
         if (parent == null) {
             return true;
         }
@@ -263,6 +286,11 @@ public class FieldInfo {
                 psiType = PsiUtil.extractIterableTypeParameter(psiType, false);
             }
         }
+        if(psiType instanceof PsiArrayType) {
+            psiType = ((PsiArrayType)psiType).getComponentType();
+        }else {
+            psiType = PsiUtil.extractIterableTypeParameter(psiType, false);
+        }
         for (PsiType resolvedType : resolvedTypeSet) {
             if (resolvedType.equals(psiType)) {
                 return false;
@@ -271,7 +299,7 @@ public class FieldInfo {
         return true;
     }
 
-    private boolean isMapType(PsiType psiType) {
+    private static boolean isMapType(PsiType psiType) {
         String presentableText = psiType.getPresentableText();
         List<String> mapList = Arrays.asList("Map","HashMap","LinkedHashMap","JSONObject");
         if(mapList.contains(presentableText)) {
