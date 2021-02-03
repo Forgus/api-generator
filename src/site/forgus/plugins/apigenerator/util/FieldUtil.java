@@ -76,14 +76,24 @@ public class FieldUtil {
     }
 
     public static boolean isIterableType(String typeName) {
-        if (iterableTypes.contains(typeName)) {
-            return true;
-        }
-        return typeName.startsWith("List<") || typeName.startsWith("Set<") || typeName.startsWith("Collection<");
+        return isCollectionType(typeName) || typeName.contains("[]");
     }
 
     public static boolean isIterableType(PsiType psiType) {
         return isIterableType(psiType.getPresentableText());
+    }
+
+    public static boolean isCollectionType(PsiType psiType) {
+        return isCollectionType(psiType.getPresentableText());
+    }
+
+    private static boolean isCollectionType(String typeName) {
+        if (AssertUtils.isEmpty(typeName)) {
+            return false;
+        }
+        return typeName.startsWith("List<")
+                || typeName.startsWith("Set<")
+                || typeName.startsWith("Collection<");
     }
 
     public static boolean isNormalType(PsiType psiType) {

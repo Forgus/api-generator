@@ -164,9 +164,16 @@ public class FieldInfo {
             return new ArrayList<>();
         }
 
+        if(psiType instanceof PsiArrayType) {
+            PsiType componentType = ((PsiArrayType) psiType).getComponentType();
+            if (FieldUtil.isNormalType(componentType.getPresentableText()) || isMapType(componentType)) {
+                return new ArrayList<>();
+            }
+            return listChildren(new FieldInfo(fieldInfo.getProject(),fieldInfo, componentType.getPresentableText(), componentType, "", new PsiAnnotation[0]));
+        }
         if (psiType instanceof PsiClassReferenceType) {
             //如果是集合类型
-            if (FieldUtil.isIterableType(psiType)) {
+            if (FieldUtil.isCollectionType(psiType)) {
                 PsiType iterableType = PsiUtil.extractIterableTypeParameter(psiType, false);
                 if (iterableType == null || FieldUtil.isNormalType(iterableType.getPresentableText()) || isMapType(iterableType)) {
                     return new ArrayList<>();
@@ -180,25 +187,23 @@ public class FieldInfo {
             if (typeName.contains("<")) {
                 PsiClass outerClass = PsiUtil.resolveClassInType(psiType);
                 PsiType innerType = PsiUtil.substituteTypeParameter(psiType, outerClass, 0, false);
+                String typeParamStr = "";
+                PsiTypeParameter typeParameter = outerClass.getTypeParameters()[0];
+                if(typeParameter != null) {
+                    typeParamStr = typeParameter.getText();
+                }
                 List<FieldInfo> fieldInfos = new ArrayList<>();
+                PsiElementFactory elementFactory = JavaPsiFacade.getElementFactory(project);
                 for (PsiField field : outerClass.getAllFields()) {
                     if (config.getState().excludeFields.contains(field.getName())) {
                         continue;
                     }
                     PsiType type;
                     String fieldTypeStr = field.getType().getPresentableText();
-                    if(containGeneric(fieldTypeStr)) {
-                        if (FieldUtil.isIterableType(fieldTypeStr)) {
-                            String typeStr = fieldTypeStr.replace(
-                                    PsiUtil.extractIterableTypeParameter(field.getType(),false).getPresentableText(),
-                                    innerType.getPresentableText()
-                            )
-                                    + " " + field.getName();
-                            type = JavaPsiFacade.getElementFactory(project).createFieldFromText(typeStr,field).getType();
-                        }else {
-                            //T
-                            type = innerType;
-                        }
+                    //解析泛型符号，重建类型
+                    if(fieldTypeStr.contains(typeParamStr)) {
+                        String typeStr = fieldTypeStr.replace(typeParamStr, innerType.getPresentableText()) + " " + field.getName();
+                        type = elementFactory.createFieldFromText(typeStr,field).getType();
                     }else {
                         type =  field.getType();
                     }
@@ -252,7 +257,11 @@ public class FieldInfo {
             p = p.getParent();
         }
         if (TypeEnum.ARRAY.equals(paramType)) {
-            psiType = PsiUtil.extractIterableTypeParameter(psiType, false);
+            if(psiType instanceof PsiArrayType) {
+                psiType = ((PsiArrayType)psiType).getComponentType();
+            }else {
+                psiType = PsiUtil.extractIterableTypeParameter(psiType, false);
+            }
         }
         for (PsiType resolvedType : resolvedTypeSet) {
             if (resolvedType.equals(psiType)) {

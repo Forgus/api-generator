@@ -2,6 +2,7 @@ package site.forgus.plugins.apigenerator.util;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.intellij.psi.PsiArrayType;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.util.PsiUtil;
 import org.apache.commons.lang.StringUtils;
@@ -115,7 +116,8 @@ public class JsonUtil {
                 return;
             }
             PsiClass psiClass = PsiUtil.resolveClassInType(fieldInfo.getPsiType());
-            String innerType = PsiUtil.substituteTypeParameter(fieldInfo.getPsiType(), psiClass, 0, true).getPresentableText();
+            String innerType = fieldInfo.getPsiType() instanceof PsiArrayType ? ((PsiArrayType)fieldInfo.getPsiType()).getComponentType().getPresentableText() :
+                    PsiUtil.substituteTypeParameter(fieldInfo.getPsiType(), psiClass, 0, true).getPresentableText();
             map.put(fieldInfo.getName(), Collections.singletonList(FieldUtil.normalTypes.get(innerType) == null ? new HashMap<>() : FieldUtil.normalTypes.get(innerType)));
             return;
         }
