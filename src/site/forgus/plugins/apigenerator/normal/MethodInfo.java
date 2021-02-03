@@ -23,7 +23,6 @@ public class MethodInfo implements Serializable {
     private String paramStr;
     private String methodName;
     private List<FieldInfo> requestFields;
-    private List<FieldInfo> responseFields;
     private FieldInfo response;
 
     private List<String> excludeParamTypes = Arrays.asList("RedirectAttributes", "HttpServletRequest", "HttpServletResponse");
@@ -43,8 +42,7 @@ public class MethodInfo implements Serializable {
         this.setParamStr(psiMethod.getParameterList().getText());
         this.setMethodName(psiMethod.getName());
         this.setRequestFields(listParamFieldInfos(psiMethod));
-        this.response = new FieldInfo(psiMethod.getProject(), psiMethod.getReturnType());
-        this.setResponseFields(response.getChildren());
+        this.setResponse(FieldFactory.buildPsiType(psiMethod.getProject(), psiMethod.getReturnType()));
     }
 
     private List<FieldInfo> listParamFieldInfos(PsiMethod psiMethod) {
@@ -145,14 +143,6 @@ public class MethodInfo implements Serializable {
 
     public void setRequestFields(List<FieldInfo> requestFields) {
         this.requestFields = requestFields;
-    }
-
-    public List<FieldInfo> getResponseFields() {
-        return responseFields;
-    }
-
-    public void setResponseFields(List<FieldInfo> responseFields) {
-        this.responseFields = responseFields;
     }
 
     public FieldInfo getResponse() {

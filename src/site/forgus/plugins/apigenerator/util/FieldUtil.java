@@ -30,7 +30,7 @@ public class FieldUtil {
         normalTypes.put("char", 'a');
         normalTypes.put("Boolean", false);
         normalTypes.put("Byte", 0);
-        normalTypes.put("Short", Short.valueOf((short) 0));
+        normalTypes.put("Short", (short) 0);
         normalTypes.put("Integer", 0);
         normalTypes.put("Long", 0L);
         normalTypes.put("Float", 0.0F);

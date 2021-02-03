@@ -808,15 +808,15 @@ public class ApiGenerateAction extends AnAction {
             }
             md.write("\n## 返回结果\n");
             md.write("### 返回结果示例\n");
-            if (AssertUtils.isNotEmpty(methodInfo.getResponseFields())) {
+            if (AssertUtils.isNotEmpty(methodInfo.getResponse().getChildren())) {
                 md.write("```json\n");
                 md.write(JsonUtil.buildPrettyJson(methodInfo.getResponse()) + "\n");
                 md.write("```\n");
             }
             md.write("### 返回结果说明\n");
-            if (AssertUtils.isNotEmpty(methodInfo.getResponseFields())) {
+            if (AssertUtils.isNotEmpty(methodInfo.getResponse().getChildren())) {
                 writeParamTableHeader(md);
-                for (FieldInfo fieldInfo : methodInfo.getResponseFields()) {
+                for (FieldInfo fieldInfo : methodInfo.getResponse().getChildren()) {
                     writeFieldInfo(md, fieldInfo, "");
                 }
             }
