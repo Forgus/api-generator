@@ -186,5 +186,14 @@ public class FieldUtil {
         }
         return null;
     }
+
+    public static boolean isMapType(PsiType psiType) {
+        String presentableText = psiType.getPresentableText();
+        List<String> mapList = Arrays.asList("Map","HashMap","LinkedHashMap","JSONObject");
+        if(mapList.contains(presentableText)) {
+            return true;
+        }
+        return presentableText.startsWith("Map<") || presentableText.startsWith("HashMap<") || presentableText.startsWith("LinkedHashMap<");
+    }
 }
 

@@ -22,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import site.forgus.plugins.apigenerator.config.ApiGeneratorConfig;
 import site.forgus.plugins.apigenerator.constant.TypeEnum;
 import site.forgus.plugins.apigenerator.constant.WebAnnotation;
+import site.forgus.plugins.apigenerator.normal.FieldFactory;
 import site.forgus.plugins.apigenerator.normal.FieldInfo;
 import site.forgus.plugins.apigenerator.normal.MethodInfo;
 import site.forgus.plugins.apigenerator.util.*;
@@ -651,10 +652,38 @@ public class ApiGenerateAction extends AnAction {
         PsiNameValuePair[] psiNameValuePairs = annotation.getParameterList().getAttributes();
         for (PsiNameValuePair psiNameValuePair : psiNameValuePairs) {
             if ("method".equals(psiNameValuePair.getName())) {
-                return RequestMethodEnum.valueOf(psiNameValuePair.getValue().getReference().resolve().getText());
+                return RequestMethodEnum.valueOf(extractMethodName(psiNameValuePair));
             }
         }
         return RequestMethodEnum.POST;
+    }
+
+    private String extractMethodName(PsiNameValuePair psiNameValuePair) {
+        PsiAnnotationMemberValue value = psiNameValuePair.getValue();
+        if(value != null) {
+            PsiReference reference = value.getReference();
+            if(reference != null) {
+                PsiElement resolve = reference.resolve();
+                if(resolve != null) {
+                    return resolve.getText();
+                }
+            }
+            PsiElement[] children = value.getChildren();
+            if(children.length == 0) {
+                return RequestMethodEnum.POST.name();
+            }
+            if(children.length > 1) {
+                for (PsiElement child : children) {
+                    if(child instanceof PsiReference) {
+                        PsiElement resolve = ((PsiReference) child).resolve();
+                        if(resolve != null) {
+                            return resolve.getText();
+                        }
+                    }
+                }
+            }
+        }
+        return RequestMethodEnum.POST.name();
     }
 
     private PsiAnnotation getMethodMapping(PsiMethod psiMethod) {
@@ -751,7 +780,7 @@ public class ApiGenerateAction extends AnAction {
             if (config.getState().excludeFieldNames.contains(psiField.getName())) {
                 continue;
             }
-            fieldInfos.add(new FieldInfo(psiClass.getProject(), psiField.getName(), psiField.getType(), DesUtil.getDescription(psiField.getDocComment()), psiField.getAnnotations()));
+            fieldInfos.add(FieldFactory.buildField(psiClass.getProject(), psiField.getName(), psiField.getType(), DesUtil.getDescription(psiField.getDocComment()), psiField.getAnnotations()));
         }
         return fieldInfos;
     }

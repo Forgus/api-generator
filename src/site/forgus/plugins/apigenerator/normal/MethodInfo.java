@@ -54,7 +54,7 @@ public class MethodInfo implements Serializable {
             if (excludeParamTypes.contains(psiType.getPresentableText())) {
                 continue;
             }
-            FieldInfo fieldInfo = new FieldInfo(
+            FieldInfo fieldInfo = FieldFactory.buildField(
                     psiMethod.getProject(),
                     psiParameter.getName(),
                     psiType,
