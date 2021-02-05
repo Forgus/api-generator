@@ -2,14 +2,14 @@ package site.forgus.plugins.apigenerator.util;
 
 import com.google.common.base.Strings;
 import com.intellij.openapi.project.Project;
-import com.intellij.psi.JavaPsiFacade;
-import com.intellij.psi.PsiClass;
-import com.intellij.psi.PsiField;
-import com.intellij.psi.PsiMethod;
+import com.intellij.psi.*;
 import com.intellij.psi.javadoc.PsiDocComment;
 import com.intellij.psi.javadoc.PsiDocTag;
 import com.intellij.psi.search.GlobalSearchScope;
+import org.apache.commons.lang.StringUtils;
+import site.forgus.plugins.apigenerator.constant.SwaggerAnnotation;
 
+import java.util.Arrays;
 import java.util.Objects;
 
 /**
@@ -45,11 +45,51 @@ public class DesUtil {
     /**
      * 获得描述
      *
-     * @param psiMethodTarget the psi method target
+     * @param psiMethod the psi method target
      * @return the description
      */
-    public static String getDescription(PsiMethod psiMethodTarget) {
-        return getDescription(psiMethodTarget.getDocComment());
+    public static String getDescription(PsiMethod psiMethod) {
+        String desc = getDescription(psiMethod.getDocComment());
+        if(StringUtils.isEmpty(desc)) {
+            for (PsiAnnotation annotation : psiMethod.getAnnotations()) {
+                if(annotation.getText().contains(SwaggerAnnotation.ApiOperation)) {
+                    PsiNameValuePair[] attributes = annotation.getParameterList().getAttributes();
+                    if(attributes.length == 1 && attributes[0].getName() == null) {
+                        return attributes[0].getLiteralValue();
+                    }
+                    if(attributes.length >= 1) {
+                        for (PsiNameValuePair attribute : attributes) {
+                            if("value".equals(attribute.getName())) {
+                                return attribute.getValue().getText();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return desc;
+    }
+
+    public static String getDesc(PsiField field) {
+        String desc = getDescription(field.getDocComment());
+        if(StringUtils.isEmpty(desc)) {
+            for (PsiAnnotation annotation : field.getAnnotations()) {
+                if(annotation.getText().contains(SwaggerAnnotation.ApiModelProperty)) {
+                    PsiNameValuePair[] attributes = annotation.getParameterList().getAttributes();
+                    if (attributes.length == 1 && attributes[0].getName() == null) {
+                        return attributes[0].getLiteralValue();
+                    }
+                    if (attributes.length >= 1) {
+                        for (PsiNameValuePair attribute : attributes) {
+                            if (Arrays.asList("value", "name").contains(attribute.getName())) {
+                                return attribute.getValue().getText();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return desc;
     }
 
     public static String getDescription(PsiDocComment psiDocComment) {
