@@ -60,7 +60,7 @@ public class DesUtil {
                     if(attributes.length >= 1) {
                         for (PsiNameValuePair attribute : attributes) {
                             if("value".equals(attribute.getName())) {
-                                return attribute.getValue().getText();
+                                return attribute.getLiteralValue();
                             }
                         }
                     }
@@ -70,7 +70,7 @@ public class DesUtil {
         return desc;
     }
 
-    public static String getDesc(PsiField field) {
+    public static String getDescription(PsiField field) {
         String desc = getDescription(field.getDocComment());
         if(StringUtils.isEmpty(desc)) {
             for (PsiAnnotation annotation : field.getAnnotations()) {

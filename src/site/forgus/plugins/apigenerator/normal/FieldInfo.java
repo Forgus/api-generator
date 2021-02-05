@@ -156,7 +156,7 @@ public class FieldInfo {
                 PsiType fieldType = psiField.getType();
                 //兼容泛型
                 PsiType realFieldType = resolveGeneric(fieldType);
-                FieldInfo fieldInfo = FieldFactory.buildFieldWithParent(project,this,psiField.getName(), realFieldType,DesUtil.getDescription(psiField.getDocComment()), psiField.getAnnotations());
+                FieldInfo fieldInfo = FieldFactory.buildFieldWithParent(project,this,psiField.getName(), realFieldType,DesUtil.getDescription(psiField), psiField.getAnnotations());
                 children.add(fieldInfo);
             }
             return;

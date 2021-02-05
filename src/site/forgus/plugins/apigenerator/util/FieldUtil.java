@@ -1,9 +1,12 @@
 package site.forgus.plugins.apigenerator.util;
 
+import com.intellij.lang.jvm.annotation.JvmAnnotationAttribute;
 import com.intellij.psi.*;
 import com.intellij.psi.util.PsiUtil;
 import org.apache.commons.lang.StringUtils;
+import site.forgus.plugins.apigenerator.constant.JacksonAnnotation;
 import site.forgus.plugins.apigenerator.constant.WebAnnotation;
+import site.forgus.plugins.apigenerator.normal.FieldInfo;
 import site.forgus.plugins.apigenerator.normal.RequireAndRange;
 
 import java.util.*;
@@ -114,24 +117,42 @@ public class FieldUtil {
         return new RequireAndRange(require, range);
     }
 
-    public static Object getValue(PsiType psiType) {
+    public static Object getValue(FieldInfo fieldInfo) {
+        PsiType psiType = fieldInfo.getPsiType();
         if (isIterableType(psiType)) {
             PsiType type = PsiUtil.extractIterableTypeParameter(psiType, false);
             if (type == null) {
                 return "[]";
             }
             if (isNormalType(type)) {
-                Object obj = normalTypes.get(type.getPresentableText());
-                if (obj == null) {
+                Object value = getValue(psiType.getPresentableText(),fieldInfo.getAnnotations());
+                if (value == null) {
                     return null;
                 }
-                return obj.toString() + "," + obj.toString();
+                return value.toString() + "," + value.toString();
             }
         }
-        Object value = normalTypes.get(psiType.getPresentableText());
+        Object value = getValue(psiType.getPresentableText(),fieldInfo.getAnnotations());
         return value == null ? "" : value;
     }
 
+    private static Object getValue(String typeStr,List<PsiAnnotation> annotations) {
+        if(Arrays.asList("LocalDateTime","Date").contains(typeStr)) {
+            for (PsiAnnotation annotation : annotations) {
+                if(annotation.getText().contains(JacksonAnnotation.JsonFormat)) {
+                    PsiNameValuePair[] attributes = annotation.getParameterList().getAttributes();
+                    if (attributes.length >= 1) {
+                        for (PsiNameValuePair attribute : attributes) {
+                            if ("pattern".equals(attribute.getName())) {
+                                return attribute.getLiteralValue();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return normalTypes.get(typeStr);
+    }
 
     public static boolean isNormalType(String typeName) {
         return normalTypes.containsKey(typeName);

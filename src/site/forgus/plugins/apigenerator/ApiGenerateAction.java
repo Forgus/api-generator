@@ -288,7 +288,7 @@ public class ApiGenerateAction extends AnAction {
             Map<String, YApiCat> catNameMap = getCatNameMap();
             PsiDocComment classDesc = containingClass.getDocComment();
             yApiInterface.setCatid(getCatId(catNameMap, classDesc));
-            yApiInterface.setTitle(requestMethodEnum.name() + " " + methodInfo.getDesc());
+            yApiInterface.setTitle(methodInfo.getDesc());
             yApiInterface.setPath(buildPath(classRequestMapping, methodMapping));
             if (containResponseBodyAnnotation(psiMethod.getAnnotations()) || controller.getText().contains("Rest")) {
                 yApiInterface.setReq_headers(Collections.singletonList(YApiHeader.json()));
@@ -432,7 +432,7 @@ public class ApiGenerateAction extends AnAction {
             YApiPathVariable yApiPathVariable = new YApiPathVariable();
             yApiPathVariable.setName(getPathVariableName(pathVariable,fieldInfo.getName()));
             yApiPathVariable.setDesc(fieldInfo.getDesc());
-            yApiPathVariable.setExample(FieldUtil.getValue(fieldInfo.getPsiType()).toString());
+            yApiPathVariable.setExample(FieldUtil.getValue(fieldInfo).toString());
             yApiPathVariables.add(yApiPathVariable);
         }
         return yApiPathVariables;
@@ -571,7 +571,7 @@ public class ApiGenerateAction extends AnAction {
         YApiQuery query = new YApiQuery();
         query.setName(fieldInfo.getName());
         query.setDesc(generateDesc(fieldInfo));
-        Object value = FieldUtil.getValue(fieldInfo.getPsiType());
+        Object value = FieldUtil.getValue(fieldInfo);
         if (value != null) {
             query.setExample(value.toString());
         }
@@ -619,7 +619,7 @@ public class ApiGenerateAction extends AnAction {
         YApiForm param = new YApiForm();
         param.setName(fieldInfo.getName());
         param.setDesc(fieldInfo.getDesc());
-        param.setExample(FieldUtil.getValue(fieldInfo.getPsiType()).toString());
+        param.setExample(FieldUtil.getValue(fieldInfo).toString());
         param.setRequired(convertRequired(fieldInfo.isRequire()));
         return param;
     }
@@ -780,7 +780,7 @@ public class ApiGenerateAction extends AnAction {
             if (config.getState().excludeFieldNames.contains(psiField.getName())) {
                 continue;
             }
-            fieldInfos.add(FieldFactory.buildField(psiClass.getProject(), psiField.getName(), psiField.getType(), DesUtil.getDescription(psiField.getDocComment()), psiField.getAnnotations()));
+            fieldInfos.add(FieldFactory.buildField(psiClass.getProject(), psiField.getName(), psiField.getType(), DesUtil.getDescription(psiField), psiField.getAnnotations()));
         }
         return fieldInfos;
     }
