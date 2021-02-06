@@ -97,6 +97,12 @@
     ]]></description>
 
     <change-notes><![CDATA[
+      <em>2021.02.10</em><br>
+      <ul>
+          <li>支持常用swagger注解和@JsonFormat注解。</li>
+          <li>生成的接口名不再带有请求方法。</li>
+          <li>修复嵌套泛型解析不正确的问题。</li>
+      </ul>
       <em>2020.09.10</em><br>
       <ul>
           <li>Fix the problem that the generated markdown's artifactId is not correct.</li>
