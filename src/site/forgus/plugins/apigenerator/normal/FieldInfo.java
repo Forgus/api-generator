@@ -1,7 +1,13 @@
 package site.forgus.plugins.apigenerator.normal;
 
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.vfs.VirtualFileManager;
 import com.intellij.psi.*;
+import com.intellij.psi.impl.compiled.ClsClassImpl;
+import com.intellij.psi.impl.java.stubs.impl.PsiJavaFileStubImpl;
+import com.intellij.psi.impl.source.PsiJavaFileImpl;
+import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.psi.util.PsiUtil;
 import site.forgus.plugins.apigenerator.config.ApiGeneratorConfig;
 import site.forgus.plugins.apigenerator.constant.TypeEnum;
@@ -149,6 +155,24 @@ public class FieldInfo {
             if (psiClass == null) {
                 return;
             }
+            try {
+
+                if (psiClass instanceof ClsClassImpl){
+                    String sourcePath = ((PsiJavaFileStubImpl) ((ClsClassImpl) psiClass).getStub().getParentStub())
+                            .getPsi().getViewProvider().getVirtualFile().toString()
+                            .replace(".jar!", "-sources.jar!");
+                    sourcePath = sourcePath.substring(0, sourcePath.length() - 5)+"java";
+                    VirtualFile virtualFile =
+                            VirtualFileManager.getInstance().findFileByUrl(sourcePath);
+                    FileViewProvider fileViewProvider = new SingleRootFileViewProvider(PsiManager.getInstance(project), virtualFile);
+                    PsiFile psiFile1 = new PsiJavaFileImpl(fileViewProvider);
+                    psiClass = PsiTreeUtil.findChildOfAnyType(psiFile1.getOriginalElement(), PsiClass.class);
+                }
+
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+
             for (PsiField psiField : psiClass.getAllFields()) {
                 if (config.getState().excludeFields.contains(psiField.getName())) {
                     continue;
