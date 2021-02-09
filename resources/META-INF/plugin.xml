@@ -1,8 +1,8 @@
 <idea-plugin>
     <id>site.forgus.plugins.api-generator</id>
     <name>Api Generator</name>
-    <version>2021.02.10</version>
-    <vendor email="wenbin1876@gmail.com">孤峰</vendor>
+    <version>2021.02.11</version>
+    <vendor email="wenbin1876@gmail.com">孤峰,泽恩</vendor>
 
     <description><![CDATA[
       <em>Api开发利器，接口文档自动生成</em><br><br>
@@ -43,6 +43,7 @@
       <li>自动识别类，生成markdown文档或上传到YApi</li>
       <li>支持List、Set、Collection等数据结构，支持嵌套泛型解析</li>
       <li>支持@NotNull、@ResponseBody等常用注解的解析，基于json5生成YApi文档</li>
+      <li>支持解析依赖的jar包源码(maven管理)读取doc</li>
       </ul><br>
       用法：<br>
       <ul><li>将光标定位到方法区域或者类名，鼠标右键单击"Generate Api".</li></ul><br>
@@ -97,6 +98,11 @@
     ]]></description>
 
     <change-notes><![CDATA[
+      <em>2021.02.11</em><br>
+      <ul>
+          <li>支持解析依赖jar的源码doc</li>
+      </ul>
+
       <em>2021.02.10</em><br>
       <ul>
           <li>支持常用swagger注解和@JsonFormat注解。</li>
