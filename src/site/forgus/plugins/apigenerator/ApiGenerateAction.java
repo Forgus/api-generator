@@ -18,7 +18,6 @@ import com.intellij.psi.util.PsiUtil;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
-import org.jetbrains.annotations.NotNull;
 import site.forgus.plugins.apigenerator.config.ApiGeneratorConfig;
 import site.forgus.plugins.apigenerator.constant.TypeEnum;
 import site.forgus.plugins.apigenerator.constant.WebAnnotation;
@@ -32,7 +31,6 @@ import site.forgus.plugins.apigenerator.yapi.enums.ResponseBodyTypeEnum;
 import site.forgus.plugins.apigenerator.yapi.model.*;
 import site.forgus.plugins.apigenerator.yapi.sdk.YApiSdk;
 
-import javax.swing.*;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -288,8 +286,8 @@ public class ApiGenerateAction extends AnAction {
             Map<String, YApiCat> catNameMap = getCatNameMap();
             PsiDocComment classDesc = containingClass.getDocComment();
             yApiInterface.setCatid(getCatId(catNameMap, classDesc));
-            yApiInterface.setTitle(methodInfo.getDesc());
             yApiInterface.setPath(buildPath(classRequestMapping, methodMapping));
+            yApiInterface.setTitle(StringUtils.isEmpty(methodInfo.getDesc()) ? yApiInterface.getPath() : methodInfo.getDesc());
             if (containResponseBodyAnnotation(psiMethod.getAnnotations()) || controller.getText().contains("Rest")) {
                 yApiInterface.setReq_headers(Collections.singletonList(YApiHeader.json()));
                 yApiInterface.setRes_body(JsonUtil.buildJson5(methodInfo.getResponse()));

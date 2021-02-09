@@ -155,24 +155,18 @@ public class FieldInfo {
             if (psiClass == null) {
                 return;
             }
-            try {
-
-                if (psiClass instanceof ClsClassImpl){
-                    String sourcePath = ((PsiJavaFileStubImpl) ((ClsClassImpl) psiClass).getStub().getParentStub())
-                            .getPsi().getViewProvider().getVirtualFile().toString()
-                            .replace(".jar!", "-sources.jar!");
-                    sourcePath = sourcePath.substring(0, sourcePath.length() - 5)+"java";
-                    VirtualFile virtualFile =
-                            VirtualFileManager.getInstance().findFileByUrl(sourcePath);
-                    FileViewProvider fileViewProvider = new SingleRootFileViewProvider(PsiManager.getInstance(project), virtualFile);
-                    PsiFile psiFile1 = new PsiJavaFileImpl(fileViewProvider);
-                    psiClass = PsiTreeUtil.findChildOfAnyType(psiFile1.getOriginalElement(), PsiClass.class);
-                }
-
-            }catch (Exception e){
-                e.printStackTrace();
+            //兼容第三方jar包
+            if (psiClass instanceof ClsClassImpl){
+                String sourcePath = ((PsiJavaFileStubImpl) ((ClsClassImpl) psiClass).getStub().getParentStub())
+                        .getPsi().getViewProvider().getVirtualFile().toString()
+                        .replace(".jar!", "-sources.jar!");
+                sourcePath = sourcePath.substring(0, sourcePath.length() - 5)+"java";
+                VirtualFile virtualFile =
+                        VirtualFileManager.getInstance().findFileByUrl(sourcePath);
+                FileViewProvider fileViewProvider = new SingleRootFileViewProvider(PsiManager.getInstance(project), virtualFile);
+                PsiFile psiFile1 = new PsiJavaFileImpl(fileViewProvider);
+                psiClass = PsiTreeUtil.findChildOfAnyType(psiFile1.getOriginalElement(), PsiClass.class);
             }
-
             for (PsiField psiField : psiClass.getAllFields()) {
                 if (config.getState().excludeFields.contains(psiField.getName())) {
                     continue;
@@ -183,8 +177,6 @@ public class FieldInfo {
                 FieldInfo fieldInfo = FieldFactory.buildFieldWithParent(project,this,psiField.getName(), realFieldType,DesUtil.getDescription(psiField), psiField.getAnnotations());
                 children.add(fieldInfo);
             }
-            return;
         }
-        return;
     }
 }
