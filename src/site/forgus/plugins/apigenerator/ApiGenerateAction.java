@@ -302,7 +302,7 @@ public class ApiGenerateAction extends AnAction {
         }catch (Exception e) {
             Map<String,Object> errorInfo = new HashMap<>();
             //TODO errorInfo
-            errorInfo.put("plugin_version","2021.02.10");
+            errorInfo.put("plugin_version","2021.02.15");
             errorInfo.put("_cause",e.getMessage());
             errorInfo.put("_trace",buildTraceStr(e));
             errorInfo.put("method_text",buildMethodSnapshot(psiMethod));

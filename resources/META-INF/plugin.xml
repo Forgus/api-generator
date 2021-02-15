@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>site.forgus.plugins.api-generator</id>
     <name>Api Generator</name>
-    <version>2021.02.11</version>
+    <version>2021.02.15</version>
     <vendor email="wenbin1876@gmail.com">孤峰</vendor>
 
     <description><![CDATA[
@@ -97,7 +97,7 @@
     ]]></description>
 
     <change-notes><![CDATA[
-      <em>2021.02.11</em><br>
+      <em>2021.02.15</em><br>
       <ul>
           <li>支持第三方jar包源码注释的解析。</li>
           <li>修复没有注释的方法无法上传文档的问题。</li>
