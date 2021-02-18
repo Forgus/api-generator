@@ -94,6 +94,8 @@ public class FieldFactory {
             }
             if (needResolveChildren(parent, psiType,fieldInfo.paramType)) {
                 fieldInfo.resolveChildren();
+            }else {
+                fieldInfo.children = null;
             }
         } else {
             fieldInfo.paramType = TypeEnum.OBJECT;

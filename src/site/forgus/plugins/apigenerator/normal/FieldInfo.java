@@ -5,8 +5,10 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileManager;
 import com.intellij.psi.*;
 import com.intellij.psi.impl.compiled.ClsClassImpl;
+import com.intellij.psi.impl.java.stubs.PsiClassStub;
 import com.intellij.psi.impl.java.stubs.impl.PsiJavaFileStubImpl;
 import com.intellij.psi.impl.source.PsiJavaFileImpl;
+import com.intellij.psi.stubs.StubElement;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.psi.util.PsiUtil;
 import site.forgus.plugins.apigenerator.config.ApiGeneratorConfig;
@@ -15,10 +17,7 @@ import site.forgus.plugins.apigenerator.util.AssertUtils;
 import site.forgus.plugins.apigenerator.util.DesUtil;
 import site.forgus.plugins.apigenerator.util.FieldUtil;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 public class FieldInfo {
 
@@ -147,6 +146,7 @@ public class FieldInfo {
             }
             String typeName = psiType.getPresentableText();
             if (typeName.startsWith("Map")) {
+                children = null;
                 return;
             }
             //兼容泛型
@@ -157,18 +157,24 @@ public class FieldInfo {
             }
             //兼容第三方jar包
             if (psiClass instanceof ClsClassImpl){
-                String sourcePath = ((PsiJavaFileStubImpl) ((ClsClassImpl) psiClass).getStub().getParentStub())
-                        .getPsi().getViewProvider().getVirtualFile().toString()
-                        .replace(".jar!", "-sources.jar!");
-                sourcePath = sourcePath.substring(0, sourcePath.length() - 5)+"java";
-                VirtualFile virtualFile =
-                        VirtualFileManager.getInstance().findFileByUrl(sourcePath);
-                FileViewProvider fileViewProvider = new SingleRootFileViewProvider(PsiManager.getInstance(project), virtualFile);
-                PsiFile psiFile1 = new PsiJavaFileImpl(fileViewProvider);
-                psiClass = PsiTreeUtil.findChildOfAnyType(psiFile1.getOriginalElement(), PsiClass.class);
+                StubElement parentStub = ((ClsClassImpl) psiClass).getStub().getParentStub();
+                if(parentStub instanceof  PsiJavaFileStubImpl) {
+                    String sourcePath = ((PsiJavaFileStubImpl) parentStub)
+                            .getPsi().getViewProvider().getVirtualFile().toString()
+                            .replace(".jar!", "-sources.jar!");
+                    sourcePath = sourcePath.substring(0, sourcePath.length() - 5)+"java";
+                    VirtualFile virtualFile =
+                            VirtualFileManager.getInstance().findFileByUrl(sourcePath);
+                    FileViewProvider fileViewProvider = new SingleRootFileViewProvider(PsiManager.getInstance(project), virtualFile);
+                    PsiFile psiFile1 = new PsiJavaFileImpl(fileViewProvider);
+                    psiClass = PsiTreeUtil.findChildOfAnyType(psiFile1.getOriginalElement(), PsiClass.class);
+                }
             }
             for (PsiField psiField : psiClass.getAllFields()) {
                 if (config.getState().excludeFields.contains(psiField.getName())) {
+                    continue;
+                }
+                if(FieldUtil.isStaticField(psiField)) {
                     continue;
                 }
                 PsiType fieldType = psiField.getType();
@@ -179,4 +185,5 @@ public class FieldInfo {
             }
         }
     }
+
 }

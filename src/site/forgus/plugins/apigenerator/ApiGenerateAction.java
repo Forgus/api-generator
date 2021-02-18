@@ -121,10 +121,15 @@ public class ApiGenerateAction extends AnAction {
             config.getState().projectId = projectId;
         }
         Map<String, YApiCat> catNameMap = getCatNameMap();
+        String catId = getCatId(catNameMap, psiClass.getDocComment());
+        if(catId == null) {
+            NotificationUtil.errorNotify("Upload api failed, cause: YApi server url or Project token is not right!", project);
+            return;
+        }
         PsiMethod[] methods = psiClass.getMethods();
         for (PsiMethod method : methods) {
             if (hasMappingAnnotation(method)) {
-                uploadToYApi(project, method,catNameMap);
+                uploadToYApi(project, method,catId);
             }
         }
     }
@@ -225,7 +230,7 @@ public class ApiGenerateAction extends AnAction {
     private void uploadToYApi(Project project, PsiMethod psiMethod) throws IOException {
         YApiInterfaceWrapper yApiInterfaceWrapper = buildYApiInterface(psiMethod);
         if (YApiInterfaceWrapper.RespCodeEnum.FAILED.equals(yApiInterfaceWrapper.getRespCode())) {
-            NotificationUtil.errorNotify("Resolve api failed, reason:" + yApiInterfaceWrapper.getRespMsg(), project);
+            NotificationUtil.errorNotify("Resolve api failed, reason: " + yApiInterfaceWrapper.getRespMsg(), project);
             return;
         }
         if(YApiInterfaceWrapper.RespCodeEnum.ERROR.equals(yApiInterfaceWrapper.getRespCode())) {
@@ -236,16 +241,23 @@ public class ApiGenerateAction extends AnAction {
             return;
         }
         if(YApiInterfaceWrapper.RespCodeEnum.SUCCESS.equals(yApiInterfaceWrapper.getRespCode())) {
-            YApiResponse yApiResponse = YApiSdk.saveInterface(config.getState().yApiServerUrl, yApiInterfaceWrapper.getYApiInterface());
+            String catId = getCatId(getCatNameMap(), psiMethod.getContainingClass().getDocComment());
+            if(catId == null) {
+                NotificationUtil.errorNotify("Upload api failed, cause: YApi server url or Project token is not right!",project);
+                return;
+            }
+            YApiInterface yApiInterface = yApiInterfaceWrapper.getYApiInterface();
+            yApiInterface.setCatid(catId);
+            YApiResponse yApiResponse = YApiSdk.saveInterface(config.getState().yApiServerUrl, yApiInterface);
             if (yApiResponse.getErrcode() != 0) {
-                NotificationUtil.errorNotify("Upload api failed, cause:" + yApiResponse.getErrmsg(), project);
+                NotificationUtil.errorNotify("Upload api failed, cause: " + yApiResponse.getErrmsg(), project);
                 return;
             }
             NotificationUtil.infoNotify("Upload api success.", project);
         }
     }
 
-    private void uploadToYApi(Project project, PsiMethod psiMethod,Map<String, YApiCat> catNameMap) throws IOException {
+    private void uploadToYApi(Project project, PsiMethod psiMethod,String catId) throws IOException {
         YApiInterfaceWrapper yApiInterfaceWrapper = buildYApiInterface(psiMethod);
         if (YApiInterfaceWrapper.RespCodeEnum.FAILED.equals(yApiInterfaceWrapper.getRespCode())) {
             NotificationUtil.errorNotify("Resolve api failed, reason:" + yApiInterfaceWrapper.getRespMsg(), project);
@@ -259,6 +271,8 @@ public class ApiGenerateAction extends AnAction {
             return;
         }
         if(YApiInterfaceWrapper.RespCodeEnum.SUCCESS.equals(yApiInterfaceWrapper.getRespCode())) {
+            YApiInterface yApiInterface = yApiInterfaceWrapper.getYApiInterface();
+            yApiInterface.setCatid(catId);
             YApiResponse yApiResponse = YApiSdk.saveInterface(config.getState().yApiServerUrl, yApiInterfaceWrapper.getYApiInterface());
             if (yApiResponse.getErrcode() != 0) {
                 NotificationUtil.errorNotify("Upload api failed, cause:" + yApiResponse.getErrmsg(), project);
@@ -300,7 +314,11 @@ public class ApiGenerateAction extends AnAction {
                 }
             }
             yApiInterface.setReq_query(listYApiQueries(methodInfo.getRequestFields(), requestMethodEnum));
-            yApiInterface.setCatid(getCatId(getCatNameMap(),containingClass.getDocComment()));
+//            String catId = getCatId(getCatNameMap(), containingClass.getDocComment());
+//            if(catId == null) {
+//                return YApiInterfaceWrapper.failed("Server url or project token is not right!");
+//            }
+//            yApiInterface.setCatid(catId);
             yApiInterface.setPath(buildPath(classRequestMapping, methodMapping));
             yApiInterface.setTitle(StringUtils.isEmpty(methodInfo.getDesc()) ? yApiInterface.getPath() : methodInfo.getDesc());
             if (containResponseBodyAnnotation(psiMethod.getAnnotations()) || controller.getText().contains("Rest")) {
@@ -386,23 +404,46 @@ public class ApiGenerateAction extends AnAction {
         }
     }
 
+    private String getClassDocText(PsiClass psiClass) {
+        if(psiClass == null) {
+            return null;
+        }
+        PsiDocComment docComment = psiClass.getDocComment();
+        if(docComment == null) {
+            return null;
+        }
+        return docComment.getText();
+    }
+
+    private String getMethodDocText(PsiMethod psiMethod) {
+        PsiDocComment docComment = psiMethod.getDocComment();
+        if(docComment == null) {
+            return null;
+        }
+        return docComment.getText();
+    }
+
     private String buildMethodSnapshot(PsiMethod psiMethod) {
         PsiClass psiClass = psiMethod.getContainingClass();
-        String classDocText = psiClass.getDocComment().getText();
+        String classDocText = getClassDocText(psiClass);
         String classModifierText = psiClass.getModifierList().getText();
         String className = psiClass.getName();
-        String methodDocText = psiMethod.getDocComment().getText();
+        String methodDocText = getMethodDocText(psiMethod);
         String methodModifierText = psiMethod.getModifierList().getText();
         String returnText = psiMethod.getReturnType().getPresentableText();
         String methodName = psiMethod.getName();
         String paramText = psiMethod.getParameterList().getText();
         StringBuilder sb = new StringBuilder();
-        sb.append(classDocText).append("\n")
-                .append(classModifierText).append(" class ").append(className).append(" {\n")
-                .append("    ").append(methodDocText).append("\n")
-                .append("    ").append(methodModifierText).append(" ").append(returnText).append(" ").append(methodName).append(paramText).append(" {\n")
-                .append("        return null;\n")
-                .append("    }\n").append("}")
+        if(classDocText != null) {
+            sb.append(classDocText).append("\n");
+        }
+        sb.append(classModifierText).append(" class ").append(className).append(" {\n");
+        if(methodDocText != null) {
+            sb.append("    ").append(methodDocText).append("\n");
+        }
+        sb.append("    ").append(methodModifierText).append(" ").append(returnText).append(" ").append(methodName).append(paramText).append(" {\n")
+        .append("        return null;\n")
+        .append("    }\n").append("}")
         ;
         return sb.toString();
     }
@@ -593,17 +634,23 @@ public class ApiGenerateAction extends AnAction {
         } else {
             catName = defaultCatName;
         }
-        YApiCat apiCat = catNameMap.get(catName);
+        YApiCat apiCat = catNameMap == null ? null : catNameMap.get(catName);
         if (apiCat != null) {
             return apiCat.get_id().toString();
         }
         YApiResponse<YApiCat> yApiResponse = YApiSdk.addCategory(config.getState().yApiServerUrl, config.getState().projectToken, config.getState().projectId, catName);
+        if(yApiResponse.getData() == null) {
+            return null;
+        }
         return yApiResponse.getData().get_id().toString();
     }
 
     private Map<String, YApiCat> getCatNameMap() throws IOException {
         List<YApiCat> yApiCats = YApiSdk.listCategories(config.getState().yApiServerUrl, config.getState().projectToken);
         Map<String, YApiCat> catNameMap = new HashMap<>();
+        if(yApiCats == null) {
+            return catNameMap;
+        }
         for (YApiCat cat : yApiCats) {
             catNameMap.put(cat.getName(), cat);
         }

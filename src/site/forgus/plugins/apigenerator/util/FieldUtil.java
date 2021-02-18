@@ -228,5 +228,20 @@ public class FieldUtil {
         }
         return presentableText.startsWith("Map<") || presentableText.startsWith("HashMap<") || presentableText.startsWith("LinkedHashMap<");
     }
+
+    public static boolean isStaticField(PsiField psiField) {
+        PsiModifierList modifierList = psiField.getModifierList();
+        if(modifierList == null) {
+            return false;
+        }
+        for (PsiElement child : modifierList.getChildren()) {
+            if(child instanceof PsiKeyword) {
+                if(child.getText().equals("static")) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 }
 
