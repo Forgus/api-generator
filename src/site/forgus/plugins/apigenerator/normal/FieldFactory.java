@@ -4,7 +4,6 @@ import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
 import com.intellij.psi.util.PsiUtil;
-import org.apache.commons.lang.StringUtils;
 import site.forgus.plugins.apigenerator.config.ApiGeneratorConfig;
 import site.forgus.plugins.apigenerator.constant.TypeEnum;
 import site.forgus.plugins.apigenerator.constant.WebAnnotation;
@@ -17,8 +16,6 @@ import java.util.*;
  * @since 2021/02/03
  */
 public class FieldFactory {
-
-    private static List<String> requiredTexts = Arrays.asList("@NotNull", "@NotBlank", "@NotEmpty", "@PathVariable");
 
     public static FieldInfo buildPsiType(Project project, PsiType psiType) {
         FieldInfo fieldInfo = new FieldInfo();
@@ -47,7 +44,7 @@ public class FieldFactory {
         fieldInfo.fieldType = FieldType.FIELD;
         fieldInfo.project = project;
         fieldInfo.config = ServiceManager.getService(project,ApiGeneratorConfig.class);
-        RequireAndRange requireAndRange = getRequireAndRange(annotations);
+        RequireAndRange requireAndRange = FieldUtil.getRequireAndRange(annotations);
         String fieldName = getParamName(name, annotations);
         fieldInfo.name = fieldName == null ? "N/A" : fieldName;
         fieldInfo.psiType = psiType;
@@ -77,7 +74,7 @@ public class FieldFactory {
         fieldInfo.fieldType = FieldType.FIELD;
         fieldInfo.project = project;
         fieldInfo.config = ServiceManager.getService(project,ApiGeneratorConfig.class);
-        RequireAndRange requireAndRange = getRequireAndRange(annotations);
+        RequireAndRange requireAndRange = FieldUtil.getRequireAndRange(annotations);
         String fieldName = getParamName(name, annotations);
         fieldInfo.name = fieldName == null ? "N/A" : fieldName;
         fieldInfo.psiType = psiType;
@@ -172,74 +169,6 @@ public class FieldFactory {
             return map;
         }
         return new HashMap<>();
-    }
-
-    private static RequireAndRange getRequireAndRange(PsiAnnotation[] annotations) {
-        if (annotations.length == 0) {
-            return RequireAndRange.instance();
-        }
-        boolean require = false;
-        String min = "";
-        String max = "";
-        String range = "N/A";
-        for (PsiAnnotation annotation : annotations) {
-            if (isParamRequired(annotation)) {
-                require = true;
-                break;
-            }
-        }
-        for (PsiAnnotation annotation : annotations) {
-            String qualifiedName = annotation.getText();
-            if (qualifiedName.contains("Length") || qualifiedName.contains("Range") || qualifiedName.contains("Size")) {
-                PsiAnnotationMemberValue minValue = annotation.findAttributeValue("min");
-                if (minValue != null) {
-                    min = minValue.getText();
-                    break;
-                }
-            }
-            if (qualifiedName.contains("Min")) {
-                PsiAnnotationMemberValue minValue = annotation.findAttributeValue("value");
-                if (minValue != null) {
-                    min = minValue.getText();
-                    break;
-                }
-            }
-        }
-        for (PsiAnnotation annotation : annotations) {
-            String qualifiedName = annotation.getText();
-            if (qualifiedName.contains("Length") || qualifiedName.contains("Range") || qualifiedName.contains("Size")) {
-                PsiAnnotationMemberValue maxValue = annotation.findAttributeValue("max");
-                if (maxValue != null) {
-                    max = maxValue.getText();
-                    break;
-                }
-            }
-            if (qualifiedName.contains("Max")) {
-                PsiAnnotationMemberValue maxValue = annotation.findAttributeValue("value");
-                if (maxValue != null) {
-                    max = maxValue.getText();
-                    break;
-                }
-            }
-        }
-        if (StringUtils.isNotEmpty(min) || StringUtils.isNotEmpty(max)) {
-            range = "[" + min + "," + max + "]";
-        }
-        return new RequireAndRange(require, range);
-    }
-
-    private static boolean isParamRequired(PsiAnnotation annotation) {
-        String annotationText = annotation.getText();
-        if (annotationText.contains(WebAnnotation.RequestParam)) {
-            PsiNameValuePair[] psiNameValuePairs = annotation.getParameterList().getAttributes();
-            for (PsiNameValuePair psiNameValuePair : psiNameValuePairs) {
-                if ("required".equals(psiNameValuePair.getName()) && "false".equals(psiNameValuePair.getLiteralValue())) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        return requiredTexts.contains(annotationText.split("\\(")[0]);
     }
 
     private static String getParamName(String name, PsiAnnotation[] annotations) {

@@ -5,6 +5,7 @@ import com.intellij.psi.*;
 import com.intellij.psi.util.PsiUtil;
 import org.apache.commons.lang.StringUtils;
 import site.forgus.plugins.apigenerator.constant.JacksonAnnotation;
+import site.forgus.plugins.apigenerator.constant.SwaggerAnnotation;
 import site.forgus.plugins.apigenerator.constant.WebAnnotation;
 import site.forgus.plugins.apigenerator.normal.FieldInfo;
 import site.forgus.plugins.apigenerator.normal.RequireAndRange;
@@ -60,7 +61,18 @@ public class FieldUtil {
             }
             return true;
         }
-        return requiredTexts.contains(annotationText.split("\\(")[0]);
+        if(requiredTexts.contains(annotationText.split("\\(")[0])) {
+            return true;
+        }
+        if(annotationText.contains(SwaggerAnnotation.ApiModelProperty)) {
+            PsiNameValuePair[] psiNameValuePairs = annotation.getParameterList().getAttributes();
+            for (PsiNameValuePair psiNameValuePair : psiNameValuePairs) {
+                if ("required".equals(psiNameValuePair.getName()) && "true".equals(psiNameValuePair.getLiteralValue())) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     public static RequireAndRange getRequireAndRange(PsiAnnotation[] annotations) {
