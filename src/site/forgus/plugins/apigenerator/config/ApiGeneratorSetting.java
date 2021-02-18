@@ -8,6 +8,8 @@ import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
 import site.forgus.plugins.apigenerator.util.AssertUtils;
+import site.forgus.plugins.apigenerator.util.NotificationUtil;
+import site.forgus.plugins.apigenerator.yapi.sdk.ConfigException;
 import site.forgus.plugins.apigenerator.yapi.sdk.YApiSdk;
 
 import javax.swing.*;
@@ -165,7 +167,7 @@ public class ApiGeneratorSetting implements Configurable {
         if(AssertUtils.isNotEmpty(yApiUrlTextField.getText()) && AssertUtils.isNotEmpty(tokenTextField.getText())) {
             try {
                 oldState.projectId = YApiSdk.getProjectInfo(yApiUrlTextField.getText(), tokenTextField.getText()).get_id().toString();
-            } catch (IOException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
