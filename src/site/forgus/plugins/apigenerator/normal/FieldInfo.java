@@ -165,9 +165,11 @@ public class FieldInfo {
                     sourcePath = sourcePath.substring(0, sourcePath.length() - 5)+"java";
                     VirtualFile virtualFile =
                             VirtualFileManager.getInstance().findFileByUrl(sourcePath);
-                    FileViewProvider fileViewProvider = new SingleRootFileViewProvider(PsiManager.getInstance(project), virtualFile);
-                    PsiFile psiFile1 = new PsiJavaFileImpl(fileViewProvider);
-                    psiClass = PsiTreeUtil.findChildOfAnyType(psiFile1.getOriginalElement(), PsiClass.class);
+                    if(virtualFile != null) {
+                        FileViewProvider fileViewProvider = new SingleRootFileViewProvider(PsiManager.getInstance(project), virtualFile);
+                        PsiFile psiFile1 = new PsiJavaFileImpl(fileViewProvider);
+                        psiClass = PsiTreeUtil.findChildOfAnyType(psiFile1.getOriginalElement(), PsiClass.class);
+                    }
                 }
             }
             for (PsiField psiField : psiClass.getAllFields()) {
