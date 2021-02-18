@@ -348,10 +348,10 @@ public class ApiGenerateAction extends AnAction {
         }catch (Exception e) {
             Map<String,Object> errorInfo = new HashMap<>();
             //TODO errorInfo
-            errorInfo.put("plugin_version","2021.02.15");
+            errorInfo.put("plugin_version","2021.02.18");
             errorInfo.put("_cause",e.getMessage());
             errorInfo.put("_trace",buildTraceStr(e));
-            errorInfo.put("method_text",buildMethodSnapshot(psiMethod));
+//            errorInfo.put("method_text",buildMethodSnapshot(psiMethod));
 //            errorInfo.put("return_text",buildReturnText(psiMethod));
 //            errorInfo.put("param_text",buildParamText(psiMethod));
             return YApiInterfaceWrapper.error(errorInfo);

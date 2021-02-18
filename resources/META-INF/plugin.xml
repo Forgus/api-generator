@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>site.forgus.plugins.api-generator</id>
     <name>Api Generator</name>
-    <version>2021.02.15</version>
+    <version>2021.02.18</version>
     <vendor email="wenbin1876@gmail.com">孤峰</vendor>
 
     <description><![CDATA[
@@ -97,6 +97,12 @@
     ]]></description>
 
     <change-notes><![CDATA[
+      <em>2021.02.18</em><br>
+      <ul>
+          <li>第三方jar包解析bug修复。</li>
+          <li>增加插件配置项（url、token）校验。</li>
+          <li>移除错误日志的代码快照。</li>
+      </ul>
       <em>2021.02.15</em><br>
       <ul>
           <li>支持第三方jar包源码注释的解析。</li>
