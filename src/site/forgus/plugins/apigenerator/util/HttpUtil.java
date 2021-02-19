@@ -17,31 +17,8 @@ public class HttpUtil {
 
     private static final String CHARSET = "UTF-8";
 
-    public static String doGet(String url, Map<String, String> params) throws IOException {
-        return doHttpRequest(buildGetRequest(url, params));
-    }
-
     public static String doPost(String url, String body) throws IOException {
         return doHttpRequest(buildPostRequestWithJsonType(url, body));
-    }
-
-    private static HttpGet buildGetRequest(String url, Map<String, String> params) {
-        StringBuilder sb = new StringBuilder();
-        for (Map.Entry<String, String> entry : params.entrySet()) {
-            if (sb.length() != 0) {
-                sb.append("&");
-            }
-            sb.append(entry.getKey());
-            sb.append("=");
-            try {
-                sb.append(URLEncoder.encode(entry.getValue(), CHARSET));
-            } catch (UnsupportedEncodingException e) {
-                e.printStackTrace();
-            }
-        }
-        HttpGet httpGet = new HttpGet(url + "?" + sb.toString());
-        httpGet.setConfig(RequestConfig.custom().setConnectTimeout(3000).build());
-        return httpGet;
     }
 
     private static HttpPost buildPostRequestWithJsonType(String url, String body) {
