@@ -1,5 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="ApiGeneratorConfig">
+    <option name="excludeFieldNames">
+      <set>
+        <option value="serialVersionUID" />
+      </set>
+    </option>
+    <option name="yApiServerUrl" value="http://localhost:40001/" />
+    <option name="projectToken" value="355eb08c2233f6c31056294069b200caad8bb90dcffe72c0fd9e724e4fab0b4c" />
+    <option name="projectId" value="11" />
+    <option name="autoCat" value="true" />
+  </component>
   <component name="ProjectRootManager" version="2" languageLevel="JDK_1_8" project-jdk-name="IntelliJ IDEA Community Edition IC-203.7148.57" project-jdk-type="IDEA JDK">
     <output url="file://$PROJECT_DIR$/out" />
   </component>

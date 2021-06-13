@@ -542,7 +542,7 @@ public class ApiGenerateAction extends AnAction {
                     if(StringUtils.isEmpty(text)) {
                         return "";
                     }
-                    text = text.replace("\"","").replace("{","").replace("}","");
+                    text = text.replace("{\"","").replace("\"}","").replace("\"","");
                     if(text.contains(",")) {
                         return appendSlash(text.split(",")[0]);
                     }
