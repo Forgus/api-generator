@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>site.forgus.plugins.api-generator</id>
     <name>Api Generator</name>
-    <version>2021.06.13</version>
+    <version>2021.08.23</version>
     <vendor email="wenbin1876@gmail.com">孤峰</vendor>
 
     <description><![CDATA[
@@ -97,6 +97,10 @@
     ]]></description>
 
     <change-notes><![CDATA[
+      <em>2021.08.23</em><br>
+      <ul>
+          <li>请求参数泛型解析bug修复。</li>
+      </ul>
       <em>2021.06.13</em><br>
       <ul>
           <li>路径参数解析bug修复。</li>

@@ -40,32 +40,14 @@ public class FieldFactory {
     }
 
     public static FieldInfo buildField(Project project,String name, PsiType psiType, String desc, PsiAnnotation[] annotations) {
-        FieldInfo fieldInfo = new FieldInfo();
-        fieldInfo.fieldType = FieldType.FIELD;
-        fieldInfo.project = project;
-        fieldInfo.config = ServiceManager.getService(project,ApiGeneratorConfig.class);
+        FieldInfo fieldInfo = buildPsiType(project, psiType);
         RequireAndRange requireAndRange = FieldUtil.getRequireAndRange(annotations);
         String fieldName = getParamName(name, annotations);
+        fieldInfo.annotations = Arrays.asList(annotations);
         fieldInfo.name = fieldName == null ? "N/A" : fieldName;
-        fieldInfo.psiType = psiType;
         fieldInfo.require = requireAndRange.isRequire();
         fieldInfo.range = requireAndRange.getRange();
         fieldInfo.desc = desc == null ? "" : desc;
-        fieldInfo.annotations = Arrays.asList(annotations);
-        if (psiType != null) {
-            if (FieldUtil.isNormalType(psiType)) {
-                fieldInfo.paramType = TypeEnum.LITERAL;
-            } else if (FieldUtil.isIterableType(psiType)) {
-                fieldInfo.paramType = TypeEnum.ARRAY;
-            } else {
-                fieldInfo.paramType = TypeEnum.OBJECT;
-            }
-            if (needResolveChildren(psiType)) {
-                fieldInfo.resolveChildren();
-            }
-        } else {
-            fieldInfo.paramType = TypeEnum.OBJECT;
-        }
         return fieldInfo;
     }
 
