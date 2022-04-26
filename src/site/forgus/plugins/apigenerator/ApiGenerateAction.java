@@ -63,12 +63,12 @@ public class ApiGenerateAction extends AnAction {
             NotificationUtil.errorNotify("this operate only support in class file", project);
             return;
         }
-        if (selectedClass.isInterface()) {
-            generateMarkdownForInterface(project, referenceAt, selectedClass);
-            return;
-        }
         if (haveControllerAnnotation(selectedClass)) {
             uploadApiToYApi(project, referenceAt, selectedClass);
+            return;
+        }
+        if (selectedClass.isInterface()) {
+            generateMarkdownForInterface(project, referenceAt, selectedClass);
             return;
         }
         generateMarkdownForClass(project, selectedClass);
