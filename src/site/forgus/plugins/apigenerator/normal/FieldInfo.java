@@ -5,7 +5,6 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileManager;
 import com.intellij.psi.*;
 import com.intellij.psi.impl.compiled.ClsClassImpl;
-import com.intellij.psi.impl.java.stubs.PsiClassStub;
 import com.intellij.psi.impl.java.stubs.impl.PsiJavaFileStubImpl;
 import com.intellij.psi.impl.source.PsiJavaFileImpl;
 import com.intellij.psi.stubs.StubElement;
@@ -177,6 +176,9 @@ public class FieldInfo {
                     continue;
                 }
                 if(FieldUtil.isStaticField(psiField)) {
+                    continue;
+                }
+                if(FieldUtil.isIgnoredField(psiField)) {
                     continue;
                 }
                 PsiType fieldType = psiField.getType();

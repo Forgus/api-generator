@@ -243,5 +243,19 @@ public class FieldUtil {
         }
         return false;
     }
+
+    public static boolean isIgnoredField(PsiField psiField) {
+        PsiAnnotation[] annotations = psiField.getAnnotations();
+        if(annotations.length ==0) {
+            return false;
+        }
+        for (PsiAnnotation annotation : annotations) {
+            String qualifiedName = annotation.getText();
+            if(qualifiedName.contains("Ignore")) {
+                return true;
+            }
+        }
+        return false;
+    }
 }
 

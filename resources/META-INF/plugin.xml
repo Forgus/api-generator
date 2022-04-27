@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>site.forgus.plugins.api-generator</id>
     <name>Api Generator</name>
-    <version>2022.04.26</version>
+    <version>2022.04.27</version>
     <vendor email="wenbin1876@gmail.com">孤峰</vendor>
 
     <description><![CDATA[
@@ -97,7 +97,11 @@
     ]]></description>
 
     <change-notes><![CDATA[
-        <em>2022.04.26</em><br>
+      <em>2022.04.27</em><br>
+      <ul>
+          <li>增加JsonIgnore字段支持。</li>
+      </ul>
+      <em>2022.04.26</em><br>
       <ul>
           <li>优化接口类型判断规则。</li>
       </ul>
